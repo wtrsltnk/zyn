@@ -36,7 +36,10 @@
 #include "db2rapInjFunc.h"
 #include "../Controls/Event.h"
 
+#include "../Effects/Composite.h"
+
 using namespace std;
+Composite *comp;
 
 Master::Master()
     :Node(NULL, "Master"),
@@ -100,6 +103,13 @@ Master::Master()
 
 
     defaults();
+
+    REALTYPE *efl = new REALTYPE[SOUND_BUFFER_SIZE],
+             *efr = new REALTYPE[SOUND_BUFFER_SIZE];
+
+    memset(efl, 0, sizeof(REALTYPE)*SOUND_BUFFER_SIZE);
+    memset(efr, 0, sizeof(REALTYPE)*SOUND_BUFFER_SIZE);
+    comp = new Composite(0, efl, efr, NULL, 0);
 }
 
 void Master::defaults()
@@ -454,6 +464,9 @@ void Master::AudioOut(REALTYPE *outl, REALTYPE *outr)
         if(Pinsparts[nefx] == -2)
             insefx[nefx]->out(outl, outr);
     ;
+
+    //Clean up the samples used by the system effects
+    comp->out(outl, outr);
 
     //Master Volume
     for(i = 0; i < SOUND_BUFFER_SIZE; i++) {

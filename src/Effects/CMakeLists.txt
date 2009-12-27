@@ -1,6 +1,7 @@
 set(zynaddsubfx_effect_SRCS
 	Alienwah.cpp
 	Chorus.cpp
+    Composite.cpp
 	Distorsion.cpp
 	DynamicFilter.cpp
 	Echo.cpp
