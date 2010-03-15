@@ -957,31 +957,17 @@
               </property>
              </widget>
             </item>
-            <item row="0" column="1">
-             <widget class="QPushButton" name="buttonControllers">
-              <property name="text">
-               <string>Controllers</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="3">
+            <item row="1" column="1">
              <widget class="QSpinBox" name="spinBox_5">
               <property name="prefix">
                <string>Max K. </string>
               </property>
              </widget>
             </item>
-            <item row="0" column="3">
+            <item row="0" column="1">
              <widget class="QSpinBox" name="spinBox_4">
               <property name="prefix">
                <string>Min K. </string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
-             <widget class="QPushButton" name="buttonControllers_2">
-              <property name="text">
-               <string>Controllers</string>
               </property>
              </widget>
             </item>
@@ -1008,7 +994,7 @@
          <item>
           <widget class="QPushButton" name="pushButton_9">
            <property name="text">
-            <string>PushButton</string>
+            <string>[UNUSED]</string>
            </property>
           </widget>
          </item>
