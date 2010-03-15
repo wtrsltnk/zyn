@@ -22,7 +22,7 @@
 #include <cstring>//for memcpy/memset
 #include "Sample.h"
 
-#warning TODO Think about renaming Sample to Frame
+//#warning TODO Think about renaming Sample to Frame
 /**\TODO start using pointer math here as these will be Frequency called
  * functions throughout the code*/
 Sample::Sample()
@@ -103,7 +103,7 @@ bool Sample::operator==(const Sample &smp) const
  */
 float linearEstimate(float ya, float yb, float xt, float xa = 0.0, float xb =1.0)
 {
-#warning TODO this could be done with a good bit less computation
+//#warning TODO this could be done with a good bit less computation
     //Lets make this simple by normalizing the x axis
 
     //Normalize point a

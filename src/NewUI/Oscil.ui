@@ -11,9 +11,9 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Oscillator</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_4">
+  <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
@@ -39,810 +39,635 @@
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_3">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Frequency spectrum</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QVBoxLayout" name="verticalLayout">
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout">
-       <item>
-        <widget class="SpectrumWidget" name="widget" native="true">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>1</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="palette">
-          <palette>
-           <active>
-            <colorrole role="Text">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>85</red>
-               <green>255</green>
-               <blue>0</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="Base">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>255</red>
-               <green>255</green>
-               <blue>255</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="Window">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>0</red>
-               <green>0</green>
-               <blue>0</blue>
-              </color>
-             </brush>
-            </colorrole>
-           </active>
-           <inactive>
-            <colorrole role="Text">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>85</red>
-               <green>255</green>
-               <blue>0</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="Base">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>255</red>
-               <green>255</green>
-               <blue>255</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="Window">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>0</red>
-               <green>0</green>
-               <blue>0</blue>
-              </color>
-             </brush>
-            </colorrole>
-           </inactive>
-           <disabled>
-            <colorrole role="Text">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>126</red>
-               <green>125</green>
-               <blue>124</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="Base">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>0</red>
-               <green>0</green>
-               <blue>0</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="Window">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>0</red>
-               <green>0</green>
-               <blue>0</blue>
-              </color>
-             </brush>
-            </colorrole>
-           </disabled>
-          </palette>
-         </property>
-         <property name="autoFillBackground">
-          <bool>true</bool>
-         </property>
-         <property name="controlId" stdset="0">
-          <string>OscilSpectrum</string>
-         </property>
-         <zorder>widget_2</zorder>
-        </widget>
-       </item>
-       <item>
-        <widget class="OscilWidget" name="widget_2" native="true">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>3</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="palette">
-          <palette>
-           <active>
-            <colorrole role="Text">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>85</red>
-               <green>255</green>
-               <blue>0</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="Window">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>0</red>
-               <green>0</green>
-               <blue>0</blue>
-              </color>
-             </brush>
-            </colorrole>
-           </active>
-           <inactive>
-            <colorrole role="Text">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>85</red>
-               <green>255</green>
-               <blue>0</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="Window">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>0</red>
-               <green>0</green>
-               <blue>0</blue>
-              </color>
-             </brush>
-            </colorrole>
-           </inactive>
-           <disabled>
-            <colorrole role="Text">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>126</red>
-               <green>125</green>
-               <blue>124</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="Window">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>0</red>
-               <green>0</green>
-               <blue>0</blue>
-              </color>
-             </brush>
-            </colorrole>
-           </disabled>
-          </palette>
-         </property>
-         <property name="autoFillBackground">
-          <bool>true</bool>
-         </property>
-         <property name="controlId" stdset="0">
-          <string>base_function</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
+      <widget class="SpectrumWidget" name="widget" native="true">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>1</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="palette">
+        <palette>
+         <active>
+          <colorrole role="Text">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>85</red>
+             <green>255</green>
+             <blue>0</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Base">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>255</red>
+             <green>255</green>
+             <blue>255</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Window">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>0</red>
+             <green>0</green>
+             <blue>0</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </active>
+         <inactive>
+          <colorrole role="Text">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>85</red>
+             <green>255</green>
+             <blue>0</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Base">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>255</red>
+             <green>255</green>
+             <blue>255</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Window">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>0</red>
+             <green>0</green>
+             <blue>0</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </inactive>
+         <disabled>
+          <colorrole role="Text">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>126</red>
+             <green>125</green>
+             <blue>124</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Base">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>0</red>
+             <green>0</green>
+             <blue>0</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Window">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>0</red>
+             <green>0</green>
+             <blue>0</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </disabled>
+        </palette>
+       </property>
+       <property name="autoFillBackground">
+        <bool>true</bool>
+       </property>
+       <property name="controlId" stdset="0">
+        <string>OscilSpectrum</string>
+       </property>
+      </widget>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout_3">
-       <item>
-        <widget class="SpectrumWidget" name="widget_4" native="true">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>1</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="palette">
-          <palette>
-           <active>
-            <colorrole role="Text">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>85</red>
-               <green>255</green>
-               <blue>0</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="Base">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>255</red>
-               <green>255</green>
-               <blue>255</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="Window">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>0</red>
-               <green>0</green>
-               <blue>0</blue>
-              </color>
-             </brush>
-            </colorrole>
-           </active>
-           <inactive>
-            <colorrole role="Text">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>85</red>
-               <green>255</green>
-               <blue>0</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="Base">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>255</red>
-               <green>255</green>
-               <blue>255</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="Window">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>0</red>
-               <green>0</green>
-               <blue>0</blue>
-              </color>
-             </brush>
-            </colorrole>
-           </inactive>
-           <disabled>
-            <colorrole role="Text">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>126</red>
-               <green>125</green>
-               <blue>124</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="Base">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>0</red>
-               <green>0</green>
-               <blue>0</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="Window">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>0</red>
-               <green>0</green>
-               <blue>0</blue>
-              </color>
-             </brush>
-            </colorrole>
-           </disabled>
-          </palette>
-         </property>
-         <property name="autoFillBackground">
-          <bool>true</bool>
-         </property>
-         <property name="controlId" stdset="0">
-          <string>OscilSpectrum</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="OscilWidget" name="widget_3" native="true">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>3</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="palette">
-          <palette>
-           <active>
-            <colorrole role="Text">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>85</red>
-               <green>255</green>
-               <blue>0</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="Window">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>0</red>
-               <green>0</green>
-               <blue>0</blue>
-              </color>
-             </brush>
-            </colorrole>
-           </active>
-           <inactive>
-            <colorrole role="Text">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>85</red>
-               <green>255</green>
-               <blue>0</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="Window">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>0</red>
-               <green>0</green>
-               <blue>0</blue>
-              </color>
-             </brush>
-            </colorrole>
-           </inactive>
-           <disabled>
-            <colorrole role="Text">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>126</red>
-               <green>125</green>
-               <blue>124</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="Window">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>0</red>
-               <green>0</green>
-               <blue>0</blue>
-              </color>
-             </brush>
-            </colorrole>
-           </disabled>
-          </palette>
-         </property>
-         <property name="autoFillBackground">
-          <bool>true</bool>
-         </property>
-         <property name="controlId" stdset="0">
-          <string>base_function</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Oscilloscope</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="OscilWidget" name="widget_2" native="true">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>3</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="palette">
+        <palette>
+         <active>
+          <colorrole role="Text">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>85</red>
+             <green>255</green>
+             <blue>0</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Window">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>0</red>
+             <green>0</green>
+             <blue>0</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </active>
+         <inactive>
+          <colorrole role="Text">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>85</red>
+             <green>255</green>
+             <blue>0</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Window">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>0</red>
+             <green>0</green>
+             <blue>0</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </inactive>
+         <disabled>
+          <colorrole role="Text">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>126</red>
+             <green>125</green>
+             <blue>124</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Window">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>0</red>
+             <green>0</green>
+             <blue>0</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </disabled>
+        </palette>
+       </property>
+       <property name="autoFillBackground">
+        <bool>true</bool>
+       </property>
+       <property name="controlId" stdset="0">
+        <string>base_function</string>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>
    <item>
     <widget class="GroupBox" name="groupBox">
      <property name="palette">
-       <palette>
-        <active>
-         <colorrole role="WindowText">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>255</red>
-            <green>255</green>
-            <blue>255</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Button">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>103</red>
-            <green>103</green>
-            <blue>103</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Light">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>90</green>
-            <blue>180</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Midlight">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>129</green>
-            <blue>124</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Dark">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>51</green>
-            <blue>49</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Mid">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>68</green>
-            <blue>66</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Text">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>255</red>
-            <green>255</green>
-            <blue>255</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="BrightText">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>255</red>
-            <green>255</green>
-            <blue>255</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="ButtonText">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>255</red>
-            <green>255</green>
-            <blue>255</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Base">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>0</green>
-            <blue>0</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Window">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>103</green>
-            <blue>99</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Shadow">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>0</green>
-            <blue>0</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="AlternateBase">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>51</green>
-            <blue>49</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="ToolTipBase">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>255</red>
-            <green>255</green>
-            <blue>220</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="ToolTipText">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>0</green>
-            <blue>0</blue>
-           </color>
-          </brush>
-         </colorrole>
-        </active>
-        <inactive>
-         <colorrole role="WindowText">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>255</red>
-            <green>255</green>
-            <blue>255</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Button">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>103</red>
-            <green>103</green>
-            <blue>103</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Light">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>90</green>
-            <blue>180</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Midlight">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>129</green>
-            <blue>124</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Dark">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>51</green>
-            <blue>49</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Mid">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>68</green>
-            <blue>66</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Text">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>255</red>
-            <green>255</green>
-            <blue>255</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="BrightText">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>255</red>
-            <green>255</green>
-            <blue>255</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="ButtonText">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>255</red>
-            <green>255</green>
-            <blue>255</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Base">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>0</green>
-            <blue>0</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Window">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>103</green>
-            <blue>99</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Shadow">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>0</green>
-            <blue>0</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="AlternateBase">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>51</green>
-            <blue>49</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="ToolTipBase">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>255</red>
-            <green>255</green>
-            <blue>220</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="ToolTipText">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>0</green>
-            <blue>0</blue>
-           </color>
-          </brush>
-         </colorrole>
-        </inactive>
-        <disabled>
-         <colorrole role="WindowText">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>51</green>
-            <blue>49</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Button">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>103</red>
-            <green>103</green>
-            <blue>103</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Light">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>90</green>
-            <blue>180</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Midlight">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>129</green>
-            <blue>124</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Dark">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>51</green>
-            <blue>49</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Mid">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>68</green>
-            <blue>66</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Text">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>51</green>
-            <blue>49</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="BrightText">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>255</red>
-            <green>255</green>
-            <blue>255</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="ButtonText">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>51</green>
-            <blue>49</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Base">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>103</green>
-            <blue>99</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Window">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>103</green>
-            <blue>99</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Shadow">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>0</green>
-            <blue>0</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="AlternateBase">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>103</green>
-            <blue>99</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="ToolTipBase">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>255</red>
-            <green>255</green>
-            <blue>220</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="ToolTipText">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>0</green>
-            <blue>0</blue>
-           </color>
-          </brush>
-         </colorrole>
-        </disabled>
-       </palette>
-      </property><property name="title">
+      <palette>
+       <active>
+        <colorrole role="WindowText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Button">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>103</red>
+           <green>103</green>
+           <blue>103</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Light">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>90</green>
+           <blue>180</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Midlight">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>129</green>
+           <blue>124</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Dark">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>51</green>
+           <blue>49</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Mid">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>68</green>
+           <blue>66</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Text">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="BrightText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ButtonText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Base">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Window">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>103</green>
+           <blue>99</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Shadow">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="AlternateBase">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>51</green>
+           <blue>49</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ToolTipBase">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>220</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ToolTipText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+       </active>
+       <inactive>
+        <colorrole role="WindowText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Button">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>103</red>
+           <green>103</green>
+           <blue>103</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Light">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>90</green>
+           <blue>180</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Midlight">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>129</green>
+           <blue>124</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Dark">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>51</green>
+           <blue>49</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Mid">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>68</green>
+           <blue>66</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Text">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="BrightText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ButtonText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Base">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Window">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>103</green>
+           <blue>99</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Shadow">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="AlternateBase">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>51</green>
+           <blue>49</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ToolTipBase">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>220</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ToolTipText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+       </inactive>
+       <disabled>
+        <colorrole role="WindowText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>51</green>
+           <blue>49</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Button">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>103</red>
+           <green>103</green>
+           <blue>103</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Light">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>90</green>
+           <blue>180</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Midlight">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>129</green>
+           <blue>124</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Dark">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>51</green>
+           <blue>49</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Mid">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>68</green>
+           <blue>66</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Text">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>51</green>
+           <blue>49</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="BrightText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ButtonText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>51</green>
+           <blue>49</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Base">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>103</green>
+           <blue>99</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Window">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>103</green>
+           <blue>99</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Shadow">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="AlternateBase">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>103</green>
+           <blue>99</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ToolTipBase">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>220</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ToolTipText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+       </disabled>
+      </palette>
+     </property>
+     <property name="toolTip">
+      <string>One halftone per slider</string>
+     </property>
+     <property name="title">
       <string>Oscillator harmonics</string>
+     </property>
+     <property name="controlId" stdset="0">
+      <string>HARMONICS</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <property name="spacing">
@@ -865,7 +690,7 @@
            <x>0</x>
            <y>0</y>
            <width>3460</width>
-           <height>247</height>
+           <height>242</height>
           </rect>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -878,7 +703,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude0</string>
+             <string>HARMONIC#0</string>
             </property>
            </widget>
           </item>
@@ -891,7 +716,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude1</string>
+             <string>HARMONIC#1</string>
             </property>
            </widget>
           </item>
@@ -904,7 +729,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude2</string>
+             <string>HARMONIC#2</string>
             </property>
            </widget>
           </item>
@@ -917,7 +742,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude3</string>
+             <string>HARMONIC#3</string>
             </property>
            </widget>
           </item>
@@ -930,7 +755,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude4</string>
+             <string>HARMONIC#4</string>
             </property>
            </widget>
           </item>
@@ -943,7 +768,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude5</string>
+             <string>HARMONIC#5</string>
             </property>
            </widget>
           </item>
@@ -956,7 +781,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude6</string>
+             <string>HARMONIC#6</string>
             </property>
            </widget>
           </item>
@@ -969,7 +794,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude7</string>
+             <string>HARMONIC#7</string>
             </property>
            </widget>
           </item>
@@ -982,7 +807,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude8</string>
+             <string>HARMONIC#8</string>
             </property>
            </widget>
           </item>
@@ -995,7 +820,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude9</string>
+             <string>HARMONIC#9</string>
             </property>
            </widget>
           </item>
@@ -1008,7 +833,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude10</string>
+             <string>HARMONIC#10</string>
             </property>
            </widget>
           </item>
@@ -1021,7 +846,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude11</string>
+             <string>HARMONIC#11</string>
             </property>
            </widget>
           </item>
@@ -1034,7 +859,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude12</string>
+             <string>HARMONIC#12</string>
             </property>
            </widget>
           </item>
@@ -1047,7 +872,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude13</string>
+             <string>HARMONIC#13</string>
             </property>
            </widget>
           </item>
@@ -1060,7 +885,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude14</string>
+             <string>HARMONIC#14</string>
             </property>
            </widget>
           </item>
@@ -1073,7 +898,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude15</string>
+             <string>HARMONIC#15</string>
             </property>
            </widget>
           </item>
@@ -1086,7 +911,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude16</string>
+             <string>HARMONIC#16</string>
             </property>
            </widget>
           </item>
@@ -1099,7 +924,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude17</string>
+             <string>HARMONIC#17</string>
             </property>
            </widget>
           </item>
@@ -1112,7 +937,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude18</string>
+             <string>HARMONIC#18</string>
             </property>
            </widget>
           </item>
@@ -1125,7 +950,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude19</string>
+             <string>HARMONIC#19</string>
             </property>
            </widget>
           </item>
@@ -1138,7 +963,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude20</string>
+             <string>HARMONIC#20</string>
             </property>
            </widget>
           </item>
@@ -1151,7 +976,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude21</string>
+             <string>HARMONIC#21</string>
             </property>
            </widget>
           </item>
@@ -1164,7 +989,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude22</string>
+             <string>HARMONIC#22</string>
             </property>
            </widget>
           </item>
@@ -1177,7 +1002,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude23</string>
+             <string>HARMONIC#23</string>
             </property>
            </widget>
           </item>
@@ -1190,7 +1015,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude24</string>
+             <string>HARMONIC#24</string>
             </property>
            </widget>
           </item>
@@ -1203,7 +1028,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude25</string>
+             <string>HARMONIC#25</string>
             </property>
            </widget>
           </item>
@@ -1216,7 +1041,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude26</string>
+             <string>HARMONIC#26</string>
             </property>
            </widget>
           </item>
@@ -1229,7 +1054,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude27</string>
+             <string>HARMONIC#27</string>
             </property>
            </widget>
           </item>
@@ -1242,7 +1067,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude28</string>
+             <string>HARMONIC#28</string>
             </property>
            </widget>
           </item>
@@ -1255,7 +1080,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude29</string>
+             <string>HARMONIC#29</string>
             </property>
            </widget>
           </item>
@@ -1268,7 +1093,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude30</string>
+             <string>HARMONIC#30</string>
             </property>
            </widget>
           </item>
@@ -1281,7 +1106,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude31</string>
+             <string>HARMONIC#31</string>
             </property>
            </widget>
           </item>
@@ -1294,7 +1119,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude32</string>
+             <string>HARMONIC#32</string>
             </property>
            </widget>
           </item>
@@ -1307,7 +1132,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude33</string>
+             <string>HARMONIC#33</string>
             </property>
            </widget>
           </item>
@@ -1320,7 +1145,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude34</string>
+             <string>HARMONIC#34</string>
             </property>
            </widget>
           </item>
@@ -1333,7 +1158,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude35</string>
+             <string>HARMONIC#35</string>
             </property>
            </widget>
           </item>
@@ -1346,7 +1171,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude36</string>
+             <string>HARMONIC#36</string>
             </property>
            </widget>
           </item>
@@ -1359,7 +1184,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude37</string>
+             <string>HARMONIC#37</string>
             </property>
            </widget>
           </item>
@@ -1372,7 +1197,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude38</string>
+             <string>HARMONIC#38</string>
             </property>
            </widget>
           </item>
@@ -1385,7 +1210,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude39</string>
+             <string>HARMONIC#39</string>
             </property>
            </widget>
           </item>
@@ -1398,7 +1223,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude40</string>
+             <string>HARMONIC#40</string>
             </property>
            </widget>
           </item>
@@ -1411,7 +1236,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude41</string>
+             <string>HARMONIC#41</string>
             </property>
            </widget>
           </item>
@@ -1424,7 +1249,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude42</string>
+             <string>HARMONIC#42</string>
             </property>
            </widget>
           </item>
@@ -1437,7 +1262,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude43</string>
+             <string>HARMONIC#43</string>
             </property>
            </widget>
           </item>
@@ -1450,7 +1275,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude44</string>
+             <string>HARMONIC#44</string>
             </property>
            </widget>
           </item>
@@ -1463,7 +1288,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude45</string>
+             <string>HARMONIC#45</string>
             </property>
            </widget>
           </item>
@@ -1476,7 +1301,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude46</string>
+             <string>HARMONIC#46</string>
             </property>
            </widget>
           </item>
@@ -1489,7 +1314,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude47</string>
+             <string>HARMONIC#47</string>
             </property>
            </widget>
           </item>
@@ -1502,7 +1327,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude48</string>
+             <string>HARMONIC#48</string>
             </property>
            </widget>
           </item>
@@ -1515,7 +1340,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude49</string>
+             <string>HARMONIC#49</string>
             </property>
            </widget>
           </item>
@@ -1528,7 +1353,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude50</string>
+             <string>HARMONIC#50</string>
             </property>
            </widget>
           </item>
@@ -1541,7 +1366,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude51</string>
+             <string>HARMONIC#51</string>
             </property>
            </widget>
           </item>
@@ -1554,7 +1379,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude52</string>
+             <string>HARMONIC#52</string>
             </property>
            </widget>
           </item>
@@ -1567,7 +1392,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude53</string>
+             <string>HARMONIC#53</string>
             </property>
            </widget>
           </item>
@@ -1580,7 +1405,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude54</string>
+             <string>HARMONIC#54</string>
             </property>
            </widget>
           </item>
@@ -1593,7 +1418,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude55</string>
+             <string>HARMONIC#55</string>
             </property>
            </widget>
           </item>
@@ -1606,7 +1431,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude56</string>
+             <string>HARMONIC#56</string>
             </property>
            </widget>
           </item>
@@ -1619,7 +1444,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude57</string>
+             <string>HARMONIC#57</string>
             </property>
            </widget>
           </item>
@@ -1632,7 +1457,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude58</string>
+             <string>HARMONIC#58</string>
             </property>
            </widget>
           </item>
@@ -1645,7 +1470,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude59</string>
+             <string>HARMONIC#59</string>
             </property>
            </widget>
           </item>
@@ -1658,7 +1483,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude60</string>
+             <string>HARMONIC#60</string>
             </property>
            </widget>
           </item>
@@ -1671,7 +1496,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude61</string>
+             <string>HARMONIC#61</string>
             </property>
            </widget>
           </item>
@@ -1684,7 +1509,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude62</string>
+             <string>HARMONIC#62</string>
             </property>
            </widget>
           </item>
@@ -1697,7 +1522,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude63</string>
+             <string>HARMONIC#63</string>
             </property>
            </widget>
           </item>
@@ -1710,7 +1535,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude64</string>
+             <string>HARMONIC#64</string>
             </property>
            </widget>
           </item>
@@ -1723,7 +1548,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude65</string>
+             <string>HARMONIC#65</string>
             </property>
            </widget>
           </item>
@@ -1736,7 +1561,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude66</string>
+             <string>HARMONIC#66</string>
             </property>
            </widget>
           </item>
@@ -1749,7 +1574,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude67</string>
+             <string>HARMONIC#67</string>
             </property>
            </widget>
           </item>
@@ -1762,7 +1587,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude68</string>
+             <string>HARMONIC#68</string>
             </property>
            </widget>
           </item>
@@ -1775,7 +1600,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude69</string>
+             <string>HARMONIC#69</string>
             </property>
            </widget>
           </item>
@@ -1788,7 +1613,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude70</string>
+             <string>HARMONIC#70</string>
             </property>
            </widget>
           </item>
@@ -1801,7 +1626,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude71</string>
+             <string>HARMONIC#71</string>
             </property>
            </widget>
           </item>
@@ -1814,7 +1639,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude72</string>
+             <string>HARMONIC#72</string>
             </property>
            </widget>
           </item>
@@ -1827,7 +1652,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude73</string>
+             <string>HARMONIC#73</string>
             </property>
            </widget>
           </item>
@@ -1840,7 +1665,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude74</string>
+             <string>HARMONIC#74</string>
             </property>
            </widget>
           </item>
@@ -1853,7 +1678,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude75</string>
+             <string>HARMONIC#75</string>
             </property>
            </widget>
           </item>
@@ -1866,7 +1691,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude76</string>
+             <string>HARMONIC#76</string>
             </property>
            </widget>
           </item>
@@ -1879,7 +1704,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude77</string>
+             <string>HARMONIC#77</string>
             </property>
            </widget>
           </item>
@@ -1892,7 +1717,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude78</string>
+             <string>HARMONIC#78</string>
             </property>
            </widget>
           </item>
@@ -1905,7 +1730,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude79</string>
+             <string>HARMONIC#79</string>
             </property>
            </widget>
           </item>
@@ -1918,7 +1743,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude80</string>
+             <string>HARMONIC#80</string>
             </property>
            </widget>
           </item>
@@ -1931,7 +1756,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude81</string>
+             <string>HARMONIC#81</string>
             </property>
            </widget>
           </item>
@@ -1944,7 +1769,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude82</string>
+             <string>HARMONIC#82</string>
             </property>
            </widget>
           </item>
@@ -1957,7 +1782,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude83</string>
+             <string>HARMONIC#83</string>
             </property>
            </widget>
           </item>
@@ -1970,7 +1795,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude84</string>
+             <string>HARMONIC#84</string>
             </property>
            </widget>
           </item>
@@ -1983,7 +1808,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude85</string>
+             <string>HARMONIC#85</string>
             </property>
            </widget>
           </item>
@@ -1996,7 +1821,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude86</string>
+             <string>HARMONIC#86</string>
             </property>
            </widget>
           </item>
@@ -2009,7 +1834,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude87</string>
+             <string>HARMONIC#87</string>
             </property>
            </widget>
           </item>
@@ -2022,7 +1847,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude88</string>
+             <string>HARMONIC#88</string>
             </property>
            </widget>
           </item>
@@ -2035,7 +1860,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude89</string>
+             <string>HARMONIC#89</string>
             </property>
            </widget>
           </item>
@@ -2048,7 +1873,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude90</string>
+             <string>HARMONIC#90</string>
             </property>
            </widget>
           </item>
@@ -2061,7 +1886,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude91</string>
+             <string>HARMONIC#91</string>
             </property>
            </widget>
           </item>
@@ -2074,7 +1899,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude92</string>
+             <string>HARMONIC#92</string>
             </property>
            </widget>
           </item>
@@ -2087,7 +1912,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude93</string>
+             <string>HARMONIC#93</string>
             </property>
            </widget>
           </item>
@@ -2100,7 +1925,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude94</string>
+             <string>HARMONIC#94</string>
             </property>
            </widget>
           </item>
@@ -2113,7 +1938,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude95</string>
+             <string>HARMONIC#95</string>
             </property>
            </widget>
           </item>
@@ -2126,7 +1951,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude96</string>
+             <string>HARMONIC#96</string>
             </property>
            </widget>
           </item>
@@ -2139,7 +1964,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude97</string>
+             <string>HARMONIC#97</string>
             </property>
            </widget>
           </item>
@@ -2152,7 +1977,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude98</string>
+             <string>HARMONIC#98</string>
             </property>
            </widget>
           </item>
@@ -2165,7 +1990,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude99</string>
+             <string>HARMONIC#99</string>
             </property>
            </widget>
           </item>
@@ -2178,7 +2003,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude100</string>
+             <string>HARMONIC#100</string>
             </property>
            </widget>
           </item>
@@ -2191,7 +2016,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude101</string>
+             <string>HARMONIC#101</string>
             </property>
            </widget>
           </item>
@@ -2204,7 +2029,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude102</string>
+             <string>HARMONIC#102</string>
             </property>
            </widget>
           </item>
@@ -2217,7 +2042,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude103</string>
+             <string>HARMONIC#103</string>
             </property>
            </widget>
           </item>
@@ -2230,7 +2055,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude104</string>
+             <string>HARMONIC#104</string>
             </property>
            </widget>
           </item>
@@ -2243,7 +2068,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude105</string>
+             <string>HARMONIC#105</string>
             </property>
            </widget>
           </item>
@@ -2256,7 +2081,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude106</string>
+             <string>HARMONIC#106</string>
             </property>
            </widget>
           </item>
@@ -2269,7 +2094,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude107</string>
+             <string>HARMONIC#107</string>
             </property>
            </widget>
           </item>
@@ -2282,7 +2107,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude108</string>
+             <string>HARMONIC#108</string>
             </property>
            </widget>
           </item>
@@ -2295,7 +2120,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude109</string>
+             <string>HARMONIC#109</string>
             </property>
            </widget>
           </item>
@@ -2308,7 +2133,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude110</string>
+             <string>HARMONIC#110</string>
             </property>
            </widget>
           </item>
@@ -2321,7 +2146,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude111</string>
+             <string>HARMONIC#111</string>
             </property>
            </widget>
           </item>
@@ -2334,7 +2159,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude112</string>
+             <string>HARMONIC#112</string>
             </property>
            </widget>
           </item>
@@ -2347,7 +2172,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude113</string>
+             <string>HARMONIC#113</string>
             </property>
            </widget>
           </item>
@@ -2360,7 +2185,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude114</string>
+             <string>HARMONIC#114</string>
             </property>
            </widget>
           </item>
@@ -2373,7 +2198,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude115</string>
+             <string>HARMONIC#115</string>
             </property>
            </widget>
           </item>
@@ -2386,7 +2211,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude116</string>
+             <string>HARMONIC#116</string>
             </property>
            </widget>
           </item>
@@ -2399,7 +2224,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude117</string>
+             <string>HARMONIC#117</string>
             </property>
            </widget>
           </item>
@@ -2412,7 +2237,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude118</string>
+             <string>HARMONIC#118</string>
             </property>
            </widget>
           </item>
@@ -2425,7 +2250,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude119</string>
+             <string>HARMONIC#119</string>
             </property>
            </widget>
           </item>
@@ -2438,7 +2263,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude120</string>
+             <string>HARMONIC#120</string>
             </property>
            </widget>
           </item>
@@ -2451,7 +2276,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude121</string>
+             <string>HARMONIC#121</string>
             </property>
            </widget>
           </item>
@@ -2464,7 +2289,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude122</string>
+             <string>HARMONIC#122</string>
             </property>
            </widget>
           </item>
@@ -2477,7 +2302,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude123</string>
+             <string>HARMONIC#123</string>
             </property>
            </widget>
           </item>
@@ -2490,7 +2315,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude124</string>
+             <string>HARMONIC#124</string>
             </property>
            </widget>
           </item>
@@ -2503,7 +2328,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude125</string>
+             <string>HARMONIC#125</string>
             </property>
            </widget>
           </item>
@@ -2516,7 +2341,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude126</string>
+             <string>HARMONIC#126</string>
             </property>
            </widget>
           </item>
@@ -2529,7 +2354,7 @@
              <enum>Qt::Vertical</enum>
             </property>
             <property name="controlId" stdset="0">
-             <string>Magnitude127</string>
+             <string>HARMONIC#127</string>
             </property>
            </widget>
           </item>

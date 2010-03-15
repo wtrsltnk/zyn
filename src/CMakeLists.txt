@@ -11,8 +11,8 @@ find_package(PkgConfig REQUIRED)
 FIND_PACKAGE(Qt4)
 #find_package(OSS)
 find_package(Alsa)
-find_package(JACK)
-find_package(PortAudio)
+#find_package(JACK)
+#find_package(PortAudio)
 set(FLTK_SKIP_OPENGL true)
 find_package(FLTK)
 find_package(OpenGL) #for FLTK
@@ -22,9 +22,9 @@ find_package(OpenGL) #for FLTK
 # file, but either in in CMakeCache.txt before compile, or by passing
 # parameters directly into cmake using the -D flag.
 SET (FFTW_VERSION 3 CACHE STRING "Version number of FFTW")
-SET (DefaultOutput oss CACHE STRING
+SET (DefaultOutput alsa CACHE STRING
     "Default Output module: [null, alsa, oss, jack, portaudio]")
-SET (GuiModule fltk CACHE STRING "GUI module, either fltk, qt or off")
+SET (GuiModule qt CACHE STRING "GUI module, either fltk, qt or off")
 SET (CompileTests OFF CACHE BOOL "whether tests should be compiled in or not")
 SET (AlsaEnable ${ALSA_FOUND} CACHE BOOL
     "Enable support for Advanced Linux Sound Architecture")
@@ -68,8 +68,8 @@ if(NOT PKG_CONFIG_FOUND)
 endif(NOT PKG_CONFIG_FOUND)
 
 # lash
-pkg_search_module(LASH lash-1.0)
-mark_as_advanced(LASH_LIBRARIES)
+#pkg_search_module(LASH lash-1.0)
+#mark_as_advanced(LASH_LIBRARIES)
 
 ########### Settings dependant code ###########
 # From here on, the setting variables have  been prepared so concentrate

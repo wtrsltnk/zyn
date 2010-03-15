@@ -104,12 +104,12 @@ void ControlHelper::setControl(QString absoluteId)
         m_control->addRedirection(this);
 
         emitOptions();
-        qDebug() << "Assigning " << this << " to " << absoluteId;
+        qDebug() << "Assigning" << this << "to" << absoluteId;
         connectedEvent();
         newValueEvent();
-    }
-    else
+    } else {
         qDebug() << "Could not find a control named " << absoluteId;
+    }
 
     Node::unlock();
 }
@@ -154,8 +154,8 @@ int ControlHelper::getValue()
         return m_control->getChar();
     }
 
-    qDebug() << "Error: value for nonconnected control requested";
-    return 64;
+    qDebug() << "Warning: value for nonconnected control requested";
+    return 0;
 }
 
 void ControlHelper::MIDILearn()

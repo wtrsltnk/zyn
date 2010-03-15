@@ -162,7 +162,7 @@ const Stereo<Sample> AudioOut::getNext(bool wait)
     {
         if((unsigned int)dat->manager->getRunning() < BUFF_SIZE)
             dat->manager->requestSamples(BUFF_SIZE-dat->manager->getRunning());
-        if(true)
+        if(false)
             cout << "-----------------Starvation------------------"<< endl;
         if(wait)
         {
