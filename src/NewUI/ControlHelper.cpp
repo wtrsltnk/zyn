@@ -22,6 +22,7 @@
 
 #include "ControlHelper.h"
 #include <QCoreApplication>
+#include <QMessageBox>
 #include <QWidget>
 #include <QDynamicPropertyChangeEvent>
 #include <QStack>
@@ -161,8 +162,14 @@ int ControlHelper::getValue()
 void ControlHelper::MIDILearn()
 {
     if(m_control) {
-        //TODO: handle result
-        m_control->MIDILearn();
+        if (QMessageBox::information(qobject_cast<QWidget*>(parent()), QString(),
+                "When you press OK, ZynAddSubFX listen for MIDI events. Once it has determined what"
+                "controller should be used, it will be connected to this control.",
+                QMessageBox::Ok | QMessageBox::Cancel) ==
+                QMessageBox::Ok) {
+            //TODO: handle result
+            m_control->MIDILearn();
+        }
     }
 }
 

@@ -1086,12 +1086,15 @@
                </widget>
               </item>
               <item>
-               <widget class="QSlider" name="horizontalSlider">
+               <widget class="Slider" name="horizontalSlider">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
+                </property>
+                <property name="maximum">
+                 <number>127</number>
                 </property>
                 <property name="orientation">
                  <enum>Qt::Horizontal</enum>
