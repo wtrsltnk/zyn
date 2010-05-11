@@ -102,7 +102,6 @@ int MIDIFile::parsemidifile(MIDIEvents *me_)
     else    //SMPTE (frames/second and ticks/frame)
         printf(
             "ERROR:in MIDIFile.cpp::parsemidifile() - SMPTE not implemented yet.");
-    ;
 
     if(ntracks >= NUM_MIDI_TRACKS)
         ntracks = NUM_MIDI_TRACKS - 1;

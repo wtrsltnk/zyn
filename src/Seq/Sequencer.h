@@ -26,8 +26,7 @@
 #include "MIDIEvents.h"
 #include "MIDIFile.h"
 
-/**The Sequencer
- * \todo restructure some of this code*/
+/**The Sequencer*/
 class Sequencer:public MIDIEvents
 {
     public:
@@ -46,7 +45,7 @@ class Sequencer:public MIDIEvents
          * @return 1 if this must be called at least once more
          *         0 if there are no more notes for the current time
          *        -1 if there are no notes*/
-        int getevent(char ntrack, int *midich, int *type, int *par1, int *par2);
+        int getevent(unsigned int ntrack, int &midich, int &type, int &par1, int &par2);
 
         /**Imports a given midifile
          * @return 0 if ok or -1 if there is a error loading file*/

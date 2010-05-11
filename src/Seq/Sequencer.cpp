@@ -67,7 +67,7 @@ int Sequencer::importmidifile(const char *filename)
 
     for(int i = 0; i < NUM_MIDI_TRACKS; i++)
         deletelist(&miditrack[i].record);
-    ;
+
     if(midifile.parsemidifile(this) < 0)
         return -1;
 
@@ -91,7 +91,7 @@ void Sequencer::startplay()
 
     for(int i = 0; i < NUM_MIDI_TRACKS; i++)
         rewindlist(&miditrack[i].track);
-    ;
+
     play = 1;
 }
 void Sequencer::stopplay()
@@ -103,51 +103,51 @@ void Sequencer::stopplay()
 
 // ************ Player stuff ***************
 
-int Sequencer::getevent(char ntrack,
-                        int *midich,
-                        int *type,
-                        int *par1,
-                        int *par2)
+int Sequencer::getevent(unsigned int ntrack,
+                        int &midich,
+                        int &type,
+                        int &par1,
+                        int &par2)
 {
-    *type = 0;
+    //default to returning nothing
+    type = 0;
+    
     if(play == 0)
         return -1;
 
-    //test
-//    if (ntrack!=0) return(-1);
+    updatecounter(&playtime[ntrack]);
 
-    updatecounter(&playtime[(int)ntrack]);
+    if(nextevent[ntrack].ev.type == -1) //at the end of the list
+        return -2;
 
-//    printf("%g %g\n",nextevent[ntrack].time,playtime[ntrack].abs);
-
-    if(nextevent[(int)ntrack].time < playtime[(int)ntrack].abs)
-        readevent(&miditrack[(int)ntrack].track, &nextevent[(int)ntrack].ev);
+    if(nextevent[ntrack].time < playtime[ntrack].abs)
+        readevent(&miditrack[ntrack].track, &nextevent[ntrack].ev);
     else
-        return -1;
-    if(nextevent[(int)ntrack].ev.type == -1)
-        return -1;
-//    printf("********************************\n");
+        return 0;
 
-    //sa pun aici o protectie. a.i. daca distanta dintre timpul curent si eveliment e prea mare (>1sec) sa elimin nota
+    //TODO Bring protection here.
+    //i.e If the distance between the current time and the event
+    //is too high (> 1sec) remove note
 
+    printf("********************************\n");
     if(ntrack == 1)
-        printf("_ %f %.2f  (%d)\n", nextevent[(int)ntrack].time,
-               playtime[(int)ntrack].abs, nextevent[(int)ntrack].ev.par2);
-
-    *type   = nextevent[(int)ntrack].ev.type;
-    *par1   = nextevent[(int)ntrack].ev.par1;
-    *par2   = nextevent[(int)ntrack].ev.par2;
-    *midich = nextevent[(int)ntrack].ev.channel;
-
-
-    double dt = nextevent[(int)ntrack].ev.deltatime * 0.0001 * realplayspeed;
-    printf("zzzzzzzzzzzzzz[%d] %d\n",
+        printf("_ %f %.2f  (%d)\n", nextevent[ntrack].time,
+               playtime[ntrack].abs, nextevent[ntrack].ev.par2);
+    printf("track[%d] time until next event: %d\n",
            ntrack,
-           nextevent[(int)ntrack].ev.deltatime);
-    nextevent[(int)ntrack].time += dt;
+           nextevent[ntrack].ev.deltatime);
 
-//    printf("%f   -  %d %d \n",nextevent[ntrack].time,par1,par2);
-    return 0; //?? sau 1
+    type   = nextevent[ntrack].ev.type;
+    par1   = nextevent[ntrack].ev.par1;
+    par2   = nextevent[ntrack].ev.par2;
+    midich = nextevent[ntrack].ev.channel;
+
+
+    double dt = nextevent[ntrack].ev.deltatime * 0.0001 * realplayspeed;
+    nextevent[ntrack].time += dt;
+
+    printf("abs time: %f - %d %d \n",nextevent[ntrack].time,par1,par2);
+    return 0; //or 1?
 }
 
 /************** Timer stuff ***************/
