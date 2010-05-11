@@ -2,6 +2,7 @@
 #define INMGR_H
 
 #include <string>
+#include <iostream>
 #include <semaphore.h>
 #include "SafeQueue.h"
 
@@ -18,6 +19,8 @@ struct MidiEvent
     int num;     //note or contoller number
     int value;   //velocity or controller value
 };
+
+std::ostream &operator<<(std::ostream &out, const MidiEvent& ev);
 
 class Master;
 class MidiIn;

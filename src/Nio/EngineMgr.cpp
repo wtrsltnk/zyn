@@ -6,6 +6,7 @@
 #include "AudioOut.h"
 #include "MidiIn.h"
 #include "NulEngine.h"
+#include "SeqEngine.h"
 #if OSS
 #include "OssEngine.h"
 #endif
@@ -29,6 +30,7 @@ EngineMgr::EngineMgr()
 
     //conditional compiling mess (but contained)
     engines.push_back(defaultEng = new NulEngine(sysOut));
+    engines.push_back(new SeqEngine());
 #if OSS
 #if OSS_DEFAULT
     engines.push_back(defaultEng = new OssEngine(sysOut));
