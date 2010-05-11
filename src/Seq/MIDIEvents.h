@@ -22,12 +22,11 @@
 #ifndef MIDI_EVENTS_H
 #define MIDI_EVENTS_H
 
+#include <list>
 #include "../globals.h"
 #define NUM_MIDI_TRACKS NUM_MIDI_CHANNELS
 
-/**storage the midi events from midi file or sequencer
- * \todo this looks quite like a remake of a linked list
- *       if it is, then it should be rewritten to use <list>*/
+/**storage the midi events from midi file or sequencer*/
 class MIDIEvents
 {
     friend class MIDIFile;
@@ -43,26 +42,19 @@ class MIDIEvents
             int channel; //on what midi channel is
             int type, par1, par2; //type=1 for note, type=2 for controller, type=255 for time messages
         } tmpevent;
-        struct listpos {
-            event ev;
-            struct listpos *next;
-        };
-        struct list {
-            listpos *first, *current;
-            int      size; //how many events are
-            double   length; //in seconds
-        };
+
+        typedef std::list<event> list;
+        typedef list::iterator iterator;
+
         struct {
             list track; //the stored track
+            iterator track_itr;
             list record; //the track being "recorded" from midi
         } miditrack[NUM_MIDI_TRACKS];
 
-        void writeevent(list *l, event *ev);
-        void readevent(list *l, event *ev);
-
-        void rewindlist(list *l);
-        void deletelist(list *l);
-        void deletelistreference(list *l);
+        void writeevent(unsigned int track, const event &ev);
+        event readevent(unsigned int track);
+        void rewindlist(unsigned int track);
 };
 
 #endif

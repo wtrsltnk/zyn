@@ -35,15 +35,6 @@ Sequencer::Sequencer()
 {
     play = 0;
     for(int i = 0; i < NUM_MIDI_TRACKS; i++) {
-        miditrack[i].track.first    = NULL;
-        miditrack[i].track.current  = NULL;
-        miditrack[i].track.size     = 0;
-        miditrack[i].track.length   = 0.0;
-        miditrack[i].record.first   = NULL;
-        miditrack[i].record.current = NULL;
-        miditrack[i].record.size    = 0;
-        miditrack[i].record.length  = 0.0;
-
         nextevent[i].time = 0.0;
         resettime(&playtime[i]);
     }
@@ -53,10 +44,6 @@ Sequencer::Sequencer()
 
 Sequencer::~Sequencer()
 {
-    for(int i = 0; i < NUM_MIDI_TRACKS; i++) {
-        deletelist(&miditrack[i].track);
-        deletelist(&miditrack[i].record);
-    }
 }
 
 
@@ -66,16 +53,15 @@ int Sequencer::importmidifile(const char *filename)
         return -1;
 
     for(int i = 0; i < NUM_MIDI_TRACKS; i++)
-        deletelist(&miditrack[i].record);
+        miditrack[i].record.clear();
 
     if(midifile.parsemidifile(this) < 0)
         return -1;
 
     //copy the "record" track to the main track
     for(int i = 0; i < NUM_MIDI_TRACKS; i++) {
-        deletelist(&miditrack[i].track);
         miditrack[i].track = miditrack[i].record;
-        deletelistreference(&miditrack[i].record);
+        miditrack[i].record.clear();
     }
     return 0;
 }
@@ -90,7 +76,7 @@ void Sequencer::startplay()
         resettime(&playtime[i]);
 
     for(int i = 0; i < NUM_MIDI_TRACKS; i++)
-        rewindlist(&miditrack[i].track);
+        rewindlist(i);
 
     play = 1;
 }
@@ -121,7 +107,7 @@ int Sequencer::getevent(unsigned int ntrack,
         return -2;
 
     if(nextevent[ntrack].time < playtime[ntrack].abs)
-        readevent(&miditrack[ntrack].track, &nextevent[ntrack].ev);
+        nextevent[ntrack].ev = readevent(ntrack);
     else
         return 0;
 

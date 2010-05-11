@@ -22,8 +22,10 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <iostream>
 #include "MIDIFile.h"
 
+using namespace std;
 
 MIDIFile::MIDIFile()
 {
@@ -99,11 +101,11 @@ int MIDIFile::parsemidifile(MIDIEvents *me_)
     int division = getint16();
     printf("division %d\n", division);
     if(division >= 0) { //delta time units in each a quater note
-//	tick=???;
+        //tick=???;
     }
     else    //SMPTE (frames/second and ticks/frame)
-        printf(
-            "ERROR:in MIDIFile.cpp::parsemidifile() - SMPTE not implemented yet.");
+        cerr << "ERROR: in MIDIFile.cpp::parsemidifile() - SMPTE not implemented yet."
+             << endl;
 
     if(ntracks >= NUM_MIDI_TRACKS)
         ntracks = NUM_MIDI_TRACKS - 1;
@@ -241,18 +243,17 @@ void MIDIFile::parsenoteoff(char ntrack, char chan, unsigned int dt)
     if(chan >= NUM_MIDI_CHANNELS)
         return;
 
-    me->tmpevent.deltatime = convertdt(dt);
-    me->tmpevent.type      = 1;
-    me->tmpevent.par1      = note;
-    me->tmpevent.par2      = 0;
-    me->tmpevent.channel   = chan;
+    MIDIEvents::event ev;
+
+    ev.deltatime = convertdt(dt);
+    ev.type      = 1;
+    ev.par1      = note;
+    ev.par2      = 0;
+    ev.channel   = chan;
 
     printf("Note off:%d \n", note);
 
-    ///test
-//    ntrack=0;
-
-    me->writeevent(&me->miditrack[(int)ntrack].record, &me->tmpevent);
+    me->miditrack[(int)ntrack].record.push_back(ev);
 }
 
 
@@ -268,12 +269,13 @@ void MIDIFile::parsenoteon(char ntrack, char chan, unsigned int dt)
     if(chan >= NUM_MIDI_CHANNELS)
         return;
 
-    me->tmpevent.deltatime = convertdt(dt);
-    me->tmpevent.type      = 1;
-    me->tmpevent.par1      = note;
-    me->tmpevent.par2      = vel;
-    me->tmpevent.channel   = chan;
-    me->writeevent(&me->miditrack[(int)ntrack].record, &me->tmpevent);
+    MIDIEvents::event ev;
+    ev.deltatime = convertdt(dt);
+    ev.type      = 1;
+    ev.par1      = note;
+    ev.par2      = vel;
+    ev.channel   = chan;
+    me->miditrack[(int)ntrack].record.push_back(ev);
 }
 
 void MIDIFile::parsecontrolchange(char ntrack, char chan, unsigned int dt)
@@ -287,12 +289,13 @@ void MIDIFile::parsecontrolchange(char ntrack, char chan, unsigned int dt)
 
     printf("[dt %d] Control change:%d %d\n", dt, control, value);
 
-    me->tmpevent.deltatime = convertdt(dt);
-    me->tmpevent.type      = 2;
-    me->tmpevent.par1      = control; //???????????? ma uit la Sequencer::recordnote() din varianele vechi de zyn
-    me->tmpevent.par2      = value;
-    me->tmpevent.channel   = chan;
-    me->writeevent(&me->miditrack[(int)ntrack].record, &me->tmpevent);
+    MIDIEvents::event ev;
+    ev.deltatime = convertdt(dt);
+    ev.type      = 2;
+    ev.par1      = control; //???????????? ma uit la Sequencer::recordnote() din varianele vechi de zyn
+    ev.par2      = value;
+    ev.channel   = chan;
+    me->miditrack[(int)ntrack].record.push_back(ev);
 }
 
 void MIDIFile::parsepitchwheel(char ntrack, char chan, unsigned int dt)
@@ -321,12 +324,13 @@ void MIDIFile::parsemetaevent(unsigned char mtype, unsigned char mlength)
 
 void MIDIFile::add_dt(char ntrack, unsigned int dt)
 {
-    me->tmpevent.deltatime = convertdt(dt);
-    me->tmpevent.type      = 255;
-    me->tmpevent.par1      = 0;
-    me->tmpevent.par2      = 0;
-    me->tmpevent.channel   = 0;
-    me->writeevent(&me->miditrack[(int)ntrack].record, &me->tmpevent);
+    MIDIEvents::event ev;
+    ev.deltatime = convertdt(dt);
+    ev.type      = 255;
+    ev.par1      = 0;
+    ev.par2      = 0;
+    ev.channel   = 0;
+    me->miditrack[(int)ntrack].record.push_back(ev);
 }
 
 

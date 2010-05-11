@@ -21,8 +21,7 @@
 */
 
 #include "MIDIEvents.h"
-#include <stdlib.h>
-#include <stdio.h>
+using namespace std;
 
 MIDIEvents::MIDIEvents()
 {}
@@ -32,62 +31,29 @@ MIDIEvents::~MIDIEvents()
 
 
 /************** Track stuff ***************/
-void MIDIEvents::writeevent(list *l, event *ev)
+void MIDIEvents::writeevent(unsigned int track, const event &ev)
 {
-    listpos *tmp = new listpos;
-    tmp->next = NULL;
-    tmp->ev   = *ev;
-    if(l->current != NULL)
-        l->current->next = tmp;
-    else
-        l->first = tmp;
-    l->current = tmp;
-//    printf("Wx%x ",(int) l->current);
-//    printf("-> %d  \n",l->current->ev.deltatime);
-    l->size++;
+    miditrack[track].record.push_back(ev);
 }
 
-void MIDIEvents::readevent(list *l, event *ev)
+struct MIDIEvents::event MIDIEvents::readevent(unsigned int track)
 {
-    if(l->current == NULL) {
-        ev->type = -1;
-        return;
+    //alias
+    iterator &itr = miditrack[track].track_itr;
+    list &l = miditrack[track].track;
+
+    if(itr==l.end()) {
+        event ev;
+        ev.type = -1;
+        return ev;
     }
-    *ev = l->current->ev;
-    l->current = l->current->next;
 
-    //test
-    if(l->current != NULL) {
-//	ev->deltatime=10000;
-//	printf("Rx%d\n",l->current->ev.deltatime);
-//	printf("Rx%x  ",(int) l->current);
-//	printf("-> %d  (next=%x) \n",(int)l->current->ev.deltatime,(int)l->current->next);
-    }
+    return *++itr;
 }
 
 
-void MIDIEvents::rewindlist(list *l)
+void MIDIEvents::rewindlist(unsigned int track)
 {
-    l->current = l->first;
-}
-
-void MIDIEvents::deletelist(list *l)
-{
-    l->current = l->first;
-    if(l->current == NULL)
-        return;
-    while(l->current->next != NULL) {
-        listpos *tmp = l->current;
-        l->current = l->current->next;
-        delete (tmp);
-    }
-    deletelistreference(l);
-}
-
-void MIDIEvents::deletelistreference(list *l)
-{
-    l->current = l->first = NULL;
-    l->size    = 0;
-    l->length  = 0.0;
+    miditrack[track].track_itr = miditrack[track].track.begin();
 }
 
