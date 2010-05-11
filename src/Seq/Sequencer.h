@@ -36,8 +36,8 @@ class Sequencer:public MIDIEvents
         ~Sequencer();
 
         //these functions are called by the master and are ignored if the recorder/player are stopped
-        void recordnote(char chan, char note, char vel);
-        void recordcontroller(char chan, unsigned int type, int par);
+        //void recordnote(char chan, char note, char vel);
+        //void recordcontroller(char chan, unsigned int type, int par);
 
         /**Gets an event \todo better description
          *

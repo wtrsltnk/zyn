@@ -146,7 +146,7 @@ int Sequencer::getevent(unsigned int ntrack,
     double dt = nextevent[ntrack].ev.deltatime * 0.0001 * realplayspeed;
     nextevent[ntrack].time += dt;
 
-    printf("abs time: %f - %d %d \n",nextevent[ntrack].time,par1,par2);
+    printf("abs time: %f - %d %d \n", nextevent[ntrack].time, par1, par2);
     return 0; //or 1?
 }
 
@@ -178,8 +178,6 @@ void Sequencer::updatecounter(timestruct *t)
     t->rel  = current - t->last;
     t->abs += t->rel;
     t->last = current;
-
-//    printf("%f %f %f\n",t->last,t->abs,t->rel);
 }
 
 void Sequencer::setplayspeed(int speed)

@@ -68,8 +68,10 @@ int MIDIFile::loadfile(const char *filename)
     fread(midifile, midifilesize, 1, file);
     fclose(file);
 
-//    for (int i=0;i<midifilesize;i++) printf("%2x ",midifile[i]);
-//    printf("\n");
+    //print out the file
+    for (int i = 0; i < midifilesize; i++)
+        printf("%2x ",midifile[i]);
+    printf("\n");
 
 
     return 0;
