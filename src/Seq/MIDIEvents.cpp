@@ -42,7 +42,7 @@ struct MIDIEvents::event MIDIEvents::readevent(unsigned int track)
     iterator &itr = miditrack[track].track_itr;
     list &l = miditrack[track].track;
 
-    if(itr==l.end()) {
+    if(itr == l.end()) {
         event ev;
         ev.type = -1;
         return ev;
@@ -55,5 +55,23 @@ struct MIDIEvents::event MIDIEvents::readevent(unsigned int track)
 void MIDIEvents::rewindlist(unsigned int track)
 {
     miditrack[track].track_itr = miditrack[track].track.begin();
+}
+
+void MIDIEvents::clear()
+{
+    for(int i = 0; i < NUM_MIDI_TRACKS; i++) {
+        miditrack[i].record.clear();
+        miditrack[i].track.clear();
+        miditrack[i].track_itr = miditrack[i].track.begin();
+    }
+}
+
+void MIDIEvents::finishRecord()
+{
+    //copy the "record" track to the main track
+    for(int i = 0; i < NUM_MIDI_TRACKS; i++) {
+        miditrack[i].track = miditrack[i].record;
+        miditrack[i].record.clear();
+    }
 }
 

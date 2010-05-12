@@ -253,7 +253,7 @@ void MIDIFile::parsenoteoff(char ntrack, char chan, unsigned int dt)
 
     printf("Note off:%d \n", note);
 
-    me->miditrack[(int)ntrack].record.push_back(ev);
+    me->writeevent(ntrack, ev);
 }
 
 
@@ -275,7 +275,7 @@ void MIDIFile::parsenoteon(char ntrack, char chan, unsigned int dt)
     ev.par1      = note;
     ev.par2      = vel;
     ev.channel   = chan;
-    me->miditrack[(int)ntrack].record.push_back(ev);
+    me->writeevent(ntrack, ev);
 }
 
 void MIDIFile::parsecontrolchange(char ntrack, char chan, unsigned int dt)
@@ -295,7 +295,7 @@ void MIDIFile::parsecontrolchange(char ntrack, char chan, unsigned int dt)
     ev.par1      = control; //???????????? ma uit la Sequencer::recordnote() din varianele vechi de zyn
     ev.par2      = value;
     ev.channel   = chan;
-    me->miditrack[(int)ntrack].record.push_back(ev);
+    me->writeevent(ntrack, ev);
 }
 
 void MIDIFile::parsepitchwheel(char ntrack, char chan, unsigned int dt)
@@ -330,7 +330,7 @@ void MIDIFile::add_dt(char ntrack, unsigned int dt)
     ev.par1      = 0;
     ev.par2      = 0;
     ev.channel   = 0;
-    me->miditrack[(int)ntrack].record.push_back(ev);
+    me->writeevent(ntrack, ev);
 }
 
 

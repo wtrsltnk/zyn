@@ -21,8 +21,6 @@
 
 */
 
-#warning TODO move Sequencer out of master
-
 #include "Master.h"
 
 #include "../Params/LFOParams.h"
@@ -269,28 +267,6 @@ void Master::partonoff(int npart, int what)
 void Master::AudioOut(REALTYPE *outl, REALTYPE *outr)
 {
     int i, npart, nefx;
-
-    /*    //test!!!!!!!!!!!!! se poate bloca aici (mutex)
-        if (seq.play){
-        int type,par1,par2,again,midichan;
-        int ntrack=1;
-    //	    do{
-            again=seq.getevent(ntrack,&midichan,&type,&par1,&par2);
-            if (type>0) {
-    //		printf("aaa\n");
-
-                    if (type==1){//note_on or note_off
-                if (par2!=0) NoteOn(midichan,par1,par2);
-                    else NoteOff(midichan,par1);
-                    };
-            };
-    //	    } while (again);
-        };
-    */
-
-
-//    printf("zzzz\n");
-
 
     //Swaps the Left channel with Right Channel (if it is asked for)
     if(swaplr != 0) {

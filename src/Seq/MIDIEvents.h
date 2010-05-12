@@ -29,12 +29,9 @@
 /**storage the midi events from midi file or sequencer*/
 class MIDIEvents
 {
-    friend class MIDIFile;
     public:
         MIDIEvents();
         ~MIDIEvents();
-
-    protected:
 
         /* Events */
         struct event {
@@ -43,6 +40,14 @@ class MIDIEvents
             int type, par1, par2; //type=1 for note, type=2 for controller, type=255 for time messages
         } tmpevent;
 
+        void writeevent(unsigned int track, const event &ev);
+        event readevent(unsigned int track);
+        void rewindlist(unsigned int track);
+
+        void clear();
+        void finishRecord();
+
+    private:
         typedef std::list<event> list;
         typedef list::iterator iterator;
 
@@ -51,10 +56,6 @@ class MIDIEvents
             iterator track_itr;
             list record; //the track being "recorded" from midi
         } miditrack[NUM_MIDI_TRACKS];
-
-        void writeevent(unsigned int track, const event &ev);
-        event readevent(unsigned int track);
-        void rewindlist(unsigned int track);
 };
 
 #endif

@@ -48,7 +48,7 @@ decl {\#include "SeqUI.h"} {public
 decl {\#include "PresetsUI.h"} {public
 } 
 
-decl {\#include "NioUI.h"} {public global
+decl {\#include "NioUI.h"} {public
 } 
 
 decl {\#include "../Misc/Master.h"} {public
@@ -63,7 +63,7 @@ decl {\#include "../Misc/Util.h"} {public
 decl {\#include "../globals.h"} {public
 } 
 
-class VUMeter {selected : {public Fl_Box}
+class VUMeter {: {public Fl_Box}
 } {
   Function {VUMeter(int x,int y, int w, int h, const char *label=0):Fl_Box(x,y,w,h,label)} {} {
     code {master=NULL;
@@ -303,7 +303,7 @@ class Panellistitem {: {public Fl_Group}
   Function {make_window()} {private
   } {
     Fl_Window panellistitem {
-      private xywh {315 213 70 260} type Double labeltype NORMAL_LABEL align 80 hide
+      private xywh {315 213 70 260} type Double hide
       class Fl_Group
     } {
       Fl_Group panellistitemgroup {
@@ -430,7 +430,7 @@ if (fl_choice("Exit and leave the unsaved data?","No","Yes",NULL)) {
     *exitprogram=1;
 };
 \#endif}
-      xywh {450 306 390 465} type Double align 80 hide xclass zynaddsubfx
+      xywh {450 306 390 465} type Double hide xclass zynaddsubfx
     } {
       Fl_Menu_Bar mastermenu {
         xywh {-5 0 690 25}
@@ -1013,7 +1013,7 @@ panelwindow->show();}
     }
     Fl_Window aboutwindow {
       label {Copyright...}
-      xywh {411 344 365 280} type Double labeltype NORMAL_LABEL align 80 hide
+      xywh {411 344 365 280} type Double hide
     } {
       Fl_Box {} {
         label {Copyright (c) 2002-2009 Nasca O. PAUL and others. Please read AUTHORS.txt}
@@ -1040,7 +1040,7 @@ GNU General Public License for details.}
     }
     Fl_Window syseffsendwindow {
       label {System Effects Send}
-      xywh {171 234 120 250} type Double labeltype NORMAL_LABEL align 80 hide resizable
+      xywh {171 234 120 250} type Double hide resizable
     } {
       Fl_Scroll {} {open
         xywh {0 45 120 170} box FLAT_BOX resizable
@@ -1059,7 +1059,7 @@ GNU General Public License for details.}
     }
     Fl_Window panelwindow {
       label {ZynAddSubFX Panel}
-      xywh {89 59 630 635} type Double labeltype NORMAL_LABEL align 80 hide
+      xywh {89 59 630 635} type Double hide
     } {
       Fl_Scroll {} {
         xywh {0 5 570 310} type HORIZONTAL box THIN_UP_BOX
@@ -1099,7 +1099,7 @@ if (fl_choice("Exit and leave the unsaved data?","No","Yes",NULL)) {
 	*exitprogram=1;
 };
 \#endif}
-      xywh {400 405 600 335} type Double labeltype NORMAL_LABEL align 80 hide
+      xywh {400 405 600 335} type Double hide
     } {
       Fl_Menu_Bar {} {
         xywh {0 0 690 25}
@@ -1589,7 +1589,7 @@ virkeys->take_focus();}
     Fl_Window selectuiwindow {
       label {User Interface mode}
       callback {*exitprogram=1;}
-      xywh {342 246 430 250} type Double labeltype NORMAL_LABEL align 80 hide non_modal
+      xywh {342 246 430 250} type Double hide non_modal
     } {
       Fl_Box {} {
         label {Welcome to ZynAddSubFX}
@@ -1659,13 +1659,14 @@ microtonalui=new MicrotonalUI(&master->microtonal);
 virkeyboard=new VirKeyboard(master);
 bankui=new BankUI(master,&npart);
 configui=new ConfigUI();
-sequi=new SeqUI(master);
+sequi=new SeqUI();
 
 make_window();
 presetsui=new PresetsUI();
 setfilelabel(NULL);
 swapefftype=0;
-simplerefresh();} {}
+simplerefresh();} {selected
+    }
   }
   Function {~MasterUI()} {} {
     code {masterwindow->hide();

@@ -27,7 +27,7 @@
 #include "MIDIFile.h"
 
 /**The Sequencer*/
-class Sequencer:public MIDIEvents
+class Sequencer
 {
     public:
         /**Constructor*/
@@ -35,17 +35,18 @@ class Sequencer:public MIDIEvents
         /**Destructor*/
         ~Sequencer();
 
+        typedef MIDIEvents::event event;
+
         //these functions are called by the master and are ignored if the recorder/player are stopped
         //void recordnote(char chan, char note, char vel);
         //void recordcontroller(char chan, unsigned int type, int par);
 
-        /**Gets an event \todo better description
+        /**Gets an event
          *
-         * this is only for player
          * @return 1 if this must be called at least once more
          *         0 if there are no more notes for the current time
          *        -1 if there are no notes*/
-        int getevent(unsigned int ntrack, int &midich, int &type, int &par1, int &par2);
+        int getevent(unsigned int ntrack, event &ev);
 
         /**Imports a given midifile
          * @return 0 if ok or -1 if there is a error loading file*/
@@ -62,6 +63,7 @@ class Sequencer:public MIDIEvents
     private:
 
         MIDIFile midifile;
+        MIDIEvents events;
 
         /* Timer */
         struct timestruct {

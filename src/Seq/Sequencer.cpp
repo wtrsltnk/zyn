@@ -49,24 +49,19 @@ Sequencer::~Sequencer()
 
 int Sequencer::importmidifile(const char *filename)
 {
+    //TODO this could be cleaned up some more
     if(midifile.loadfile(filename) < 0)
         return -1;
 
-    for(int i = 0; i < NUM_MIDI_TRACKS; i++)
-        miditrack[i].record.clear();
+    events.clear();
 
-    if(midifile.parsemidifile(this) < 0)
+    if(midifile.parsemidifile(&events) < 0)
         return -1;
 
-    //copy the "record" track to the main track
-    for(int i = 0; i < NUM_MIDI_TRACKS; i++) {
-        miditrack[i].track = miditrack[i].record;
-        miditrack[i].record.clear();
-    }
+    events.finishRecord();
+
     return 0;
 }
-
-
 
 void Sequencer::startplay()
 {
@@ -76,10 +71,11 @@ void Sequencer::startplay()
         resettime(&playtime[i]);
 
     for(int i = 0; i < NUM_MIDI_TRACKS; i++)
-        rewindlist(i);
+        events.rewindlist(i);
 
     play = 1;
 }
+
 void Sequencer::stopplay()
 {
     if(play == 0)
@@ -89,15 +85,11 @@ void Sequencer::stopplay()
 
 // ************ Player stuff ***************
 
-int Sequencer::getevent(unsigned int ntrack,
-                        int &midich,
-                        int &type,
-                        int &par1,
-                        int &par2)
+int Sequencer::getevent(unsigned int ntrack, event &ev)
 {
     //default to returning nothing
-    type = 0;
-    
+    ev.type = 0;
+
     if(play == 0)
         return -1;
 
@@ -107,7 +99,7 @@ int Sequencer::getevent(unsigned int ntrack,
         return -2;
 
     if(nextevent[ntrack].time < playtime[ntrack].abs)
-        nextevent[ntrack].ev = readevent(ntrack);
+        nextevent[ntrack].ev = events.readevent(ntrack);
     else
         return 0;
 
@@ -123,16 +115,12 @@ int Sequencer::getevent(unsigned int ntrack,
            ntrack,
            nextevent[ntrack].ev.deltatime);
 
-    type   = nextevent[ntrack].ev.type;
-    par1   = nextevent[ntrack].ev.par1;
-    par2   = nextevent[ntrack].ev.par2;
-    midich = nextevent[ntrack].ev.channel;
-
+    ev = nextevent[ntrack].ev;
 
     double dt = nextevent[ntrack].ev.deltatime * 0.0001 * realplayspeed;
     nextevent[ntrack].time += dt;
 
-    printf("abs time: %f - %d %d \n", nextevent[ntrack].time, par1, par2);
+    printf("abs time: %f - %d %d \n", nextevent[ntrack].time, ev.par1, ev.par2);
     return 0; //or 1?
 }
 

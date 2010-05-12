@@ -31,7 +31,6 @@
 #include "Recorder.h"
 #include "Part.h"
 #include "Dump.h"
-#include "../Seq/Sequencer.h"
 #include "XMLwrapper.h"
 
 typedef enum { MUTEX_TRYLOCK, MUTEX_LOCK, MUTEX_UNLOCK } lockset;
@@ -146,9 +145,6 @@ class Master
 
         Controller ctl;
         int swaplr; //1 if L and R are swapped
-
-        //Sequencer
-        Sequencer seq;
 
         //other objects
         Microtonal microtonal;

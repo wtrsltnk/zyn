@@ -105,7 +105,13 @@ void *SeqEngine::thread()
                 continue;
 
             MidiEvent ev;
-            seq.getevent(ntrack, ev.channel, ev.type, ev.num, ev.value);
+            Sequencer::event foo;
+            seq.getevent(ntrack, foo);
+            ev.channel = foo.channel;
+            ev.type    = foo.type;
+            ev.num     = foo.par1;
+            ev.value   = foo.par2;
+
 
             if(ev.type == -1) //track has finished
                 tracks[ntrack] = false;
