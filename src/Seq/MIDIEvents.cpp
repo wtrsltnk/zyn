@@ -23,6 +23,10 @@
 #include "MIDIEvents.h"
 using namespace std;
 
+SeqEvent::SeqEvent()
+    :deltatime(0)
+{}
+
 MIDIEvents::MIDIEvents()
 {}
 
@@ -31,19 +35,19 @@ MIDIEvents::~MIDIEvents()
 
 
 /************** Track stuff ***************/
-void MIDIEvents::writeevent(unsigned int track, const event &ev)
+void MIDIEvents::writeevent(unsigned int track, const SeqEvent &ev)
 {
     miditrack[track].record.push_back(ev);
 }
 
-struct MIDIEvents::event MIDIEvents::readevent(unsigned int track)
+SeqEvent MIDIEvents::readevent(unsigned int track)
 {
     //alias
     iterator &itr = miditrack[track].track_itr;
     list &l = miditrack[track].track;
 
     if(itr == l.end()) {
-        event ev;
+        SeqEvent ev;
         ev.type = -1;
         return ev;
     }

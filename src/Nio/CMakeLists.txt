@@ -6,6 +6,7 @@
 set(zynaddsubfx_nio_SRCS
     WavEngine.cpp
     NulEngine.cpp
+    MidiEvent.cpp
     SeqEngine.cpp
     AudioOut.cpp
     MidiIn.cpp

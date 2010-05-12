@@ -3,7 +3,7 @@
 #include "../Seq/Sequencer.h"
 using namespace std;
 
-bool some(bool *array)
+bool some_bool(bool *array)
 {
     bool ans = false;
     for(int i = 0; i < NUM_MIDI_TRACKS; i++)
@@ -26,22 +26,22 @@ class SeqTest:public CxxTest::TestSuite
             for(int i = 0; i < NUM_MIDI_TRACKS; i++)
                 tracks[i] = true;
             
-            while(some(tracks)) {
+            while(some_bool(tracks)) {
                 int again;
                 for(int ntrack = 0; ntrack < NUM_MIDI_TRACKS; ntrack++) {
                     if(!tracks[ntrack])
                         continue;
-                    MIDIEvents::event ev;
+                    MidiEvent ev;
                     again = seq.getevent(ntrack, ev);
 
                     if(ev.type == -1)
                         tracks[ntrack] = false;
                     if(ev.type > 0) {
                         if(ev.type == 1) { //note_on or note_off
-                            if(ev.par2 != 0)
-                                printf("NoteOn on %d for %d at %d\n", ev.channel, ev.par1, ev.par2);
+                            if(ev.value != 0)
+                                printf("NoteOn on %d for %d at %d\n", ev.channel, ev.num, ev.value);
                             else
-                                printf("NoteOff on %d for %d\n", ev.channel, ev.par1);
+                                printf("NoteOff on %d for %d\n", ev.channel, ev.num);
                         }
                         if(ev.type == 255)
                             printf("Timing Info\n");

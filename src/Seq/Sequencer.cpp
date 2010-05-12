@@ -85,7 +85,7 @@ void Sequencer::stopplay()
 
 // ************ Player stuff ***************
 
-int Sequencer::getevent(unsigned int ntrack, event &ev)
+int Sequencer::getevent(unsigned int ntrack, MidiEvent &ev)
 {
     //default to returning nothing
     ev.type = 0;
@@ -110,7 +110,7 @@ int Sequencer::getevent(unsigned int ntrack, event &ev)
     printf("********************************\n");
     if(ntrack == 1)
         printf("_ %f %.2f  (%d)\n", nextevent[ntrack].time,
-               playtime[ntrack].abs, nextevent[ntrack].ev.par2);
+               playtime[ntrack].abs, nextevent[ntrack].ev.value);
     printf("track[%d] time until next event: %d\n",
            ntrack,
            nextevent[ntrack].ev.deltatime);
@@ -120,7 +120,7 @@ int Sequencer::getevent(unsigned int ntrack, event &ev)
     double dt = nextevent[ntrack].ev.deltatime * 0.0001 * realplayspeed;
     nextevent[ntrack].time += dt;
 
-    printf("abs time: %f - %d %d \n", nextevent[ntrack].time, ev.par1, ev.par2);
+    printf("abs time: %f - %d %d \n", nextevent[ntrack].time, ev.num, ev.value);
     return 0; //or 1?
 }
 

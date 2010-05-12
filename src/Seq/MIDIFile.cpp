@@ -243,12 +243,12 @@ void MIDIFile::parsenoteoff(char ntrack, char chan, unsigned int dt)
     if(chan >= NUM_MIDI_CHANNELS)
         return;
 
-    MIDIEvents::event ev;
+    SeqEvent ev;
 
     ev.deltatime = convertdt(dt);
     ev.type      = 1;
-    ev.par1      = note;
-    ev.par2      = 0;
+    ev.num       = note;
+    ev.value     = 0;
     ev.channel   = chan;
 
     printf("Note off:%d \n", note);
@@ -269,11 +269,11 @@ void MIDIFile::parsenoteon(char ntrack, char chan, unsigned int dt)
     if(chan >= NUM_MIDI_CHANNELS)
         return;
 
-    MIDIEvents::event ev;
+    SeqEvent ev;
     ev.deltatime = convertdt(dt);
     ev.type      = 1;
-    ev.par1      = note;
-    ev.par2      = vel;
+    ev.num       = note;
+    ev.value     = vel;
     ev.channel   = chan;
     me->writeevent(ntrack, ev);
 }
@@ -289,11 +289,11 @@ void MIDIFile::parsecontrolchange(char ntrack, char chan, unsigned int dt)
 
     printf("[dt %d] Control change:%d %d\n", dt, control, value);
 
-    MIDIEvents::event ev;
+    SeqEvent ev;
     ev.deltatime = convertdt(dt);
     ev.type      = 2;
-    ev.par1      = control; //???????????? ma uit la Sequencer::recordnote() din varianele vechi de zyn
-    ev.par2      = value;
+    ev.num       = control; //???????????? ma uit la Sequencer::recordnote() din varianele vechi de zyn
+    ev.value     = value;
     ev.channel   = chan;
     me->writeevent(ntrack, ev);
 }
@@ -324,11 +324,11 @@ void MIDIFile::parsemetaevent(unsigned char mtype, unsigned char mlength)
 
 void MIDIFile::add_dt(char ntrack, unsigned int dt)
 {
-    MIDIEvents::event ev;
+    SeqEvent ev;
     ev.deltatime = convertdt(dt);
     ev.type      = 255;
-    ev.par1      = 0;
-    ev.par2      = 0;
+    ev.num       = 0;
+    ev.value     = 0;
     ev.channel   = 0;
     me->writeevent(ntrack, ev);
 }

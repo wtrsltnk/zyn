@@ -24,7 +24,14 @@
 
 #include <list>
 #include "../globals.h"
+#include "../Nio/InMgr.h" //this is for MidiEvent
 #define NUM_MIDI_TRACKS NUM_MIDI_CHANNELS
+
+struct SeqEvent: public MidiEvent
+{
+    SeqEvent();
+    int deltatime;
+};
 
 /**storage the midi events from midi file or sequencer*/
 class MIDIEvents
@@ -33,22 +40,15 @@ class MIDIEvents
         MIDIEvents();
         ~MIDIEvents();
 
-        /* Events */
-        struct event {
-            int deltatime;
-            int channel; //on what midi channel is
-            int type, par1, par2; //type=1 for note, type=2 for controller, type=255 for time messages
-        } tmpevent;
-
-        void writeevent(unsigned int track, const event &ev);
-        event readevent(unsigned int track);
+        void writeevent(unsigned int track, const SeqEvent &ev);
+        SeqEvent readevent(unsigned int track);
         void rewindlist(unsigned int track);
 
         void clear();
         void finishRecord();
 
     private:
-        typedef std::list<event> list;
+        typedef std::list<SeqEvent> list;
         typedef list::iterator iterator;
 
         struct {

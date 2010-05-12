@@ -35,8 +35,6 @@ class Sequencer
         /**Destructor*/
         ~Sequencer();
 
-        typedef MIDIEvents::event event;
-
         //these functions are called by the master and are ignored if the recorder/player are stopped
         //void recordnote(char chan, char note, char vel);
         //void recordcontroller(char chan, unsigned int type, int par);
@@ -46,7 +44,7 @@ class Sequencer
          * @return 1 if this must be called at least once more
          *         0 if there are no more notes for the current time
          *        -1 if there are no notes*/
-        int getevent(unsigned int ntrack, event &ev);
+        int getevent(unsigned int ntrack, MidiEvent &ev);
 
         /**Imports a given midifile
          * @return 0 if ok or -1 if there is a error loading file*/
@@ -80,7 +78,7 @@ class Sequencer
         /* Player only*/
 
         struct {
-            event  ev;
+            SeqEvent  ev;
             double time;
         } nextevent[NUM_MIDI_TRACKS];
 
