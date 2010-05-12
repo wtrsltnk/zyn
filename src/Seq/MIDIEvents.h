@@ -30,6 +30,11 @@
 struct SeqEvent: public MidiEvent
 {
     SeqEvent();
+    SeqEvent(int dt, int type, int chan, int number, int val);
+
+    static SeqEvent note(int dt, int chan, int note, int velocity=0);
+    static SeqEvent control(int dt, int chan, int ctl, int val);
+    static SeqEvent time(int dt);
     int deltatime;
 };
 

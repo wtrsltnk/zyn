@@ -6,6 +6,10 @@ MidiEvent::MidiEvent()
     :channel(0),type(0),num(0),value(0)
 {}
 
+MidiEvent::MidiEvent(int chan, int _type, int number, int val)
+    :channel(chan),type(_type),num(number),value(val)
+{}
+
 ostream &operator<<(ostream &out, const MidiEvent& ev)
 {
     if(ev.type == M_NOTE)

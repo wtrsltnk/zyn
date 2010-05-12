@@ -27,6 +27,26 @@ SeqEvent::SeqEvent()
     :deltatime(0)
 {}
 
+SeqEvent::SeqEvent(int dt, int type, int chan, int number, int val)
+    :MidiEvent(chan, type, number, val), deltatime(dt)
+{}
+
+
+SeqEvent SeqEvent::note(int dt, int chan, int note, int velocity)
+{
+    return SeqEvent(dt, 1, chan, note, velocity);
+}
+
+SeqEvent SeqEvent::control(int dt, int chan, int ctl, int value)
+{
+    return SeqEvent(dt, 1, chan, ctl, value);
+}
+
+SeqEvent SeqEvent::time(int dt)
+{
+    return SeqEvent(dt, 255, 0, 0, 0);
+}
+
 MIDIEvents::MIDIEvents()
 {}
 
@@ -42,17 +62,17 @@ void MIDIEvents::writeevent(unsigned int track, const SeqEvent &ev)
 
 SeqEvent MIDIEvents::readevent(unsigned int track)
 {
-    //alias
+    //alias names for clarity
     iterator &itr = miditrack[track].track_itr;
-    list &l = miditrack[track].track;
+    list &l       = miditrack[track].track;
 
-    if(itr == l.end()) {
+    if(!l.size() || itr == l.end()) {
         SeqEvent ev;
         ev.type = -1;
-        return ev;
+        return ev;//Returning Quit Signal
     }
 
-    return *++itr;
+    return *(itr++);
 }
 
 

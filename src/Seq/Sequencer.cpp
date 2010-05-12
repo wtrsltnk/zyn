@@ -29,7 +29,7 @@
 
 #include "Sequencer.h"
 
-
+using namespace std;
 
 Sequencer::Sequencer()
 {
@@ -84,20 +84,20 @@ void Sequencer::stopplay()
 }
 
 // ************ Player stuff ***************
-
 int Sequencer::getevent(unsigned int ntrack, MidiEvent &ev)
 {
     //default to returning nothing
     ev.type = 0;
 
     if(play == 0)
-        return -1;
+        return -2;
 
     updatecounter(&playtime[ntrack]);
 
     if(nextevent[ntrack].ev.type == -1) //at the end of the list
-        return -2;
+        return -1;
 
+    //printf("%g vs %g with %d\n",nextevent[ntrack].time, playtime[ntrack].abs, nextevent[ntrack].ev.type); 
     if(nextevent[ntrack].time < playtime[ntrack].abs)
         nextevent[ntrack].ev = events.readevent(ntrack);
     else
@@ -107,20 +107,25 @@ int Sequencer::getevent(unsigned int ntrack, MidiEvent &ev)
     //i.e If the distance between the current time and the event
     //is too high (> 1sec) remove note
 
-    printf("********************************\n");
-    if(ntrack == 1)
-        printf("_ %f %.2f  (%d)\n", nextevent[ntrack].time,
-               playtime[ntrack].abs, nextevent[ntrack].ev.value);
-    printf("track[%d] time until next event: %d\n",
-           ntrack,
-           nextevent[ntrack].ev.deltatime);
+    //printf("********************************\n");
+    //if(ntrack == 1)
+    //    printf("_ %f %.2f  (%d)\n", nextevent[ntrack].time,
+    //           playtime[ntrack].abs, nextevent[ntrack].ev.value);
+    //printf("track[%d] time until next event: %d\n",
+    //       ntrack,
+    //       nextevent[ntrack].ev.deltatime);
 
     ev = nextevent[ntrack].ev;
 
     double dt = nextevent[ntrack].ev.deltatime * 0.0001 * realplayspeed;
+    if(dt > 10.0) {
+        cout << ev << endl;
+        cout << events.readevent(ntrack) << endl;
+        return -1;
+    }
     nextevent[ntrack].time += dt;
 
-    printf("abs time: %f - %d %d \n", nextevent[ntrack].time, ev.num, ev.value);
+    //printf("abs time: %f - %d %d \n", nextevent[ntrack].time, ev.num, ev.value);
     return 0; //or 1?
 }
 

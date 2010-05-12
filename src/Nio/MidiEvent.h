@@ -11,6 +11,7 @@ enum midi_type{
 struct MidiEvent
 {
     MidiEvent();
+    MidiEvent(int chan, int _type, int number, int val);
     int channel; //the midi channel for the event
     int type;    //type=1 for note, type=2 for controller
     int num;     //note or contoller number
