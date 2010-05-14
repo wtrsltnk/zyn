@@ -62,7 +62,6 @@ Master::Master()
     //System Effects init
     for(int nefx = 0; nefx < NUM_SYS_EFX; nefx++)
         sysefx[nefx] = new EffectMgr(0, &mutex);
-    ;
 
 
     defaults();
@@ -117,6 +116,11 @@ bool Master::mutexLock(lockset request)
     return false;
 }
 
+Master &Master::getInstance()
+{
+    static Master instance;
+    return instance;
+}
 
 /*
  * Note On Messages (velocity=0 for NoteOff)
@@ -444,7 +448,8 @@ Master::~Master()
 
     delete [] tmpmixl;
     delete [] tmpmixr;
-    delete (fft);
+    delete fft;
+    FFT_cleanup();
 
     pthread_mutex_destroy(&mutex);
     pthread_mutex_destroy(&vumutex);
