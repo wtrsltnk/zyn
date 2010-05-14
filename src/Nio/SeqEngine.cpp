@@ -111,7 +111,7 @@ void *SeqEngine::thread()
                 tracks[ntrack] = false;
 
             if(ev.type == 1) //note_on or note_off
-                sysIn->putEvent(ev);
+                InMgr::getInstance().putEvent(ev);
         }
         usleep(1000);
     }

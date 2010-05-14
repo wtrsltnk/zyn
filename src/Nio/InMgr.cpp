@@ -6,6 +6,11 @@
 
 using namespace std;
 
+InMgr &InMgr::getInstance()
+{
+    static InMgr instance;
+    return instance;
+}
 
 InMgr::InMgr()
     :queue(100), master(Master::getInstance())
