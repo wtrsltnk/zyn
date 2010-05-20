@@ -62,7 +62,7 @@ MasterUI *ui;
 
 using namespace std;
 
-pthread_t thr3, thr4;
+pthread_t thr3;
 Master   *master;
 int  swaplr    = 0; //1 for left-right swapping
 
@@ -117,52 +117,6 @@ void *thread3(void *)
     return 0;
 }
 
-//this code is disabled for Nio testing
-//it should get moved out of here into the nio system soon
-#if 0
-/*
- * Sequencer thread (test)
- */
-void *thread4(void *arg)
-{
-    while(Pexitprogram == 0) {
-        int type, par1, par2, again, midichan;
-        for(int ntrack = 0; ntrack < NUM_MIDI_TRACKS; ntrack++) {
-            if(master->seq.play == 0)
-                break;
-            do {
-                again = master->seq.getevent(ntrack,
-                                             &midichan,
-                                             &type,
-                                             &par1,
-                                             &par2);
-//		printf("ntrack=%d again=%d\n",ntrack,again);
-                if(type > 0) {
-//	    printf("%d %d  %d %d %d\n",type,midichan,chan,par1,par2);
-
-//	if (cmdtype==MidiController) master->SetController(cmdchan,cmdparams[0],cmdparams[1]);
-
-
-
-                    pthread_mutex_lock(&master->mutex);
-                    if(type == 1) { //note_on or note_off
-                        if(par2 != 0)
-                            master->NoteOn(midichan, par1, par2);
-                        else
-                            master->NoteOff(midichan, par1);
-                    }
-                    pthread_mutex_unlock(&master->mutex);
-                }
-            } while(again > 0);
-        }
-//if (!realtime player) atunci fac asta
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		os_sleep(1000);
-    }
-
-    return 0;
-}
-#endif
 
 void exitprogram();
 
@@ -469,7 +423,6 @@ int main(int argc, char *argv[])
     }
 #endif
 
-//    pthread_create(&thr4, NULL, thread4, NULL);
 #ifdef WINMIDIIN
     InitWinMidi(master);
 #endif
