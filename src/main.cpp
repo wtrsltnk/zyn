@@ -66,9 +66,9 @@ pthread_t thr3;
 Master   *master;
 int  swaplr    = 0; //1 for left-right swapping
 
-#ifdef USE_LASH
+#if LASH
 #include "Misc/LASHClient.h"
-LASHClient *lash;
+LASHClient *lash = NULL;
 #endif
 
 int     Pexitprogram = 0; //if the UI set this to 1, the program will exit
@@ -86,23 +86,23 @@ void *thread3(void *)
     ui->showUI();
 
     while(Pexitprogram == 0) {
-#ifdef USE_LASH
+#if LASH
         string filename;
         switch(lash->checkevents(filename)) {
-        case LASHClient::Save:
-            ui->do_save_master(filename.c_str());
-            lash->confirmevent(LASHClient::Save);
-            break;
-        case LASHClient::Restore:
-            ui->do_load_master(filename.c_str());
-            lash->confirmevent(LASHClient::Restore);
-            break;
-        case LASHClient::Quit:
-            Pexitprogram = 1;
-        default:
-            break;
+            case LASHClient::Save:
+                ui->do_save_master(filename.c_str());
+                lash->confirmevent(LASHClient::Save);
+                break;
+            case LASHClient::Restore:
+                ui->do_load_master(filename.c_str());
+                lash->confirmevent(LASHClient::Restore);
+                break;
+            case LASHClient::Quit:
+                Pexitprogram = 1;
+            default:
+                break;
         }
-#endif //USE_LASH
+#endif //LASH
         Fl::wait();
     }
 
@@ -135,6 +135,10 @@ void sigterm_exit(int sig)
  */
 void initprogram()
 {
+#if LASH
+    lash = new LASHClient(&argc, &argv);
+#endif
+
     cerr.precision(1);
     cerr << std::fixed;
     cerr << "\nSample Rate = \t\t" << SAMPLE_RATE << endl;
@@ -166,7 +170,7 @@ void exitprogram()
     delete ui;
 #endif
 
-#ifdef USE_LASH
+#if LASH
     delete lash;
 #endif
 
@@ -201,9 +205,6 @@ int opterr = 0;
 #ifndef VSTAUDIOOUT
 int main(int argc, char *argv[])
 {
-#ifdef USE_LASH
-    lash = new LASHClient(&argc, &argv);
-#endif
 
     config.init();
     dump.startnow();
@@ -418,7 +419,6 @@ int main(int argc, char *argv[])
 
 #ifndef DISABLE_GUI
     if(noui == 0) {
-        ui = new MasterUI(master, &Pexitprogram);
         pthread_create(&thr3, NULL, thread3, NULL);
     }
 #endif
