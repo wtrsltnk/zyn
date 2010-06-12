@@ -119,11 +119,13 @@ void OutMgr::addSmps(REALTYPE *l, REALTYPE *r)
 
     Stereo<Sample> smps(Sample(SOUND_BUFFER_SIZE, l), Sample(SOUND_BUFFER_SIZE, r));
 
+#if 0
     if(currentOut->getSampleRate() != SAMPLE_RATE) { //we need to resample
         //cout << "BAD RESAMPLING" << endl;
         smps.l().resample(SAMPLE_RATE,currentOut->getSampleRate());
         smps.r().resample(SAMPLE_RATE,currentOut->getSampleRate());
     }
+#endif
 
     memcpy(priBuffCurrent.l(), smps.l().c_buf(), SOUND_BUFFER_SIZE*sizeof(REALTYPE));
     memcpy(priBuffCurrent.r(), smps.r().c_buf(), SOUND_BUFFER_SIZE*sizeof(REALTYPE));

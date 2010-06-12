@@ -32,6 +32,9 @@
 #include "../Misc/Config.h"
 #include "../Misc/Bank.h"
 #include <limits.h>
+#include "../Nio/AudioOut.h"
+#include "../Nio/OutMgr.h"
+#include "../Nio/InMgr.h"
 
 //
 // Static stubs for LADSPA member functions
@@ -301,6 +304,7 @@ const LADSPA_Descriptor* DSSIaudiooutput::getLadspaDescriptor(unsigned long inde
 const DSSI_Program_Descriptor* DSSIaudiooutput::getProgram (unsigned long index)
 {
     static DSSI_Program_Descriptor retVal;
+    return NULL;
 
     /* Make sure we have the list of banks loaded */
     initBanks();
@@ -426,7 +430,8 @@ void DSSIaudiooutput::runSynth(unsigned long sample_count, snd_seq_event_t *even
     unsigned long event_index = 0;
     unsigned long next_event_frame = 0;
     unsigned long to_frame = 0;
-    pthread_mutex_lock(&master->mutex);
+    LADSPA_Data *outl_loc = outl;
+    LADSPA_Data *outr_loc = outr;
 
     do {
         /* Find the time of the next event, if any */
@@ -446,8 +451,13 @@ void DSSIaudiooutput::runSynth(unsigned long sample_count, snd_seq_event_t *even
         if(from_frame<to_frame)
         {
             // call master to fill from `from_frame` to `to_frame`:
-            //TODO: disabled
-            //master->GetAudioOutSamples(to_frame - from_frame, (int)sampleRate, &(outl[from_frame]), &(outr[from_frame]));
+            unsigned int size = to_frame - from_frame;
+            Stereo<REALTYPE *> tmp = OutMgr::getInstance().tick(size);
+            for(unsigned int i = 0; i < size; ++i) {
+                *(outl_loc++) = tmp.l()[i];
+                *(outr_loc++) = tmp.r()[i];
+            }
+
             // next sub-sample please...
             from_frame = to_frame;
         }
@@ -455,31 +465,35 @@ void DSSIaudiooutput::runSynth(unsigned long sample_count, snd_seq_event_t *even
         // Now process any event(s) at the current timing point
         while(events != NULL && event_index < event_count && events[event_index].time.tick == to_frame)
         {
-            if(events[event_index].type == SND_SEQ_EVENT_NOTEON)
-            {
-                //TODO: disabled
-                //master->NoteOn(events[event_index].data.note.channel, events[event_index].data.note.note, events[event_index].data.note.velocity);
+            MidiDriverEvent ev;
+
+            if(events[event_index].type == SND_SEQ_EVENT_NOTEON) {
+                ev.type    = M_NOTE;
+                ev.channel = events[event_index].data.note.channel;
+                ev.num     = events[event_index].data.note.note;
+                ev.value     = events[event_index].data.note.velocity;
+
             }
-            else if(events[event_index].type == SND_SEQ_EVENT_NOTEOFF)
-            {
-                //TODO: disabled
-                //master->NoteOff(events[event_index].data.note.channel, events[event_index].data.note.note);
+            else if(events[event_index].type == SND_SEQ_EVENT_NOTEOFF) {
+                ev.type    = M_NOTE;
+                ev.channel = events[event_index].data.note.channel;
+                ev.num     = events[event_index].data.note.note;
+                ev.value     = 0;
             }
-            else if(events[event_index].type == SND_SEQ_EVENT_CONTROLLER)
-            {
-                //TODO: disabled
-                //master->SetController(events[event_index].data.control.channel, events[event_index].data.control.param, events[event_index].data.control.value);
+            else if(events[event_index].type == SND_SEQ_EVENT_CONTROLLER) {
+                ev.type    = M_NOTE;
+                ev.channel = events[event_index].data.control.channel;
+                ev.num     = events[event_index].data.control.param;
+                ev.value     = events[event_index].data.control.value;
             }
             else
-            {
-            }
+                continue;
+            InMgr::getInstance().putEvent(ev);
             event_index++;
         }
 
         // Keep going until we have the desired total length of sample...
     } while(to_frame < sample_count);
-
-    pthread_mutex_unlock(&master->mutex);
 }
 
 /**
@@ -602,13 +616,15 @@ DSSIaudiooutput::DSSIaudiooutput(unsigned long sampleRate)
     this->sampleRate = sampleRate;
     this->banksInited = false;
 
+    SAMPLE_RATE = sampleRate;
+
     config.init();
 
     srand(time(NULL));
     denormalkillbuf=new REALTYPE [SOUND_BUFFER_SIZE];
     for (int i=0;i<SOUND_BUFFER_SIZE;i++) denormalkillbuf[i]=(RND-0.5)*1e-16;
 
-    this->master = new Master();
+    this->master = &Master::getInstance();
 }
 
 /**
