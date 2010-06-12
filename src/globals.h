@@ -78,7 +78,7 @@ extern int OSCIL_SIZE;
 /*
  * Number of parts
  */
-#define NUM_MIDI_PARTS 16
+#define NUM_MIDI_PARTS 1
 
 /*
  * Number of Midi channes

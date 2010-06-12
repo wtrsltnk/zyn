@@ -48,10 +48,10 @@ MasterUI::MasterUI(Master *master_, int *exitprogram_)
 
     qDebug() << "Created new part at " << QString::fromStdString(
         master->parts.createChild(0));
-    qDebug() << "Created new part at " << QString::fromStdString(
-        master->parts.createChild(0));
-    qDebug() << "Created new part at " << QString::fromStdString(
-        master->parts.createChild(0));
+    //qDebug() << "Created new part at " << QString::fromStdString(
+        //master->parts.createChild(0));
+    //qDebug() << "Created new part at " << QString::fromStdString(
+        //master->parts.createChild(0));
 
     setupUi(this);
 

@@ -225,6 +225,7 @@ set(NONGUI_LIBRARIES
 
 set(CXXTEST_LINK_LIBS ${NONGUI_LIBRARIES})
 
+add_definitions(-fPIC)
 add_subdirectory(Misc)
 add_subdirectory(Controls)
 add_subdirectory(Synth)
@@ -255,6 +256,23 @@ target_link_libraries(zynaddsubfx
         ${NIO_LIBRARIES}
         ${AUDIO_LIBRARIES}
         ${OS_LIBRARIES}
+	)
+
+add_library(zynaddsubfx_dssi SHARED
+    Output/DSSIaudiooutput.cpp
+    #main.cpp
+    #zyndssi.cpp
+)
+
+target_link_libraries(zynaddsubfx_dssi
+    ${NONGUI_LIBRARIES}
+    #${GUI_LIBRARIES}
+    ${zlib_LIBRARIES}
+    ${fftw_LIBRARIES}
+    ${MXML_LIBRARIES}
+    ${NIO_LIBRARIES}
+    ${AUDIO_LIBRARIES}
+    ${OS_LIBRARIES}
 	)
 
 install(TARGETS zynaddsubfx

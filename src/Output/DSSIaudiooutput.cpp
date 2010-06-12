@@ -344,7 +344,8 @@ const DSSI_Program_Descriptor* DSSIaudiooutput::getProgram (unsigned long index)
 void DSSIaudiooutput::selectProgram(unsigned long bank, unsigned long program)
 {
     initBanks();
-//    cerr << "selectProgram(" << (bank & 0x7F) << ':' << ((bank >> 7) & 0x7F) << "," << program  << ")" << '\n';
+    std::cerr << "selectProgram(" << (bank & 0x7F) << ':' << ((bank >> 7) & 0x7F) << "," << program  << ")" << '\n';
+#if 0
     if(bank < MAX_NUM_BANKS && program < BANK_SIZE)
     {
         char* bankdir = master->bank.banks[ bank ].dir;
@@ -370,6 +371,7 @@ void DSSIaudiooutput::selectProgram(unsigned long bank, unsigned long program)
             pthread_mutex_unlock(&master->mutex);
         }
     }
+#endif
 }
 
 /**
@@ -444,7 +446,8 @@ void DSSIaudiooutput::runSynth(unsigned long sample_count, snd_seq_event_t *even
         if(from_frame<to_frame)
         {
             // call master to fill from `from_frame` to `to_frame`:
-            master->GetAudioOutSamples(to_frame - from_frame, (int)sampleRate, &(outl[from_frame]), &(outr[from_frame]));
+            //TODO: disabled
+            //master->GetAudioOutSamples(to_frame - from_frame, (int)sampleRate, &(outl[from_frame]), &(outr[from_frame]));
             // next sub-sample please...
             from_frame = to_frame;
         }
@@ -454,15 +457,18 @@ void DSSIaudiooutput::runSynth(unsigned long sample_count, snd_seq_event_t *even
         {
             if(events[event_index].type == SND_SEQ_EVENT_NOTEON)
             {
-                master->NoteOn(events[event_index].data.note.channel, events[event_index].data.note.note, events[event_index].data.note.velocity);
+                //TODO: disabled
+                //master->NoteOn(events[event_index].data.note.channel, events[event_index].data.note.note, events[event_index].data.note.velocity);
             }
             else if(events[event_index].type == SND_SEQ_EVENT_NOTEOFF)
             {
-                master->NoteOff(events[event_index].data.note.channel, events[event_index].data.note.note);
+                //TODO: disabled
+                //master->NoteOff(events[event_index].data.note.channel, events[event_index].data.note.note);
             }
             else if(events[event_index].type == SND_SEQ_EVENT_CONTROLLER)
             {
-                master->SetController(events[event_index].data.control.channel, events[event_index].data.control.param, events[event_index].data.control.value);
+                //TODO: disabled
+                //master->SetController(events[event_index].data.control.channel, events[event_index].data.control.param, events[event_index].data.control.value);
             }
             else
             {
@@ -643,7 +649,7 @@ DSSIaudiooutput::ProgramDescriptor::ProgramDescriptor(unsigned long _bank, unsig
 /**
  * The map of programs available; held as a single shared statically allocated object.
  */
-vector <DSSIaudiooutput::ProgramDescriptor> DSSIaudiooutput::programMap = vector<DSSIaudiooutput::ProgramDescriptor>();
+std::vector <DSSIaudiooutput::ProgramDescriptor> DSSIaudiooutput::programMap = std::vector<DSSIaudiooutput::ProgramDescriptor>();
 
 /**
  * Index controlling the map of banks
@@ -659,6 +665,7 @@ long DSSIaudiooutput::bankNoToMap = 1;
  */
 bool DSSIaudiooutput::mapNextBank()
 {
+#if 0
     pthread_mutex_lock(&master->mutex);
     Bank& bank = master->bank;
     bool retval;
@@ -682,4 +689,5 @@ bool DSSIaudiooutput::mapNextBank()
     }
     pthread_mutex_unlock(&master->mutex);
     return retval;
+#endif
 }

@@ -30,6 +30,7 @@
 #include <dssi.h>
 #include <ladspa.h>
 #include <vector>
+#include <string>
 
 class DSSIaudiooutput
 {
@@ -76,7 +77,7 @@ public:
     {
         unsigned long bank;
         unsigned long program;
-        string name;
+        std::string name;
         ProgramDescriptor(unsigned long _bank, unsigned long _program, char* _name);
     };
 
@@ -94,9 +95,9 @@ private:
     long sampleRate;
     Master* master;
     static DSSI_Descriptor* dssiDescriptor;
-    static string bankDirNames[];
+    static std::string bankDirNames[];
     static
-    vector <ProgramDescriptor> programMap;
+    std::vector <ProgramDescriptor> programMap;
 
     /**
      * Flag controlling the list of bank directories
