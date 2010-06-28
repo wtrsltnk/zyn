@@ -121,7 +121,7 @@ void *thread3(void *)
 void exitprogram();
 
 //cleanup on signaled exit
-void sigterm_exit(int sig)
+void sigterm_exit(int /*sig*/)
 {
     Pexitprogram = 1;
     sleep(1);
