@@ -28,21 +28,17 @@
 using namespace std;
 
 MidiFile::MidiFile()
-    :me(NULL), midifile(NULL), midifilesize(0),
-    midieof(false)
-{
-}
+    :me(NULL),tick(0.05)
+{}
 
 MidiFile::~MidiFile()
-{
-    clearmidifile();
-}
+{}
 
 int MidiFile::loadfile(const char *filename)
 {
     clearmidifile();
 
-    FILE *file = fopen(filename, "r");
+    file = fopen(filename, "r");
     if(file == NULL)
         return -1;
 
@@ -56,22 +52,7 @@ int MidiFile::loadfile(const char *filename)
         fclose(file);
         return -1;
     }
-
-    //get the filesize
-    fseek(file, 0, SEEK_END);
-    midifilesize = ftell(file);
     rewind(file);
-
-    midifile = new unsigned char[midifilesize];
-    ZERO(midifile, midifilesize);
-    fread(midifile, midifilesize, 1, file);
-    fclose(file);
-
-    //print out the file
-    //for (int i = 0; i < midifilesize; i++)
-    //    printf("%2x ",midifile[i]);
-    //printf("\n");
-
 
     return 0;
 }
@@ -113,9 +94,9 @@ int MidiFile::parsemidifile(MidiEvents *me_)
         }
     }
 
-    printf("\n\nCURRENT File position is = 0x%x\n", midifilek);
     printf("\nMIDI file succesfully parsed.\n");
 
+    fclose(file);
     me = NULL;
     return 0;
 }
@@ -134,12 +115,12 @@ int MidiFile::parsetrack(int ntrack)
     int size = getint32();
     printf("size = %d\n", size);
 
-    int oldmidifilek      = midifilek;
+    const int oldPosition = ftell(file);
 
     unsigned char lastmsg = 0;
     unsigned int  dt      = 0;
 
-    while(!midieof) {
+    while(!feof(file)) {
         unsigned int msgdeltatime = getvarint32();
 
 ///	printf("MSGDELTATIME = %d\n",msgdeltatime);
@@ -188,7 +169,7 @@ int MidiFile::parsetrack(int ntrack)
             break;
         case 0xf0: //sysex - ignored
             while(getbyte() != 0xf7) {
-                if(midieof)
+                if(feof(file))
                     break;
             }
             break;
@@ -210,14 +191,14 @@ int MidiFile::parsetrack(int ntrack)
         }
 
 
-        if(midieof)
+        if(feof(file))
             return -1;
 
-        if((midifilek - oldmidifilek) == size)
+        if((ftell(file) - oldPosition) == size)
             break;
         else
-        if((midifilek - oldmidifilek) > size)
-            return -1;
+            if((ftell(file) - oldPosition) > size)
+                return -1;
 //    if (size!=6) return(-1);//header is always 6 bytes long
     }
 
@@ -283,10 +264,8 @@ void MidiFile::parsepitchwheel(char ntrack, char chan, unsigned int dt)
 
 void MidiFile::parsemetaevent(unsigned char mtype, unsigned char mlength)
 {
-    int oldmidifilek = midifilek;
     printf("meta-event type=0x%x  length=%d\n", mtype, mlength);
-
-    midifilek = oldmidifilek + mlength;
+    skipnbytes(mlength);
 }
 
 void MidiFile::add_dt(char ntrack, unsigned int dt)
@@ -297,43 +276,25 @@ void MidiFile::add_dt(char ntrack, unsigned int dt)
     me->writeevent(ntrack, SeqEvent::time(convertdt(dt)));
 }
 
+void MidiFile::clearmidifile()
+{
+}
 
 unsigned int MidiFile::convertdt(unsigned int dt)
 {
-    double result = dt;
-
-    return (int) (result * 15.0);
-}
-
-
-void MidiFile::clearmidifile()
-{
-    if(midifile != NULL)
-        delete (midifile);
-    midifile     = NULL;
-    midifilesize = 0;
-    midifilek    = 0;
-    midieof      = false;
-    tick         = 0.05;
+    return dt * 15.0;
 }
 
 unsigned char MidiFile::getbyte()
 {
-    if(midifilek >= midifilesize) {
-        midieof = true;
-        return 0;
-    }
-
-    return midifile[midifilek++];
+    int byte = fgetc(file);
+    return byte == EOF ? 0 : byte;
 }
 
 unsigned char MidiFile::peekbyte()
 {
-    if(midifilek >= midifilesize) {
-        midieof = true;
-        return 0;
-    }
-    return midifile[midifilek];
+    int byte = ungetc(fgetc(file), file);
+    return byte == EOF ? 0 : byte;
 }
 
 unsigned int MidiFile::getint32()
@@ -342,9 +303,7 @@ unsigned int MidiFile::getint32()
     for(int i = 0; i < 4; i++)
         result = result * 256 + getbyte();
 
-    if(midieof)
-        result = 0;
-    return result;
+    return feof(file) ? 0 : result;
 }
 
 unsigned short int MidiFile::getint16()
@@ -353,16 +312,13 @@ unsigned short int MidiFile::getint16()
     for(int i = 0; i < 2; i++)
         result = result * 256 + getbyte();
 
-    if(midieof)
-        result = 0;
-    return result;
+    return feof(file) ? 0 : result;
 }
 
 unsigned int MidiFile::getvarint32()
 {
     unsigned long result = 0;
     unsigned char b;
-
 
     if((result = getbyte()) & 0x80) {
         result &= 0x7f;
@@ -375,13 +331,8 @@ unsigned int MidiFile::getvarint32()
     return result;
 }
 
-
 void MidiFile::skipnbytes(int n)
 {
-    midifilek += n;
-    if(midifilek >= midifilesize) {
-        midifilek = midifilesize - 1;
-        midieof   = true;
-    }
+    fseek(file, n, SEEK_CUR);
 }
 

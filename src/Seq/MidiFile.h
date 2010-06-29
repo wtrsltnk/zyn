@@ -43,10 +43,7 @@ class MidiFile
 
     private:
         MidiEvents *me;
-
-        unsigned char *midifile;
-        int  midifilesize, midifilek;
-        bool midieof;
+        FILE *file;
 
         //returns -1 if there is an error, otherwise 0
         int parsetrack(int ntrack);
@@ -84,7 +81,7 @@ class MidiFile
         //skip some bytes
         void skipnbytes(int n);
 
-        double tick; //how many seconds one tick has
+        const double tick; //how many seconds one tick has
 };
 
 #endif
