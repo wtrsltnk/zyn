@@ -1,7 +1,7 @@
 /*
   ZynAddSubFX - a software synthesizer
 
-  MIDIEvents.h - It stores the midi events from midi file or sequencer
+  MidiEvents.h - It stores the midi events from midi file or sequencer
   Copyright (C) 2003-2005 Nasca Octavian Paul
   Author: Nasca Octavian Paul
 
@@ -39,11 +39,11 @@ struct SeqEvent: public MidiEvent
 };
 
 /**storage the midi events from midi file or sequencer*/
-class MIDIEvents
+class MidiEvents
 {
     public:
-        MIDIEvents();
-        ~MIDIEvents();
+        MidiEvents();
+        ~MidiEvents();
 
         void writeevent(unsigned int track, const SeqEvent &ev);
         SeqEvent readevent(unsigned int track);

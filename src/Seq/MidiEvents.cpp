@@ -1,7 +1,7 @@
 /*
   ZynAddSubFX - a software synthesizer
 
-  MIDIEvents.cpp - It stores the midi events from midi file or sequencer
+  MidiEvents.cpp - It stores the midi events from midi file or sequencer
   Copyright (C) 2003-2005 Nasca Octavian Paul
   Author: Nasca Octavian Paul
 
@@ -20,7 +20,7 @@
 
 */
 
-#include "MIDIEvents.h"
+#include "MidiEvents.h"
 using namespace std;
 
 SeqEvent::SeqEvent()
@@ -47,20 +47,20 @@ SeqEvent SeqEvent::time(int dt)
     return SeqEvent(dt, 255, 0, 0, 0);
 }
 
-MIDIEvents::MIDIEvents()
+MidiEvents::MidiEvents()
 {}
 
-MIDIEvents::~MIDIEvents()
+MidiEvents::~MidiEvents()
 {}
 
 
 /************** Track stuff ***************/
-void MIDIEvents::writeevent(unsigned int track, const SeqEvent &ev)
+void MidiEvents::writeevent(unsigned int track, const SeqEvent &ev)
 {
     miditrack[track].record.push_back(ev);
 }
 
-SeqEvent MIDIEvents::readevent(unsigned int track)
+SeqEvent MidiEvents::readevent(unsigned int track)
 {
     //alias names for clarity
     iterator &itr = miditrack[track].track_itr;
@@ -76,12 +76,12 @@ SeqEvent MIDIEvents::readevent(unsigned int track)
 }
 
 
-void MIDIEvents::rewindlist(unsigned int track)
+void MidiEvents::rewindlist(unsigned int track)
 {
     miditrack[track].track_itr = miditrack[track].track.begin();
 }
 
-void MIDIEvents::clear()
+void MidiEvents::clear()
 {
     for(int i = 0; i < NUM_MIDI_TRACKS; i++) {
         miditrack[i].record.clear();
@@ -90,7 +90,7 @@ void MIDIEvents::clear()
     }
 }
 
-void MIDIEvents::finishRecord()
+void MidiEvents::finishRecord()
 {
     //copy the "record" track to the main track
     for(int i = 0; i < NUM_MIDI_TRACKS; i++) {

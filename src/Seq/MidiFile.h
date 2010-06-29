@@ -1,7 +1,7 @@
 /*
   ZynAddSubFX - a software synthesizer
 
-  MIDIFile.h - MIDI file loader
+  MidiFile.h - MIDI file loader
   Copyright (C) 2003-2005 Nasca Octavian Paul
   Author: Nasca Octavian Paul
 
@@ -24,14 +24,14 @@
 #define MIDIFILE_H
 
 #include "../globals.h"
-#include "MIDIEvents.h"
+#include "MidiEvents.h"
 
 /**MIDI file loader*/
-class MIDIFile
+class MidiFile
 {
     public:
-        MIDIFile();
-        ~MIDIFile();
+        MidiFile();
+        ~MidiFile();
 
         /**Loads the given file
              * @param filename The name of the file to load
@@ -39,10 +39,10 @@ class MIDIFile
         int loadfile(const char *filename);
 
         //returns -1 if there is an error, otherwise 0
-        int parsemidifile(MIDIEvents *me_);
+        int parsemidifile(MidiEvents *me_);
 
     private:
-        MIDIEvents *me;
+        MidiEvents *me;
 
         unsigned char *midifile;
         int  midifilesize, midifilek;

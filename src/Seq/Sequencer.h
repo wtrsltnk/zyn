@@ -23,8 +23,8 @@
 #define SEQUENCER_H
 
 #include "../globals.h"
-#include "MIDIEvents.h"
-#include "MIDIFile.h"
+#include "MidiEvents.h"
+#include "MidiFile.h"
 
 /**The Sequencer*/
 class Sequencer
@@ -59,8 +59,8 @@ class Sequencer
 
     private:
 
-        MIDIFile midifile;
-        MIDIEvents events;
+        MidiFile midifile;
+        MidiEvents events;
 
         /* Timer */
         struct timestruct {

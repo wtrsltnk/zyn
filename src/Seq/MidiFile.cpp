@@ -1,7 +1,7 @@
 /*
   ZynAddSubFX - a software synthesizer
 
-  MIDIFile.cpp - MIDI file loader
+  MidiFile.cpp - MIDI file loader
   Copyright (C) 2003-2005 Nasca Octavian Paul
   Author: Nasca Octavian Paul
 
@@ -23,22 +23,22 @@
 #include <cstdio>
 #include <cstring>
 #include <iostream>
-#include "MIDIFile.h"
+#include "MidiFile.h"
 
 using namespace std;
 
-MIDIFile::MIDIFile()
+MidiFile::MidiFile()
     :me(NULL), midifile(NULL), midifilesize(0),
     midieof(false)
 {
 }
 
-MIDIFile::~MIDIFile()
+MidiFile::~MidiFile()
 {
     clearmidifile();
 }
 
-int MIDIFile::loadfile(const char *filename)
+int MidiFile::loadfile(const char *filename)
 {
     clearmidifile();
 
@@ -76,7 +76,7 @@ int MIDIFile::loadfile(const char *filename)
     return 0;
 }
 
-int MIDIFile::parsemidifile(MIDIEvents *me_)
+int MidiFile::parsemidifile(MidiEvents *me_)
 {
     me = me_;
 
@@ -100,7 +100,7 @@ int MIDIFile::parsemidifile(MIDIEvents *me_)
         //tick=???;
     }
     else    //SMPTE (frames/second and ticks/frame)
-        cerr << "ERROR: in MIDIFile.cpp::parsemidifile() - SMPTE not implemented yet."
+        cerr << "ERROR: in MidiFile.cpp::parsemidifile() - SMPTE not implemented yet."
              << endl;
 
     if(ntracks >= NUM_MIDI_TRACKS)
@@ -123,7 +123,7 @@ int MIDIFile::parsemidifile(MIDIEvents *me_)
 //private members
 
 
-int MIDIFile::parsetrack(int ntrack)
+int MidiFile::parsetrack(int ntrack)
 {
     printf("\n--==*Reading track %d **==--\n", ntrack);
 
@@ -227,7 +227,7 @@ int MIDIFile::parsetrack(int ntrack)
 }
 
 
-void MIDIFile::parsenoteoff(char ntrack, char chan, unsigned int dt)
+void MidiFile::parsenoteoff(char ntrack, char chan, unsigned int dt)
 {
     unsigned char note;
     note = getbyte();
@@ -241,7 +241,7 @@ void MIDIFile::parsenoteoff(char ntrack, char chan, unsigned int dt)
 }
 
 
-void MIDIFile::parsenoteon(char ntrack, char chan, unsigned int dt)
+void MidiFile::parsenoteon(char ntrack, char chan, unsigned int dt)
 {
     unsigned char note, vel;
     note = getbyte();
@@ -254,7 +254,7 @@ void MIDIFile::parsenoteon(char ntrack, char chan, unsigned int dt)
     me->writeevent(ntrack, SeqEvent::note(convertdt(dt), chan, note, vel));
 }
 
-void MIDIFile::parsecontrolchange(char ntrack, char chan, unsigned int dt)
+void MidiFile::parsecontrolchange(char ntrack, char chan, unsigned int dt)
 {
     unsigned char control, value;
     control = getbyte();
@@ -267,7 +267,7 @@ void MIDIFile::parsecontrolchange(char ntrack, char chan, unsigned int dt)
     me->writeevent(ntrack, SeqEvent::control(convertdt(dt), chan, control, value));
 }
 
-void MIDIFile::parsepitchwheel(char ntrack, char chan, unsigned int dt)
+void MidiFile::parsepitchwheel(char ntrack, char chan, unsigned int dt)
 {
     unsigned char valhi, vallo;
     vallo = getbyte();
@@ -281,7 +281,7 @@ void MIDIFile::parsepitchwheel(char ntrack, char chan, unsigned int dt)
     printf("[dt %d] Pitch wheel:%d\n", dt, value);
 }
 
-void MIDIFile::parsemetaevent(unsigned char mtype, unsigned char mlength)
+void MidiFile::parsemetaevent(unsigned char mtype, unsigned char mlength)
 {
     int oldmidifilek = midifilek;
     printf("meta-event type=0x%x  length=%d\n", mtype, mlength);
@@ -289,7 +289,7 @@ void MIDIFile::parsemetaevent(unsigned char mtype, unsigned char mlength)
     midifilek = oldmidifilek + mlength;
 }
 
-void MIDIFile::add_dt(char ntrack, unsigned int dt)
+void MidiFile::add_dt(char ntrack, unsigned int dt)
 {
     if(dt == 0)
         return;
@@ -298,7 +298,7 @@ void MIDIFile::add_dt(char ntrack, unsigned int dt)
 }
 
 
-unsigned int MIDIFile::convertdt(unsigned int dt)
+unsigned int MidiFile::convertdt(unsigned int dt)
 {
     double result = dt;
 
@@ -306,7 +306,7 @@ unsigned int MIDIFile::convertdt(unsigned int dt)
 }
 
 
-void MIDIFile::clearmidifile()
+void MidiFile::clearmidifile()
 {
     if(midifile != NULL)
         delete (midifile);
@@ -317,7 +317,7 @@ void MIDIFile::clearmidifile()
     tick         = 0.05;
 }
 
-unsigned char MIDIFile::getbyte()
+unsigned char MidiFile::getbyte()
 {
     if(midifilek >= midifilesize) {
         midieof = true;
@@ -327,7 +327,7 @@ unsigned char MIDIFile::getbyte()
     return midifile[midifilek++];
 }
 
-unsigned char MIDIFile::peekbyte()
+unsigned char MidiFile::peekbyte()
 {
     if(midifilek >= midifilesize) {
         midieof = true;
@@ -336,7 +336,7 @@ unsigned char MIDIFile::peekbyte()
     return midifile[midifilek];
 }
 
-unsigned int MIDIFile::getint32()
+unsigned int MidiFile::getint32()
 {
     unsigned int result = 0;
     for(int i = 0; i < 4; i++)
@@ -347,7 +347,7 @@ unsigned int MIDIFile::getint32()
     return result;
 }
 
-unsigned short int MIDIFile::getint16()
+unsigned short int MidiFile::getint16()
 {
     unsigned short int result = 0;
     for(int i = 0; i < 2; i++)
@@ -358,7 +358,7 @@ unsigned short int MIDIFile::getint16()
     return result;
 }
 
-unsigned int MIDIFile::getvarint32()
+unsigned int MidiFile::getvarint32()
 {
     unsigned long result = 0;
     unsigned char b;
@@ -376,7 +376,7 @@ unsigned int MIDIFile::getvarint32()
 }
 
 
-void MIDIFile::skipnbytes(int n)
+void MidiFile::skipnbytes(int n)
 {
     midifilek += n;
     if(midifilek >= midifilesize) {

@@ -1,6 +1,6 @@
 set(zynaddsubfx_seq_SRCS
-	MIDIEvents.cpp
-	MIDIFile.cpp
+	MidiEvents.cpp
+	MidiFile.cpp
 	Sequencer.cpp
 )
 
