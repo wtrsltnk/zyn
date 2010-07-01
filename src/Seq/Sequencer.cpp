@@ -49,18 +49,7 @@ Sequencer::~Sequencer()
 
 int Sequencer::importmidifile(const char *filename)
 {
-    //TODO this could be cleaned up some more
-    if(midifile.loadfile(filename) < 0)
-        return -1;
-
-    events.clear();
-
-    if(midifile.parsemidifile(&events) < 0)
-        return -1;
-
-    events.finishRecord();
-
-    return 0;
+    return loadMidi(filename,events);
 }
 
 void Sequencer::startplay()

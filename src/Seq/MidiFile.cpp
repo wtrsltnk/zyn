@@ -22,21 +22,55 @@
 
 #include <cstdio>
 #include <cstring>
+#include <stdint.h>//upgrade to cstdint when C++0x happens
 #include "MidiFile.h"
+#include "MidiEvents.h"
+#include "../globals.h"
 
 static const bool verbose = false;
 
-MidiFile::MidiFile()
-    :me(NULL),tick(0.05)
-{}
+static const double tick = 0.05; //how many seconds one tick has
 
-MidiFile::~MidiFile()
-{}
+static MidiEvents *me = NULL;
+static FILE *file     = NULL;
 
-int MidiFile::loadfile(const char *filename)
+//returns -1 if there is an error, otherwise 0
+int loadfile(const char *filename);
+int parsemidifile(MidiEvents *me_);
+int parsetrack(int ntrack);
+
+/* Low Level MIDI functions */
+
+//get a byte from the midifile
+uint8_t getbyte();
+//peek the current byte from the midifile
+uint8_t peekbyte();
+//get a set of 4 bytes from the midifile
+uint32_t getint32();
+//get a word of 2 bytes from the midifile
+uint16_t getint16();
+//read a variable length quantity
+uint32_t getvarint32();
+//skip n bytes in file
+void skipnbytes(unsigned int n);
+
+int loadMidi(const char *file, class MidiEvents &midi)
 {
-    clearmidifile();
+    if(loadfile(file))
+        return -1;
 
+    midi.clear();
+
+    if(parsemidifile(&midi))
+        return -1;
+
+    midi.finishRecord();
+
+    return 0;
+}
+
+int loadfile(const char *filename)
+{
     file = fopen(filename, "r");
     if(file == NULL)
         return -1;
@@ -56,7 +90,7 @@ int MidiFile::loadfile(const char *filename)
     return 0;
 }
 
-int MidiFile::parsemidifile(MidiEvents *me_)
+int parsemidifile(MidiEvents *me_)
 {
     me = me_;
 
@@ -89,12 +123,9 @@ int MidiFile::parsemidifile(MidiEvents *me_)
     if(ntracks >= NUM_MIDI_TRACKS)
         ntracks = NUM_MIDI_TRACKS - 1;
 
-    for(int n = 0; n < ntracks; n++) {
-        if(parsetrack(n) < 0) {
-            clearmidifile();
+    for(int n = 0; n < ntracks; n++)
+        if(parsetrack(n) < 0)
             return -1;
-        }
-    }
 
     if(verbose)
         printf("\nMIDI file succesfully parsed.\n");
@@ -104,10 +135,20 @@ int MidiFile::parsemidifile(MidiEvents *me_)
     return 0;
 }
 
-//private members
+//Parse various events
+void parsenoteoff(char ntrack, char chan, unsigned int dt);
+void parsenoteon(char ntrack, char chan, unsigned int dt);
+void parsecontrolchange(char ntrack, char chan, unsigned int dt);
+void parsepitchwheel(char ntrack, char chan, unsigned int dt);
+void parsemetaevent(unsigned char mtype, unsigned char mlength);
 
+//Add delay
+void add_dt(char ntrack, unsigned int dt);
 
-int MidiFile::parsetrack(int ntrack)
+//convert the delta-time to internal format
+unsigned int convertdt(unsigned int dt);
+
+int parsetrack(int ntrack)
 {
     if(verbose)
         printf("\n--==*Reading track %d **==--\n", ntrack);
@@ -214,7 +255,7 @@ int MidiFile::parsetrack(int ntrack)
 }
 
 
-void MidiFile::parsenoteoff(char ntrack, char chan, unsigned int dt)
+void parsenoteoff(char ntrack, char chan, unsigned int dt)
 {
     const char note = getbyte();
     getbyte(); //get noteoff velocity - unused by zynaddsubfx
@@ -228,7 +269,7 @@ void MidiFile::parsenoteoff(char ntrack, char chan, unsigned int dt)
 }
 
 
-void MidiFile::parsenoteon(char ntrack, char chan, unsigned int dt)
+void parsenoteon(char ntrack, char chan, unsigned int dt)
 {
     const char note = getbyte(), vel = getbyte();
 
@@ -240,7 +281,7 @@ void MidiFile::parsenoteon(char ntrack, char chan, unsigned int dt)
     me->writeevent(ntrack, SeqEvent::note(convertdt(dt), chan, note, vel));
 }
 
-void MidiFile::parsecontrolchange(char ntrack, char chan, unsigned int dt)
+void parsecontrolchange(char ntrack, char chan, unsigned int dt)
 {
     const char control = getbyte(), value = getbyte();
 
@@ -252,7 +293,7 @@ void MidiFile::parsecontrolchange(char ntrack, char chan, unsigned int dt)
     me->writeevent(ntrack, SeqEvent::control(convertdt(dt), chan, control, value));
 }
 
-void MidiFile::parsepitchwheel(char ntrack, char chan, unsigned int dt)
+void parsepitchwheel(char ntrack, char chan, unsigned int dt)
 {
     const char vallo = getbyte(), valhi = getbyte();
 
@@ -265,14 +306,14 @@ void MidiFile::parsepitchwheel(char ntrack, char chan, unsigned int dt)
         printf("[dt %d] Pitch wheel:%d\n", dt, value);
 }
 
-void MidiFile::parsemetaevent(unsigned char mtype, unsigned char mlength)
+void parsemetaevent(unsigned char mtype, unsigned char mlength)
 {
     if(verbose)
         printf("meta-event type=0x%x  length=%d\n", mtype, mlength);
     skipnbytes(mlength);
 }
 
-void MidiFile::add_dt(char ntrack, unsigned int dt)
+void add_dt(char ntrack, unsigned int dt)
 {
     if(dt == 0)
         return;
@@ -281,49 +322,45 @@ void MidiFile::add_dt(char ntrack, unsigned int dt)
     me->writeevent(ntrack, SeqEvent::time(convertdt(dt)));
 }
 
-void MidiFile::clearmidifile()
-{
-}
-
-unsigned int MidiFile::convertdt(unsigned int dt)
+unsigned int convertdt(unsigned int dt)
 {
     return dt * 15.0;
 }
 
-unsigned char MidiFile::getbyte()
+uint8_t getbyte()
 {
     int byte = fgetc(file);
     return byte == EOF ? 0 : byte;
 }
 
-unsigned char MidiFile::peekbyte()
+uint8_t peekbyte()
 {
     int byte = ungetc(fgetc(file), file);
     return byte == EOF ? 0 : byte;
 }
 
-unsigned int MidiFile::getint32()
+uint32_t getint32()
 {
-    unsigned int result = 0;
+    uint32_t result = 0;
     for(int i = 0; i < 4; i++)
         result = result * 256 + getbyte();
 
     return feof(file) ? 0 : result;
 }
 
-unsigned short int MidiFile::getint16()
+uint16_t getint16()
 {
-    unsigned short int result = 0;
+    uint16_t result = 0;
     for(int i = 0; i < 2; i++)
         result = result * 256 + getbyte();
 
     return feof(file) ? 0 : result;
 }
 
-unsigned int MidiFile::getvarint32()
+uint32_t getvarint32()
 {
-    unsigned long result = 0;
-    unsigned char b;
+    uint32_t result = 0;
+    uint8_t b;
 
     if((result = getbyte()) & 0x80) {
         result &= 0x7f;
@@ -336,7 +373,7 @@ unsigned int MidiFile::getvarint32()
     return result;
 }
 
-void MidiFile::skipnbytes(int n)
+void skipnbytes(unsigned int n)
 {
     fseek(file, n, SEEK_CUR);
 }

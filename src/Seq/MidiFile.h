@@ -23,66 +23,7 @@
 #ifndef MIDIFILE_H
 #define MIDIFILE_H
 
-#include "../globals.h"
-#include "MidiEvents.h"
-
-/**MIDI file loader*/
-class MidiFile
-{
-    public:
-        MidiFile();
-        ~MidiFile();
-
-        /**Loads the given file
-             * @param filename The name of the file to load
-             * @return -1 if there is an error, otherwise 0*/
-        int loadfile(const char *filename);
-
-        //returns -1 if there is an error, otherwise 0
-        int parsemidifile(MidiEvents *me_);
-
-    private:
-        MidiEvents *me;
-        FILE *file;
-
-        //returns -1 if there is an error, otherwise 0
-        int parsetrack(int ntrack);
-
-        void parsenoteoff(char ntrack, char chan, unsigned int dt);
-        void parsenoteon(char ntrack, char chan, unsigned int dt);
-        void parsecontrolchange(char ntrack, char chan, unsigned int dt);
-        void parsepitchwheel(char ntrack, char chan, unsigned int dt);
-        void parsemetaevent(unsigned char mtype, unsigned char mlength);
-
-        void add_dt(char ntrack, unsigned int dt);
-
-        void clearmidifile();
-
-        //convert the delta-time to internal format
-        unsigned int convertdt(unsigned int dt);
-
-        /* Low Level MIDIfile functions */
-
-        //get a byte from the midifile
-        unsigned char getbyte();
-
-        //peek the current byte from the midifile
-        unsigned char peekbyte();
-
-        //get a set of 4 bytes from the midifile
-        unsigned int getint32();
-
-        //get a word of 2 bytes from the midifile
-        unsigned short int getint16();
-
-        //read a variable length quantity
-        unsigned int getvarint32();
-
-        //skip some bytes
-        void skipnbytes(int n);
-
-        const double tick; //how many seconds one tick has
-};
+int loadMidi(const char *file, class MidiEvents &midi);
 
 #endif
 

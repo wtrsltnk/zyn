@@ -59,7 +59,6 @@ class Sequencer
 
     private:
 
-        MidiFile midifile;
         MidiEvents events;
 
         /* Timer */
