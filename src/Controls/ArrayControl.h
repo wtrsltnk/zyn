@@ -25,32 +25,26 @@
 
 #include "GenControl.h"
 #include "../globals.h"
+#include <boost/function.hpp>
 
 class ArrayControl : public GenControl
 {
     public:
-        ArrayControl(Node *parent, std::string id, int bufsize);
+        ArrayControl(Node *parent, std::string id);
+        ArrayControl(Node *parent, std::string id, boost::function1<size_t, REALTYPE *> func);
         virtual ~ArrayControl();
-
 
         virtual int getInt() const {return 0;}
         virtual void setInt(int) {}
         virtual std::string getString() const;
         virtual void defaults();
         void queueGetInt(){}
-        void queueSetInt(int ){}
+        void queueSetInt(int){}
 
-        void readArray(REALTYPE *buffer, int *size);
-
-        int size();
-        REALTYPE* writeBuffer();
-        void finishWrite();
-
+        void damage();
     private:
-        //frontbuffer and backbuffer
-        REALTYPE *m_front, *m_back;
-        int m_bufsize;
-        void swapBuffers();
+        //It behaves like it has an array, but does not need one
+        boost::function1<size_t, REALTYPE *> callback;
 };
 
 #endif // ARRAYCONTROL_H

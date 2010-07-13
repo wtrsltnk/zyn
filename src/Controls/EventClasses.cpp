@@ -12,8 +12,23 @@ NewValueEvent::NewValueEvent(GenControl *control, int value, bool wasChanged)
     :Event(Event::NewValueEvent),
       control(control),
       value(value),
-      wasChanged(wasChanged)
-{}
+      wasChanged(wasChanged),buf(NULL)
+{
+    puts("NEWVALUEEVENT: TYPE A");
+}
+
+NewValueEvent::~NewValueEvent()
+{
+    delete[] buf;
+}
+
+NewValueEvent::NewValueEvent(GenControl *control, const float *buf)
+    :Event(Event::NewValueEvent),
+      control(control), value(0),
+      wasChanged(false),buf(buf)
+{
+    puts("NEWVALUEEVENT: TYPE B");
+}
 
 RequestValueEvent::RequestValueEvent()
     :Event(Event::RequestValueEvent)

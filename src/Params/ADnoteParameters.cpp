@@ -110,6 +110,11 @@ ADnoteParameters::ADnoteParameters(Node *parent, FFTwrapper *fft_)
 
 void ADnoteParameters::defaults()
 {
+    defaults(false);
+}
+
+void ADnoteParameters::defaults(bool init)
+{
     //Default Parameters
     /* Frequency Global Parameters */
     PStereo = 1; //stereo
@@ -141,7 +146,7 @@ void ADnoteParameters::defaults()
 
 
     for(int nvoice = 0; nvoice < NUM_VOICES; nvoice++)
-        defaults(nvoice);
+        defaults(nvoice,init);
     ;
     VoicePar[0]->Enabled = 1;
 }
@@ -150,6 +155,11 @@ void ADnoteParameters::defaults()
  * Defaults a voice
  */
 void ADnoteParameters::defaults(int n)
+{
+    defaults(n, false);
+}
+
+void ADnoteParameters::defaults(int n, bool init)
 {
     int nvoice = n;
     VoicePar[nvoice]->Enabled     = 0;
@@ -161,22 +171,24 @@ void ADnoteParameters::defaults(int n)
     VoicePar[nvoice]->Unison_vibratto_speed   = 64;
     VoicePar[nvoice]->Unison_invert_phase     = 0;
 
-    VoicePar[nvoice]->type.defaults();
-    VoicePar[nvoice]->fixedFreq.defaults();
-    VoicePar[nvoice]->fixedFreqET.defaults();
-    VoicePar[nvoice]->resonance.defaults();
-    VoicePar[nvoice]->filterBypass.defaults();
-    VoicePar[nvoice]->extoscil.defaults();
-    VoicePar[nvoice]->extFMoscil.defaults();
-    VoicePar[nvoice]->oscilphase.defaults();
-    VoicePar[nvoice]->FMoscilphase.defaults();
-    VoicePar[nvoice]->delay.defaults();
-    //VoicePar[nvoice]->PVolume=100;
-    VoicePar[nvoice]->volumeMinus.defaults();
-    VoicePar[nvoice]->panning.defaults(); //center
-    VoicePar[nvoice]->detuneSet.defaults();
-    VoicePar[nvoice]->freqLfoEnabled.defaults();
-    VoicePar[nvoice]->freqEnvelopeEnabled.defaults();
+    if(!init) {
+        VoicePar[nvoice]->type.defaults();
+        VoicePar[nvoice]->fixedFreq.defaults();
+        VoicePar[nvoice]->fixedFreqET.defaults();
+        VoicePar[nvoice]->resonance.defaults();
+        VoicePar[nvoice]->filterBypass.defaults();
+        VoicePar[nvoice]->extoscil.defaults();
+        VoicePar[nvoice]->extFMoscil.defaults();
+        VoicePar[nvoice]->oscilphase.defaults();
+        VoicePar[nvoice]->FMoscilphase.defaults();
+        VoicePar[nvoice]->delay.defaults();
+        //VoicePar[nvoice]->PVolume=100;
+        VoicePar[nvoice]->volumeMinus.defaults();
+        VoicePar[nvoice]->panning.defaults(); //center
+        VoicePar[nvoice]->detuneSet.defaults();
+        VoicePar[nvoice]->freqLfoEnabled.defaults();
+        VoicePar[nvoice]->freqEnvelopeEnabled.defaults();
+    }
     VoicePar[nvoice]->PAmpEnvelopeEnabled       = 0;
     VoicePar[nvoice]->PAmpLfoEnabled            = 0;
     VoicePar[nvoice]->PAmpVelocityScaleFunction = 127;
@@ -195,21 +207,23 @@ void ADnoteParameters::defaults(int n)
     VoicePar[nvoice]->PFMAmpEnvelopeEnabled    = 0;
     VoicePar[nvoice]->PFMVelocityScaleFunction = 64;
 
-    VoicePar[nvoice]->OscilSmp->defaults();
-    VoicePar[nvoice]->FMSmp->defaults();
+    if(!init) {
+        VoicePar[nvoice]->OscilSmp->defaults();
+        VoicePar[nvoice]->FMSmp->defaults();
 
-    VoicePar[nvoice]->AmpEnvelope->defaults();
-    VoicePar[nvoice]->AmpLfo->defaults();
+        VoicePar[nvoice]->AmpEnvelope->defaults();
+        VoicePar[nvoice]->AmpLfo->defaults();
 
-    VoicePar[nvoice]->FreqEnvelope->defaults();
-    VoicePar[nvoice]->FreqLfo->defaults();
+        VoicePar[nvoice]->FreqEnvelope->defaults();
+        VoicePar[nvoice]->FreqLfo->defaults();
 
-    VoicePar[nvoice]->VoiceFilter->defaults();
-    VoicePar[nvoice]->FilterEnvelope->defaults();
-    VoicePar[nvoice]->FilterLfo->defaults();
+        VoicePar[nvoice]->VoiceFilter->defaults();
+        VoicePar[nvoice]->FilterEnvelope->defaults();
+        VoicePar[nvoice]->FilterLfo->defaults();
 
-    VoicePar[nvoice]->FMFreqEnvelope->defaults();
-    VoicePar[nvoice]->FMAmpEnvelope->defaults();
+        VoicePar[nvoice]->FMFreqEnvelope->defaults();
+        VoicePar[nvoice]->FMAmpEnvelope->defaults();
+    }
 }
 
 

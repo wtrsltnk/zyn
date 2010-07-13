@@ -37,8 +37,7 @@ class ArrayControlHelper : public ControlHelper
         virtual void newValueEvent(NewValueEvent *event);
 
     signals:
-        void arrayUpdated(ArrayControl *control);
-
+        void arrayUpdated(const float *control);
 };
 
 #endif // ARRAYCONTROLHELPER_H

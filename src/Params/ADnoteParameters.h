@@ -292,6 +292,7 @@ class ADnoteParameters : public PresetsArray
         std::vector<ADnoteVoiceParam *> VoicePar;
 
         void defaults();
+        void defaults(bool init);
         void add2XML(XMLwrapper *xml);
         void getfromXML(XMLwrapper *xml);
 
@@ -301,6 +302,7 @@ class ADnoteParameters : public PresetsArray
         void set_unison_size_index(int nvoice, int index);
     private:
         void defaults(int n); //n is the nvoice
+        void defaults(int n, bool init); //n is the nvoice
 
         void EnableVoice(int nvoice, class ADnoteParameters *par);
         void KillVoice(int nvoice);

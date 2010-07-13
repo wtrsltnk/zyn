@@ -24,24 +24,24 @@
 #include <QPainter>
 #include <QPaintEvent>
 #include <QtDebug>
-#include <math.h>
+#include <cmath>
 #include "../globals.h"
 
 SpectrumWidget::SpectrumWidget(QWidget *parent)
     : QWidget(parent)
 {
     ControlHelper *helper = new ArrayControlHelper(this);
-    connect(helper, SIGNAL(arrayUpdated(ArrayControl*)),
-            this, SLOT(readArray(ArrayControl*)));
+    connect(helper, SIGNAL(arrayUpdated(const float*)),
+            this, SLOT(readArray(const float*)));
 
     m_data = new REALTYPE[OSCIL_SIZE];
     memset(m_data, 0, sizeof(REALTYPE)*OSCIL_SIZE/2);
     m_size = OSCIL_SIZE/2;
 }
 
-void SpectrumWidget::readArray(ArrayControl* array)
+void SpectrumWidget::readArray(const float *array)
 {
-    array->readArray(m_data, &m_size);
+    memcpy(m_data, array, sizeof(float) * m_size);
     update();
 }
 

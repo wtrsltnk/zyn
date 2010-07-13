@@ -36,7 +36,7 @@ class SpectrumWidget : public QWidget
         void paintEvent(class QPaintEvent* event);
 
     private slots:
-        void readArray(ArrayControl* array);
+        void readArray(const float *array);
 
     private:
         REALTYPE *m_data;

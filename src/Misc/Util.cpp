@@ -23,6 +23,7 @@
 #include "Util.h"
 #include <math.h>
 #include <stdio.h>
+#include <algorithm>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -37,6 +38,7 @@
 #include <windows.h>
 #endif
 
+using namespace std;
 
 int SAMPLE_RATE = 44100;
 int SOUND_BUFFER_SIZE = 256;
@@ -199,5 +201,16 @@ std::string legalizeFilename(std::string filename)
             filename[i] = '_';
     }
     return filename;
+}
+
+REALTYPE *getUiBuf()
+{
+    size_t size = max(2048,max(SOUND_BUFFER_SIZE,OSCIL_SIZE));
+    return new REALTYPE[size];
+}
+
+void returnUiBuf(REALTYPE *ptr)
+{
+    delete[] ptr;
 }
 

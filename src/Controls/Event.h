@@ -22,6 +22,8 @@ class Event
         virtual ev_type type() const {return internalType;}
         virtual ~Event();
 
+        void own(){isOwned=true;}//assert ownership
+
     protected:
         Event(enum ev_type ntype);
         enum ev_type internalType;

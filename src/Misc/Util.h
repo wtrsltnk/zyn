@@ -54,9 +54,13 @@ void os_sleep(long length);
 
 std::string legalizeFilename(std::string filename);
 
+REALTYPE *getUiBuf();
+void returnUiBuf(REALTYPE *);
+
 extern REALTYPE *denormalkillbuf; /**<the buffer to add noise in order to avoid denormalisation*/
 
 extern Config config;
+
 
 template<class T>
 std::string stringFrom(T x)

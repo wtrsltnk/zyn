@@ -24,18 +24,23 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
+#include <boost/bind.hpp>
+#include <functional>
 
 #include "OscilGen.h"
 #include "../Effects/Distorsion.h"
 
 #include "../Misc/LinInjFunc.h"
 
+using namespace std;
+using boost::bind;
+
 OscilGen::OscilGen(FFTwrapper *fft_, Resonance *res_,
                    Node *parent, std::string id)
     :Presets(parent, id),
       harmonics(this, "HARMONICS"),
-      oscilSpectrum(this, "OscilSpectrum", OSCIL_SIZE/2),
-      oscilBaseFunc(this, "base_function", OSCIL_SIZE),
+      oscilSpectrum(this, "OscilSpectrum",bind1st(mem_fun(&OscilGen::getSpectrum), this)),
+      oscilBaseFunc(this, "base_function",bind1st(mem_fun(&OscilGen::getBasefunc), this)),
       currentBaseFunc(this, "BaseFunc", 0),
       baseParam(this, "BASE_PARAMETERS", 0.5, new LinInjFunc<REALTYPE>(0.0, 1.0))
 {
@@ -58,11 +63,11 @@ OscilGen::OscilGen(FFTwrapper *fft_, Resonance *res_,
         std::stringstream ss;
         ss << "HARMONIC#" << i;
         magnitude[i] = new DescRanger(&harmonics, ss.str(), 64);
-        magnitude[i]->addRedirection(this, new TypeFilter(Event::NewValueEvent));
+        magnitude[i]->addRedirection(this);
         magnitude[i]->setOptions(NoXmlIfDefault);
     }
-    baseParam.addRedirection(this, new TypeFilter(Event::NewValueEvent));
-    currentBaseFunc.addRedirection(this, new TypeFilter(Event::NewValueEvent));
+    baseParam.addRedirection(this);
+    currentBaseFunc.addRedirection(this);
 
     setpresettype("Poscilgen");
     fft     = fft_;
@@ -685,13 +690,8 @@ void OscilGen::prepare()
     oldharmonicshift = Pharmonicshift + Pharmonicshiftfirst * 256;
 
     oscilprepared    = 1;
-
-
-    getspectrum(oscilSpectrum.size(), oscilSpectrum.writeBuffer(), 0);
-    oscilSpectrum.finishWrite();
-
-    get(oscilBaseFunc.writeBuffer(), -1.0);
-    oscilBaseFunc.finishWrite();
+    oscilSpectrum.damage();
+    oscilBaseFunc.damage();
 
 }
 
@@ -1025,6 +1025,18 @@ void OscilGen::useasbase()
     prepare();
 }
 
+
+size_t OscilGen::getSpectrum(REALTYPE *spc)
+{
+    getspectrum(OSCIL_SIZE/2, spc, 0);
+    return OSCIL_SIZE/2;
+}
+
+size_t OscilGen::getBasefunc(REALTYPE *fnc)
+{
+    get(fnc, -1.0);
+    return OSCIL_SIZE;
+}
 
 /*
  * Get the base function for UI
