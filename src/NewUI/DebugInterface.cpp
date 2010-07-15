@@ -64,12 +64,6 @@ void EventReceiver::handleEvent(Event *event)
 
     info += "<" + absoluteId + "> ";
 
-    if(event->type() == Event::ChangeEvent) {
-        info += "(ChangeEvent) ";
-        info += "val:" + QString::number(
-            static_cast<ChangeEvent *>(event)->val);
-    }
-    else
     if(event->type() == Event::NewValueEvent) {
 
         NewValueEvent* ev = static_cast<NewValueEvent *>(event);
@@ -238,6 +232,8 @@ DebugInterface::DebugInterface(QWidget *parent, Master *master)
 
 void DebugInterface::createEventReceivers(class Node *parent)
 {
+#warning temporary debug interface disable
+    return;
     for(NodeIterator i = parent->getChildren().begin();
         i != parent->getChildren().end();
         ++i) {

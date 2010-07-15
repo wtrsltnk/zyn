@@ -41,6 +41,7 @@ class ArrayControl : public GenControl
         void queueGetInt(){}
         void queueSetInt(int){}
 
+        virtual void redirHelper(NodeUser *dest);
         void damage();
     private:
         //It behaves like it has an array, but does not need one

@@ -32,7 +32,7 @@ class ArrayControlHelper : public ControlHelper
 
     public:
         ArrayControlHelper(QObject *parent);
-        virtual void connectedEvent();
+        virtual void connectedEvent(class ConnEvent *ev);
         virtual void disconnectedEvent();
         virtual void newValueEvent(NewValueEvent *event);
 

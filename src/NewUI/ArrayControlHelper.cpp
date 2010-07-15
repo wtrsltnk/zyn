@@ -31,11 +31,11 @@ ArrayControlHelper::ArrayControlHelper(QObject *parent)
 
 }
 
-void ArrayControlHelper::connectedEvent()
+void ArrayControlHelper::connectedEvent(ConnEvent *ev)
 {
-    ControlHelper::connectedEvent();
-#warning Thread unsafe behavior here, please fix
-    static_cast<ArrayControl*>(m_control)->damage();
+    ControlHelper::connectedEvent(ev);
+    if(ev->buf)
+        emit arrayUpdated(ev->dat.f);
 }
 
 void ArrayControlHelper::disconnectedEvent()
@@ -44,8 +44,6 @@ void ArrayControlHelper::disconnectedEvent()
 
 void ArrayControlHelper::newValueEvent(NewValueEvent *event)
 {
-    ControlHelper::newValueEvent(event);
-
     //Could add a refence counting system instead of all of this silly allocation
     if(event->buf) {
         size_t size = max(2048,max(SOUND_BUFFER_SIZE,OSCIL_SIZE));

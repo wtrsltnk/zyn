@@ -9,13 +9,11 @@ class Event
 
     public:
         enum ev_type {
-            ChangeEvent,
-            UpdateEvent,
             CreateNodeEvent,
             RemovalEvent,
+            ConnEvent,
             NewNodeEvent,
             NewValueEvent,
-            RequestValueEvent,
             MidiEvent,
             OptionsChangedEvent
         };

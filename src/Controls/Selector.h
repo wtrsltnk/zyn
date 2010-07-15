@@ -45,6 +45,8 @@ class Selector:public Control<int>
         void addOption(std::string option);
         void clearOptions();
 
+        void redirHelper(NodeUser *dest);
+
         inline void operator=(int v) {
             setValue(v);
         }

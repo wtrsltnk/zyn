@@ -1,6 +1,7 @@
 #include "ArrayControl.h"
 #include "EventClasses.h"
 #include "../Misc/Util.h"
+#include <cassert>
 
 using std::string;
 
@@ -28,6 +29,15 @@ void ArrayControl::defaults()
 {
 }
 
+void ArrayControl::redirHelper(NodeUser *dest)
+{
+    assert(dest);
+    puts("ARRAYCONTROL CONNECTED!");
+    REALTYPE *buf = getUiBuf();
+    size_t s = callback(buf);
+    ConnEvent tmp = ConnEvent(this,buf);
+    dest->handleEvent(&tmp);
+};
 void ArrayControl::damage()
 {
     puts("ARRAYCONTROL DAMAGED!");

@@ -4,40 +4,23 @@
 #include "Event.h"
 #include "GenControl.h"
 
-//class AddChild : public Job
-//{
-//public:
-//    AddChild(class Node *parentContainer, int type) : m_parentContainer(parentContainer),
-//    m_type(type) {}
-//    std::string getChildId() { return m_childId; }
-//    class Node* getParentContainer() { return m_parentContainer; }
-//
-//protected:
-//    class Node* m_parentContainer;
-//    int m_type;
-//    std::string m_childId;
-//};
-
-/**Events for setting values at nodes*/
-class ChangeEvent:public Event
+/**Connection event*/
+struct ConnEvent:public Event
 {
-    public:
-        ChangeEvent(int nval);
-        const int val;
-};
+    ConnEvent(GenControl *control, const float *buf);
+    ConnEvent(GenControl *control, int val, void *data=NULL);
+    ~ConnEvent();
 
-/**Request Value Event*/
-class RequestValueEvent:public Event
-{
-    public:
-        RequestValueEvent();
-};
+    GenControl *control;
 
-/**Notification Event*/
-class UpdateEvent:public Event
-{
-    public:
-        UpdateEvent();
+    bool buf;
+    union{
+        int i;
+        const float *f;
+    } dat;
+
+    //Currently used for Selectors, but could be used for something else
+    const void *data;
 };
 
 /** Emitted from the node when its value has changed **/
@@ -45,11 +28,10 @@ class NewValueEvent:public Event
 {
     public:
         NewValueEvent(GenControl *control, const float *buf);
-        NewValueEvent(GenControl *control, int value, bool wasChanged = false);
+        NewValueEvent(GenControl *control, int value);
         ~NewValueEvent();
         const GenControl *control;
         int value;
-        bool wasChanged;
         const float *buf;
 };
 

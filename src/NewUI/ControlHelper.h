@@ -23,7 +23,6 @@
 #ifndef _CONTROLHELPER_H_
 #define _CONTROLHELPER_H_
 
-#include "../Controls/Control.h"
 #include "../Controls/ControlUser.h"
 #include <QObject>
 #include <QMutex>
@@ -82,7 +81,7 @@ class ControlHelper:public QObject, public NodeUser
          */
         void debugPrint();
 
-        virtual void connectedEvent();
+        virtual void connectedEvent(class ConnEvent *ev);
 
         virtual void disconnectedEvent();
 
@@ -153,7 +152,7 @@ class ControlHelper:public QObject, public NodeUser
          * 
          * @param control The control the helper has been connected to
          */
-        void connected(GenControl *control);
+        void connected(class GenControl* ctl);
 
         /** 
          * @brief The ControlHelper.has been disconnected from the node in the tree it was
@@ -162,7 +161,7 @@ class ControlHelper:public QObject, public NodeUser
         void disconnected();
 
     protected:
-        GenControl *m_control;
+        class GenControl *m_control;
 
     private:
         void emitOptions();

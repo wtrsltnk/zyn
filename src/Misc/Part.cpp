@@ -1435,22 +1435,19 @@ void Part::handleEvent(Event *event)
     if(event->type() == Event::NewValueEvent) {
         NewValueEvent *newValue = static_cast<NewValueEvent *>(event);
 
-        if (newValue->wasChanged) {
+        if(newValue->control == &bankControl)
 
-            if(newValue->control == &bankControl)
+            instrumentControl.loadBank(
+                    bankControl.bank->banks[bankControl()].dir);
 
-                instrumentControl.loadBank(
-                        bankControl.bank->banks[bankControl()].dir);
+        else if (newValue->control == &instrumentControl) {
 
-            else if (newValue->control == &instrumentControl) {
+            Job::push(new NodeJob(this, new NewValueEvent(*newValue)));
 
-                Job::push(new NodeJob(this, new NewValueEvent(*newValue)));
+        } else {
 
-            } else {
+            std::cout << "Part: NewValueEvent for unknown control" << std::endl;
 
-                std::cout << "Part: NewValueEvent for unknown control" << std::endl;
-
-            }
         }
     }
 }

@@ -1,18 +1,29 @@
 #include "EventClasses.h"
 
-ChangeEvent::ChangeEvent(int nval)
-    :Event(Event::ChangeEvent), val(nval)
-{}
+ConnEvent::ConnEvent(GenControl *control, const float *buf)
+    :Event(Event::ConnEvent), control(control),
+    buf(true),data(NULL)
+{
+    dat.f = buf;
+}
 
-UpdateEvent::UpdateEvent()
-    :Event(Event::UpdateEvent)
-{}
+ConnEvent::ConnEvent(GenControl *control, int val, void *data)
+    :Event(Event::ConnEvent), control(control),
+    buf(false),data(data)
+{
+    dat.i = val;
+}
 
-NewValueEvent::NewValueEvent(GenControl *control, int value, bool wasChanged)
+ConnEvent::~ConnEvent()
+{
+    if(buf)
+        delete[] dat.f;
+}
+
+NewValueEvent::NewValueEvent(GenControl *control, int value)
     :Event(Event::NewValueEvent),
       control(control),
-      value(value),
-      wasChanged(wasChanged),buf(NULL)
+      value(value),buf(NULL)
 {
     puts("NEWVALUEEVENT: TYPE A");
 }
@@ -24,15 +35,10 @@ NewValueEvent::~NewValueEvent()
 
 NewValueEvent::NewValueEvent(GenControl *control, const float *buf)
     :Event(Event::NewValueEvent),
-      control(control), value(0),
-      wasChanged(false),buf(buf)
+      control(control), value(0),buf(buf)
 {
     puts("NEWVALUEEVENT: TYPE B");
 }
-
-RequestValueEvent::RequestValueEvent()
-    :Event(Event::RequestValueEvent)
-{}
 
 CreateNodeEvent::CreateNodeEvent(unsigned int ntype)
     :Event(Event::CreateNodeEvent), type(ntype)
