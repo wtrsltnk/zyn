@@ -26,7 +26,8 @@
 DynamicFilter::DynamicFilter(int insertion_,
                              REALTYPE *efxoutl_,
                              REALTYPE *efxoutr_)
-    :Effect(insertion_, efxoutl_, efxoutr_, new FilterParams(0, 64, 64), 0),
+    :Effect(insertion_, efxoutl_, efxoutr_,
+            new FilterParams(NULL, 0, 64, 64), 0),
       Pvolume(110), Ppanning(64), Pdepth(0), Pampsns(90),
       Pampsnsinv(0), Pampsmooth(60),
       filterl(NULL), filterr(NULL)
@@ -176,38 +177,38 @@ void DynamicFilter::setpreset(unsigned char npreset)
     filterpars->defaults();
     switch(npreset) {
     case 0:
-        filterpars->Pcategory = 0;
-        filterpars->Ptype     = 2;
-        filterpars->Pfreq     = 45;
-        filterpars->Pq = 64;
-        filterpars->Pstages   = 1;
-        filterpars->Pgain     = 64;
+        filterpars->category = 0;
+        filterpars->type     = 2;
+        filterpars->frequency.setInt(45);
+        filterpars->q.setInt( 64);
+        filterpars->stages.setInt( 1);
+        filterpars->gain.setInt( 64);
         break;
     case 1:
-        filterpars->Pcategory = 2;
-        filterpars->Ptype     = 0;
-        filterpars->Pfreq     = 72;
-        filterpars->Pq = 64;
-        filterpars->Pstages   = 0;
-        filterpars->Pgain     = 64;
+        filterpars->category = 2;
+        filterpars->type     = 0;
+        filterpars->frequency.setInt(72);
+        filterpars->q.setInt( 64);
+        filterpars->stages.setInt( 0);
+        filterpars->gain.setInt( 64);
         break;
     case 2:
-        filterpars->Pcategory = 0;
-        filterpars->Ptype     = 4;
-        filterpars->Pfreq     = 64;
-        filterpars->Pq = 64;
-        filterpars->Pstages   = 2;
-        filterpars->Pgain     = 64;
+        filterpars->category = 0;
+        filterpars->type     = 4;
+        filterpars->frequency.setInt(64);
+        filterpars->q.setInt( 64);
+        filterpars->stages.setInt( 2);
+        filterpars->gain.setInt( 64);
         break;
     case 3:
-        filterpars->Pcategory     = 1;
-        filterpars->Ptype         = 0;
-        filterpars->Pfreq         = 50;
-        filterpars->Pq = 70;
-        filterpars->Pstages       = 1;
-        filterpars->Pgain         = 64;
+        filterpars->category     = 1;
+        filterpars->type         = 0;
+        filterpars->frequency.setInt(50);
+        filterpars->q.setInt( 70);
+        filterpars->stages.setInt( 1);
+        filterpars->gain.setInt( 64);
 
-        filterpars->Psequencesize = 2;
+        filterpars->sequencesize.setInt(2);
         // "I"
         filterpars->Pvowels[0].formants[0].freq = 34;
         filterpars->Pvowels[0].formants[0].amp  = 127;
@@ -230,16 +231,16 @@ void DynamicFilter::setpreset(unsigned char npreset)
         filterpars->Pvowels[1].formants[2].q    = 64;
         break;
     case 4:
-        filterpars->Pcategory = 1;
-        filterpars->Ptype = 0;
-        filterpars->Pfreq           = 64;
-        filterpars->Pq    = 70;
-        filterpars->Pstages = 1;
-        filterpars->Pgain = 64;
+        filterpars->category = 1;
+        filterpars->type     = 0;
+        filterpars->frequency.setInt(64);
+        filterpars->q.setInt( 70);
+        filterpars->stages.setInt( 1);
+        filterpars->gain.setInt( 64);
 
-        filterpars->Psequencesize   = 2;
-        filterpars->Pnumformants    = 2;
-        filterpars->Pvowelclearness = 0;
+        filterpars->sequencesize.setInt( 2);
+        filterpars->numformants.setInt( 2);
+        filterpars->vowelclearness.setInt( 0);
 
         filterpars->Pvowels[0].formants[0].freq = 70;
         filterpars->Pvowels[0].formants[0].amp  = 127;

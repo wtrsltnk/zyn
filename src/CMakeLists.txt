@@ -8,6 +8,7 @@ find_package(fftw REQUIRED)
 find_package(MXML REQUIRED)
 find_package(PkgConfig REQUIRED)
 #find_package(pthread REQUIRED)
+FIND_PACKAGE(Qt4)
 #find_package(OSS)
 find_package(Alsa)
 find_package(JACK)
@@ -44,8 +45,10 @@ SET (LashEnable ${LASH_FOUND} CACHE BOOL
 # on this
 
 if (GuiModule STREQUAL qt AND QT_FOUND)
+	message(STATUS "Using qt gui")
 	set (QtGui TRUE)
 elseif(GuiModule STREQUAL fltk AND FLTK_FOUND)
+	message(STATUS "Using fltk gui")
 	set (FltkGui TRUE)
 elseif(GuiModule STREQUAL off)
         add_definitions(-DDISABLE_GUI)
@@ -157,6 +160,20 @@ if(FltkGui)
 endif()
 
 
+if (QtGui)
+	INCLUDE(${QT_USE_FILE})
+	include_directories(
+	${CMAKE_CURRENT_BINARY_DIR}/NewUI
+	${CMAKE_CURRENT_SOURCE_DIR}/NewUI
+	)
+
+    add_definitions(-DQT_GUI)
+
+
+	add_subdirectory(NewUI)
+endif()
+
+
 ########### General section ##############
 # Following this should be only general compilation code, and no mention
 # of module-specific variables
@@ -204,12 +221,14 @@ set(NONGUI_LIBRARIES
 	zynaddsubfx_params
 	zynaddsubfx_dsp
 	zynaddsubfx_samples
-        zynaddsubfx_nio
+	zynaddsubfx_controls
+	zynaddsubfx_nio
     )
 
 set(CXXTEST_LINK_LIBS ${NONGUI_LIBRARIES})
 
 add_subdirectory(Misc)
+add_subdirectory(Controls)
 add_subdirectory(Synth)
 add_subdirectory(Seq)
 add_subdirectory(Effects)

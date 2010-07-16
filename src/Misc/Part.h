@@ -30,6 +30,14 @@
 #include "../Misc/Microtonal.h"
 #include "../DSP/FFTwrapper.h"
 #include "XMLwrapper.h"
+#include "../Controls/Ranger.h"
+#include "../Controls/DescRanger.h"
+#include "../Controls/Toggle.h"
+//#include "../Controls/CharControl.h"
+//#include "../Controls/FloatControl.h"
+#include "../Controls/Node.h"
+#include "../Controls/InstrumentControl.h"
+#include "../Controls/BankControl.h"
 
 #include <list> // For the monomemnotes list.
 
@@ -42,14 +50,17 @@ class SUBnote;
 class PADnote;
 
 /** Part implementation*/
-class Part
+class Part:public Node
 {
     public:
         /**Constructor
          * @param microtonal_ Pointer to the microtonal object
          * @param fft_ Pointer to the FFTwrapper
          * @param mutex_ Pointer to the master pthread_mutex_t*/
-        Part(Microtonal *microtonal_, FFTwrapper *fft_, pthread_mutex_t *mutex_);
+        Part(Node *parent,
+             Microtonal *microtonal_,
+             FFTwrapper *fft_,
+             pthread_mutex_t *mutex_);
         /**Destructor*/
         ~Part();
 
@@ -85,6 +96,9 @@ class Part
         void getfromXML(XMLwrapper *xml);
         void getfromXMLinstrument(XMLwrapper *xml);
 
+        void handleEvent(Event *event);
+        void handleSyncEvent(Event *event);
+
         void cleanup(bool final = false);
 
 //      ADnoteParameters *ADPartParameters;
@@ -101,22 +115,30 @@ class Part
             PADnoteParameters *padpars;
         } kit[NUM_KIT_ITEMS];
 
+        Node instrument;
+        Node instrumentKit;
+
+        //temporary until actual instrument kit items are implemented.
+        Node tempInstrumentKitItem1;
+
+        //for setting instruments loaded from bank
+        InstrumentControl instrumentControl;
+        BankControl bankControl;
 
         //Part parameters
         void setkeylimit(unsigned char Pkeylimit);
         void setkititemstatus(int kititem, int Penabled_);
 
-        unsigned char Penabled; /**<if the part is enabled*/
         unsigned char Pvolume; /**<part volume*/
-        unsigned char Pminkey; /**<the minimum key that the part receives noteon messages*/
-        unsigned char Pmaxkey; //the maximum key that the part receives noteon messages
+        DescRanger minKey; /**<the minimum key that the part receives noteon messages*/
+        DescRanger maxKey; //the maximum key that the part receives noteon messages
         void setPvolume(char Pvolume);
-        unsigned char Pkeyshift; //Part keyshift
-        unsigned char Prcvchn; //from what midi channel it receive commnads
-        unsigned char Ppanning; //part panning
-        void setPpanning(char Ppanning);
-        unsigned char Pvelsns; //velocity sensing (amplitude velocity scale)
-        unsigned char Pveloffs; //velocity offset
+        DescRanger keyShift; //Part keyshift
+        Selector receiveChannel; //from what midi channel it receive commnads
+        Ranger panning; //part panning
+        DescRanger velSns; //velocity sensing (amplitude velocity scale)
+        DescRanger velOffs; //velocity offset
+
         unsigned char Pnoteon; //if the part receives NoteOn messages
         unsigned char Pkitmode; //if the kitmode is enabled
         unsigned char Pdrummode; //if all keys are mapped and the system is 12tET (used for drums)
@@ -143,8 +165,9 @@ class Part
             KEY_OFF, KEY_PLAYING, KEY_RELASED_AND_SUSTAINED, KEY_RELASED
         };
 
-        REALTYPE volume, oldvolumel, oldvolumer; //this is applied by Master
-        REALTYPE panning; //this is applied by Master, too
+        REALTYPE oldvolumel, oldvolumer; //this is applied by Master
+        Ranger   partVolume;
+        Toggle   enabled;
 
         Controller ctl; //Part controllers
 
@@ -157,7 +180,13 @@ class Part
 
         int lastnote;
 
+        //CharControl Volume;/**<part volume*/
+
     private:
+        void enablePart();
+        void disablePart();
+
+
         void KillNotePos(int pos);
         void RelaseNotePos(int pos);
         void MonoMemRenote(); // MonoMem stuff.

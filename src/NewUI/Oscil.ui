@@ -1,0 +1,2416 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>OscilUi</class>
+ <widget class="QDialog" name="OscilUi">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>723</width>
+    <height>649</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Oscillator</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_3">
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>Base function</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="ComboBox" name="comboBox_2">
+       <property name="controlId" stdset="0">
+        <string>BaseFunc</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>Parameter</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Slider" name="verticalSlider0_2">
+       <property name="maximum">
+        <number>127</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="controlId" stdset="0">
+        <string>BASE_PARAMETERS</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Frequency spectrum</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <item>
+      <widget class="SpectrumWidget" name="widget" native="true">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>1</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="palette">
+        <palette>
+         <active>
+          <colorrole role="Text">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>85</red>
+             <green>255</green>
+             <blue>0</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Base">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>255</red>
+             <green>255</green>
+             <blue>255</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Window">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>0</red>
+             <green>0</green>
+             <blue>0</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </active>
+         <inactive>
+          <colorrole role="Text">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>85</red>
+             <green>255</green>
+             <blue>0</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Base">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>255</red>
+             <green>255</green>
+             <blue>255</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Window">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>0</red>
+             <green>0</green>
+             <blue>0</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </inactive>
+         <disabled>
+          <colorrole role="Text">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>126</red>
+             <green>125</green>
+             <blue>124</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Base">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>0</red>
+             <green>0</green>
+             <blue>0</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Window">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>0</red>
+             <green>0</green>
+             <blue>0</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </disabled>
+        </palette>
+       </property>
+       <property name="autoFillBackground">
+        <bool>true</bool>
+       </property>
+       <property name="controlId" stdset="0">
+        <string>OscilSpectrum</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Oscilloscope</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="OscilWidget" name="widget_2" native="true">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>3</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="palette">
+        <palette>
+         <active>
+          <colorrole role="Text">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>85</red>
+             <green>255</green>
+             <blue>0</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Window">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>0</red>
+             <green>0</green>
+             <blue>0</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </active>
+         <inactive>
+          <colorrole role="Text">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>85</red>
+             <green>255</green>
+             <blue>0</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Window">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>0</red>
+             <green>0</green>
+             <blue>0</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </inactive>
+         <disabled>
+          <colorrole role="Text">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>126</red>
+             <green>125</green>
+             <blue>124</blue>
+            </color>
+           </brush>
+          </colorrole>
+          <colorrole role="Window">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>0</red>
+             <green>0</green>
+             <blue>0</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </disabled>
+        </palette>
+       </property>
+       <property name="autoFillBackground">
+        <bool>true</bool>
+       </property>
+       <property name="controlId" stdset="0">
+        <string>base_function</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="GroupBox" name="groupBox">
+     <property name="palette">
+      <palette>
+       <active>
+        <colorrole role="WindowText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Button">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>103</red>
+           <green>103</green>
+           <blue>103</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Light">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>90</green>
+           <blue>180</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Midlight">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>129</green>
+           <blue>124</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Dark">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>51</green>
+           <blue>49</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Mid">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>68</green>
+           <blue>66</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Text">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="BrightText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ButtonText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Base">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Window">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>103</green>
+           <blue>99</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Shadow">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="AlternateBase">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>51</green>
+           <blue>49</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ToolTipBase">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>220</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ToolTipText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+       </active>
+       <inactive>
+        <colorrole role="WindowText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Button">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>103</red>
+           <green>103</green>
+           <blue>103</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Light">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>90</green>
+           <blue>180</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Midlight">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>129</green>
+           <blue>124</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Dark">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>51</green>
+           <blue>49</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Mid">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>68</green>
+           <blue>66</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Text">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="BrightText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ButtonText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Base">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Window">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>103</green>
+           <blue>99</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Shadow">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="AlternateBase">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>51</green>
+           <blue>49</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ToolTipBase">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>220</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ToolTipText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+       </inactive>
+       <disabled>
+        <colorrole role="WindowText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>51</green>
+           <blue>49</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Button">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>103</red>
+           <green>103</green>
+           <blue>103</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Light">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>90</green>
+           <blue>180</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Midlight">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>129</green>
+           <blue>124</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Dark">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>51</green>
+           <blue>49</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Mid">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>68</green>
+           <blue>66</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Text">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>51</green>
+           <blue>49</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="BrightText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ButtonText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>51</green>
+           <blue>49</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Base">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>103</green>
+           <blue>99</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Window">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>103</green>
+           <blue>99</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Shadow">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="AlternateBase">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>103</green>
+           <blue>99</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ToolTipBase">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>220</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ToolTipText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+       </disabled>
+      </palette>
+     </property>
+     <property name="toolTip">
+      <string>One halftone per slider</string>
+     </property>
+     <property name="title">
+      <string>Oscillator harmonics</string>
+     </property>
+     <property name="controlId" stdset="0">
+      <string>HARMONICS</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <property name="margin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QScrollArea" name="scrollArea">
+        <property name="frameShape">
+         <enum>QFrame::NoFrame</enum>
+        </property>
+        <property name="widgetResizable">
+         <bool>true</bool>
+        </property>
+        <widget class="QWidget" name="scrollAreaWidgetContents">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>3460</width>
+           <height>242</height>
+          </rect>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <widget class="Slider" name="verticalSlider0">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#0</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider1">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#1</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider2">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#2</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider3">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#3</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider4">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#4</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider5">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#5</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider6">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#6</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider7">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#7</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider8">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#8</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider9">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#9</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider10">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#10</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider11">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#11</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider12">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#12</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider13">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#13</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider14">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#14</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider15">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#15</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider16">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#16</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider17">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#17</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider18">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#18</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider19">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#19</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider20">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#20</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider21">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#21</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider22">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#22</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider23">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#23</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider24">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#24</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider25">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#25</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider26">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#26</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider27">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#27</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider28">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#28</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider29">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#29</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider30">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#30</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider31">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#31</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider32">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#32</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider33">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#33</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider34">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#34</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider35">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#35</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider36">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#36</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider37">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#37</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider38">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#38</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider39">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#39</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider40">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#40</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider41">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#41</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider42">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#42</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider43">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#43</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider44">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#44</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider45">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#45</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider46">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#46</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider47">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#47</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider48">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#48</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider49">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#49</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider50">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#50</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider51">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#51</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider52">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#52</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider53">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#53</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider54">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#54</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider55">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#55</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider56">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#56</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider57">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#57</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider58">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#58</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider59">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#59</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider60">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#60</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider61">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#61</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider62">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#62</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider63">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#63</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider64">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#64</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider65">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#65</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider66">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#66</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider67">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#67</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider68">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#68</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider69">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#69</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider70">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#70</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider71">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#71</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider72">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#72</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider73">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#73</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider74">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#74</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider75">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#75</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider76">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#76</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider77">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#77</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider78">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#78</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider79">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#79</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider80">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#80</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider81">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#81</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider82">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#82</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider83">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#83</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider84">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#84</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider85">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#85</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider86">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#86</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider87">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#87</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider88">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#88</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider89">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#89</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider90">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#90</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider91">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#91</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider92">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#92</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider93">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#93</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider94">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#94</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider95">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#95</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider96">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#96</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider97">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#97</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider98">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#98</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider99">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#99</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider100">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#100</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider101">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#101</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider102">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#102</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider103">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#103</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider104">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#104</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider105">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#105</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider106">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#106</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider107">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#107</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider108">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#108</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider109">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#109</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider110">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#110</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider111">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#111</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider112">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#112</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider113">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#113</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider114">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#114</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider115">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#115</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider116">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#116</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider117">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#117</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider118">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#118</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider119">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#119</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider120">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#120</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider121">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#121</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider122">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#122</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider123">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#123</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider124">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#124</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider125">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#125</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider126">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#126</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Slider" name="verticalSlider127">
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="controlId" stdset="0">
+             <string>HARMONIC#127</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ComboBox</class>
+   <extends>QComboBox</extends>
+   <header>ComboBox.h</header>
+  </customwidget>
+  <customwidget>
+   <class>GroupBox</class>
+   <extends>QGroupBox</extends>
+   <header>GroupBox.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>Slider</class>
+   <extends>QSlider</extends>
+   <header>Slider.h</header>
+  </customwidget>
+  <customwidget>
+   <class>OscilWidget</class>
+   <extends>QWidget</extends>
+   <header>OscilWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>SpectrumWidget</class>
+   <extends>QWidget</extends>
+   <header>SpectrumWidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

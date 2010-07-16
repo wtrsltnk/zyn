@@ -10,9 +10,9 @@ enum midi_type{
     M_CONTROLLER = 2
 };    //type=1 for note, type=2 for controller
 
-struct MidiEvent
+struct MidiDriverEvent
 {
-    MidiEvent();
+    MidiDriverEvent();
     int channel; //the midi channel for the event
     int type;    //type=1 for note, type=2 for controller
     int num;     //note or contoller number
@@ -26,7 +26,7 @@ class InMgr
         static InMgr &getInstance();
         ~InMgr();
 
-        void putEvent(MidiEvent ev);
+        void putEvent(MidiDriverEvent ev);
 
         /**Flush the Midi Queue*/
         void flush();
@@ -39,7 +39,7 @@ class InMgr
     private:
         InMgr();
         class MidiIn *getIn(std::string name);
-        SafeQueue<MidiEvent> queue;
+        SafeQueue<MidiDriverEvent> queue;
         sem_t work;
         class MidiIn *current;
 

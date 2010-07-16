@@ -41,6 +41,8 @@
 #include "Misc/Dump.h"
 extern Dump dump;
 
+int (*rand_func)();
+
 //Nio System
 #include "Nio/Nio.h"
 
@@ -48,7 +50,7 @@ extern Dump dump;
 #ifdef QT_GUI
 
 #include <QApplication>
-#include "masterui.h"
+#include "MasterUI.h"
 QApplication *app;
 
 #elif defined FLTK_GUI
@@ -76,7 +78,7 @@ int     Pexitprogram = 0; //if the UI set this to 1, the program will exit
 /*
  * User Interface thread
  */
-void *thread3(void *)
+void *thread3(void * /*arg*/)
 {
 #ifndef DISABLE_GUI
 
@@ -107,10 +109,17 @@ void *thread3(void *)
     }
 
 #elif defined QT_GUI
-    app = new QApplication(0, 0);
-    ui  = new MasterUI(master, 0);
+    //TODO: provide proper args here
+    int fakeargc = 1;
+    const char* fakeargv = "zynaddsubfx";
+
+
+    app = new QApplication(fakeargc, const_cast<char**>(&fakeargv));
+    ui  = new MasterUI(master, &Pexitprogram);
     ui->show();
     app->exec();
+    delete ui;
+    delete app;
 #endif //defined QT_GUI
 
 #endif //DISABLE_GUI
@@ -213,7 +222,9 @@ void exitprogram()
     Nio::getInstance().stop();
 
 #ifndef DISABLE_GUI
+#ifdef FLTK_GUI
     delete ui;
+#endif
 #endif
 
 #if LASH
@@ -251,6 +262,10 @@ int opterr = 0;
 #ifndef VSTAUDIOOUT
 int main(int argc, char *argv[])
 {
+
+    //set the random function to the stdlib.h one.
+    //this will be changed for testing mode
+    rand_func = rand;
 
     config.init();
     dump.startnow();
@@ -465,6 +480,9 @@ int main(int argc, char *argv[])
 
 #ifndef DISABLE_GUI
     if(noui == 0) {
+#ifdef FLTK_GUI
+        ui = new MasterUI(master, &Pexitprogram);
+#endif
         pthread_create(&thr3, NULL, thread3, NULL);
     }
 #endif

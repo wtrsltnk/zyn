@@ -38,6 +38,11 @@ extern REALTYPE getdetune(unsigned char type,
                           unsigned short int coarsedetune,
                           unsigned short int finedetune);
 
+extern REALTYPE newgetdetune(unsigned char type,
+                          int octave,
+                          int coarsedetune,
+                          int finedetune);
+
 /**Try to set current thread to realtime priority program priority
  * \todo see if the right pid is being sent
  * \todo see if this is having desired effect, if not then look at
@@ -48,6 +53,9 @@ void set_realtime();
 void os_sleep(long length);
 
 std::string legalizeFilename(std::string filename);
+
+REALTYPE *getUiBuf();
+void returnUiBuf(REALTYPE *);
 
 extern REALTYPE *denormalkillbuf; /**<the buffer to add noise in order to avoid denormalisation*/
 

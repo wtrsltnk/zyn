@@ -23,7 +23,6 @@ OutMgr::OutMgr()
 {
     currentOut = NULL;
     stales = 0;
-    master = Master::getInstance();
 
     //init samples
     outr = new REALTYPE[SOUND_BUFFER_SIZE];

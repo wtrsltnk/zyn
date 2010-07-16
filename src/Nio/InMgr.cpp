@@ -6,7 +6,7 @@
 
 using namespace std;
 
-ostream &operator<<(ostream &out, const MidiEvent& ev)
+ostream &operator<<(ostream &out, const MidiDriverEvent& ev)
 {
     if(ev.type == M_NOTE)
         out << "MidiNote: note("     << ev.num      << ")\n"
@@ -19,7 +19,7 @@ ostream &operator<<(ostream &out, const MidiEvent& ev)
     return out;
 }
 
-MidiEvent::MidiEvent()
+MidiDriverEvent::MidiDriverEvent()
     :channel(0),type(0),num(0),value(0)
 {}
 
@@ -42,7 +42,7 @@ InMgr::~InMgr()
     sem_destroy(&work);
 }
 
-void InMgr::putEvent(MidiEvent ev)
+void InMgr::putEvent(MidiDriverEvent ev)
 {
     if(queue.push(ev)) //check for error
         cerr << "ERROR: Midi Ringbuffer is FULL" << endl;
@@ -52,7 +52,7 @@ void InMgr::putEvent(MidiEvent ev)
 
 void InMgr::flush()
 {
-    MidiEvent ev;
+    MidiDriverEvent ev;
     while(!sem_trywait(&work)) {
         queue.pop(ev);
         cout << ev << endl;

@@ -8,6 +8,7 @@
 #include "../Synth/ADnote.h"
 #include "../Params/Presets.h"
 #include "../globals.h"
+#include "testing.h"
 
 using namespace std;
 
@@ -42,9 +43,11 @@ class AdNoteTest:public CxxTest::TestSuite
 
             //phew, glad to get thouse out of my way. took me a lot of sweat and gdb to get this far...
 
+            Job::setEngineThread();
+
             //prepare the default settings
             ADnoteParameters *defaultPreset = new ADnoteParameters(
-                new FFTwrapper(OSCIL_SIZE));
+                NULL, new FFTwrapper(OSCIL_SIZE));
             XMLwrapper *wrap = new XMLwrapper();
             cout << string(SOURCE_DIR) + string("/Tests/guitar-adnote.xmz")
                  << endl;
@@ -102,26 +105,26 @@ class AdNoteTest:public CxxTest::TestSuite
 #endif
             sampleCount += SOUND_BUFFER_SIZE;
 
-            TS_ASSERT_DELTA(outL[255], 0.3019, 0.0001);
+            TS_ASSERT_DELTA(outL[255], 0.2410, 0.0001);
 
             note->relasekey();
 
 
             note->noteout(outL, outR);
             sampleCount += SOUND_BUFFER_SIZE;
-            TS_ASSERT_DELTA(outL[255], -0.1382, 0.0001);
+            TS_ASSERT_DELTA(outL[255], -0.1814, 0.0001);
 
             note->noteout(outL, outR);
             sampleCount += SOUND_BUFFER_SIZE;
-            TS_ASSERT_DELTA(outL[255], -0.0334, 0.0001);
+            TS_ASSERT_DELTA(outL[255], -0.0178, 0.0001);
 
             note->noteout(outL, outR);
             sampleCount += SOUND_BUFFER_SIZE;
-            TS_ASSERT_DELTA(outL[255], -0.1329, 0.0001);
+            TS_ASSERT_DELTA(outL[255], -0.0947, 0.0001);
 
             note->noteout(outL, outR);
             sampleCount += SOUND_BUFFER_SIZE;
-            TS_ASSERT_DELTA(outL[255], 0.2690, 0.0001);
+            TS_ASSERT_DELTA(outL[255], 0.1521, 0.0001);
 
             while(!note->finished()) {
                 note->noteout(outL, outR);

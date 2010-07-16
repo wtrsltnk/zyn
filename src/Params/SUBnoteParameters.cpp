@@ -24,18 +24,20 @@
 #include "SUBnoteParameters.h"
 #include <stdio.h>
 
-SUBnoteParameters::SUBnoteParameters():Presets()
+SUBnoteParameters::SUBnoteParameters():
+    Presets(NULL, "SUBnoteParameters: FIXME")
 {
     setpresettype("Psubsyth");
-    AmpEnvelope = new EnvelopeParams(64, 1);
+    AmpEnvelope = new EnvelopeParams(this, "AMPLITUDE_ENVELOPE", 64, 1);
     AmpEnvelope->ADSRinit_dB(0, 40, 127, 25);
-    FreqEnvelope      = new EnvelopeParams(64, 0);
+    FreqEnvelope      = new EnvelopeParams(this, "FREQUENCY_ENVELOPE", 64, 0);
     FreqEnvelope->ASRinit(30, 50, 64, 60);
-    BandWidthEnvelope = new EnvelopeParams(64, 0);
+    BandWidthEnvelope = new EnvelopeParams(this, "BANDWIDTH_ENVELOPE", 64, 0);
     BandWidthEnvelope->ASRinit_bw(100, 70, 64, 60);
 
-    GlobalFilter = new FilterParams(2, 80, 40);
-    GlobalFilterEnvelope = new EnvelopeParams(0, 1);
+    //TODO: controlify this
+    GlobalFilter = new FilterParams(NULL, 2, 80, 40);
+    GlobalFilterEnvelope = new EnvelopeParams(this, "GlobalFilterEnvelope", 0, 1);
     GlobalFilterEnvelope->ADSRinit_filter(64, 40, 64, 70, 60, 64);
 
     defaults();

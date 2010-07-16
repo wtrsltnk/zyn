@@ -26,7 +26,7 @@
 
 void MidiIn::midiProcess(unsigned char head, unsigned char num, unsigned char value)
 {
-    MidiEvent ev;
+    MidiDriverEvent ev;
     unsigned char chan = head & 0x0f;
     switch(head & 0xf0)
     {

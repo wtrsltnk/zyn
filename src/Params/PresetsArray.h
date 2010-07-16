@@ -31,7 +31,7 @@
 class PresetsArray : public Presets
 {
     public:
-        PresetsArray();
+        PresetsArray(Node *parent, std::string id);
         virtual ~PresetsArray();
 
         void copy(const char *name); /**<if name==NULL, the clipboard is used*/

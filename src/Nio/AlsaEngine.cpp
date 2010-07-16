@@ -108,7 +108,7 @@ void *AlsaEngine::_MidiThread(void *arg)
 void *AlsaEngine::MidiThread(void)
 {
     snd_seq_event_t *event;
-    MidiEvent ev;
+    MidiDriverEvent ev;
     set_realtime();
     while(snd_seq_event_input(midi.handle, &event) > 0)
     {

@@ -1,0 +1,34 @@
+
+#ifndef EVENT_H
+#define EVENT_H
+
+/**General Event messager class*/
+class Event
+{
+    friend class Node;
+
+    public:
+        enum ev_type {
+            CreateNodeEvent,
+            RemovalEvent,
+            ConnEvent,
+            NewNodeEvent,
+            NewValueEvent,
+            MidiEvent,
+            OptionsChangedEvent
+        };
+        virtual ev_type type() const {return internalType;}
+        virtual ~Event();
+
+        void own(){isOwned=true;}//assert ownership
+
+    protected:
+        Event(enum ev_type ntype);
+        enum ev_type internalType;
+        bool isOwned;
+        static int ref;
+};
+
+
+#endif // EVENT_H
+

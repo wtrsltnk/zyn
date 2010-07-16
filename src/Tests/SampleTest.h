@@ -21,6 +21,7 @@
 */
 #include <cxxtest/TestSuite.h>
 #include "../Samples/Sample.h"
+#include "testing.h"
 
 class SampleTest:public CxxTest::TestSuite
 {

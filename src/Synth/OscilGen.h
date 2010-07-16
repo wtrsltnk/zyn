@@ -28,12 +28,20 @@
 #include "Resonance.h"
 #include "../DSP/FFTwrapper.h"
 #include "../Params/Presets.h"
+#include "../Controls/Node.h"
+#include "../Controls/Selector.h"
+#include "../Controls/Ranger.h"
+#include "../Controls/DescRanger.h"
+#include "../Controls/ArrayControl.h"
 
 class OscilGen:public Presets
 {
     public:
-        OscilGen(FFTwrapper *fft_, Resonance *res_);
-        ~OscilGen();
+        OscilGen(FFTwrapper *fft_,
+                 Resonance *res_,
+                 Node *parent,
+                 std::string id);
+        virtual ~OscilGen();
 
         /**computes the full spectrum of oscil from harmonics,phases and basefunc*/
         void prepare();
@@ -45,7 +53,10 @@ class OscilGen:public Presets
 
         void getbasefunction(REALTYPE *smps);
 
-        //called by UI
+        //UI callbacks
+        size_t getSpectrum(REALTYPE *spc);
+        size_t getBasefunc(REALTYPE *fnc);
+
         void getspectrum(int n, REALTYPE *spc, int what); //what=0 pt. oscil,1 pt. basefunc
         void getcurrentbasefunction(REALTYPE *smps);
         /**convert oscil to base function*/
@@ -63,7 +74,12 @@ class OscilGen:public Presets
          * The hmag and hphase starts counting from 0, so the first harmonic(1) has the index 0,
          * 2-nd harmonic has index 1, ..the 128 harminic has index 127
          */
-        unsigned char Phmag[MAX_AD_HARMONICS], Phphase[MAX_AD_HARMONICS]; //the MIDI parameters for mag. and phases
+        unsigned char Phphase[MAX_AD_HARMONICS]; //the MIDI parameters for mag. and phases
+        Node harmonics;
+        DescRanger* magnitude[MAX_AD_HARMONICS];
+
+        ArrayControl oscilSpectrum;
+        ArrayControl oscilBaseFunc;
 
 
         /**The Type of magnitude:
@@ -74,8 +90,10 @@ class OscilGen:public Presets
          *   4 - dB scale (-100)*/
         unsigned char Phmagtype;
 
-        unsigned char Pcurrentbasefunc; //The base function used - 0=sin, 1=...
-        unsigned char Pbasefuncpar; //the parameter of the base function
+        //unsigned char Pcurrentbasefunc;
+        Selector      currentBaseFunc; //The base function used - 0=sin, 1=...
+        Ranger        baseParam;
+        //unsigned char Pbasefuncpar; //the parameter of the base function
 
         unsigned char Pbasefuncmodulation; //what modulation is applied to the basefunc
         unsigned char Pbasefuncmodulationpar1, Pbasefuncmodulationpar2,
@@ -110,10 +128,19 @@ class OscilGen:public Presets
 
         bool ADvsPAD; //if it is used by ADsynth or by PADsynth
 
+        void handleEvent(Event *event);
+        void handleSyncEvent(Event *event);
+
     private:
         //This array stores some termporary data and it has OSCIL_SIZE elements
         REALTYPE *tmpsmps;
+
         FFTFREQS  outoscilFFTfreqs;
+
+        //this is used (probably temporarily) for storing the spectrum values, usually
+        //gotten in a pull-fashion through getspectrum(), but now instead pushed to the
+        //oscilSpectrum ArrayControl
+        REALTYPE *oscilOutTmp;
 
         REALTYPE hmag[MAX_AD_HARMONICS], hphase[MAX_AD_HARMONICS]; //the magnituides and the phases of the sine/nonsine harmonics
 //    private:

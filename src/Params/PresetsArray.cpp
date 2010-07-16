@@ -24,7 +24,8 @@
 #include <string.h>
 
 
-PresetsArray::PresetsArray()
+PresetsArray::PresetsArray(Node *parent, std::string id)
+    : Presets(parent, id)
 {
     type[0]  = 0;
     nelement = -1;

@@ -23,6 +23,7 @@
 #include "Util.h"
 #include <math.h>
 #include <stdio.h>
+#include <algorithm>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -37,6 +38,7 @@
 #include <windows.h>
 #endif
 
+using namespace std;
 
 int SAMPLE_RATE = 44100;
 int SOUND_BUFFER_SIZE = 256;
@@ -59,14 +61,12 @@ REALTYPE VelF(REALTYPE velocity, unsigned char scaling)
         return pow(velocity, x);
 }
 
-/*
- * Get the detune in cents
- */
 REALTYPE getdetune(unsigned char type,
                    unsigned short int coarsedetune,
                    unsigned short int finedetune)
 {
     REALTYPE det = 0.0, octdet = 0.0, cdet = 0.0, findet = 0.0;
+
     //Get Octave
     int octave   = coarsedetune / 1024;
     if(octave >= 8)
@@ -104,6 +104,56 @@ REALTYPE getdetune(unsigned char type,
         findet = -findet;
     if(cdetune < 0)
         cdet = -cdet;
+
+    det = octdet + cdet + findet;
+    return det;
+}
+
+/*
+ * Get the detune in cents
+ */
+REALTYPE newgetdetune(unsigned char type,
+                   int octave,
+                   int cdetune,
+                   int finedetune)
+{
+    REALTYPE det = 0.0, octdet = 0.0, cdet = 0.0, findet = 0.0;
+
+    /*
+    //Get Octave
+    int octave   = coarsedetune / 1024;
+    if(octave >= 8)
+        octave -= 16;
+
+    //Coarse and fine detune
+    int cdetune = coarsedetune % 1024;
+    if(cdetune > 512)
+        cdetune -= 1024;
+        */
+    octdet = octave * 1200.0;
+
+    int fdetune = finedetune - 8192;
+
+    switch(type) {
+//	case 1: is used for the default (see below)
+    case 2:
+        cdet   = cdetune * 10.0;
+        findet = (fdetune / 8192.0) * 10.0;
+        break;
+    case 3:
+        cdet   = cdetune * 100;
+        findet = pow(10, (fdetune / 8192.0) * 3.0) / 10.0 - 0.1;
+        break;
+    case 4:
+        cdet   = cdetune * 701.95500087; //perfect fifth
+        findet = (pow(2, (fdetune / 8192.0) * 12.0) - 1.0) / 4095 * 1200;
+        break;
+    //case ...: need to update N_DETUNE_TYPES, if you'll add more
+    default:
+        cdet   = cdetune * 50.0;
+        findet = fdetune / 8192.0 * 35.0; //almost like "Paul's Sound Designer 2"
+        break;
+    }
 
     det = octdet + cdet + findet;
     return det;
@@ -165,5 +215,15 @@ void crossover(REALTYPE &a, REALTYPE &b, REALTYPE crossover)
     REALTYPE tmpb = b;
     a = tmpa * (1.0 - crossover) + tmpb * crossover;
     b = tmpb * (1.0 - crossover) + tmpa * crossover;
+}
+REALTYPE *getUiBuf()
+{
+    size_t size = max(2048,max(SOUND_BUFFER_SIZE,OSCIL_SIZE));
+    return new REALTYPE[size];
+}
+
+void returnUiBuf(REALTYPE *ptr)
+{
+    delete[] ptr;
 }
 

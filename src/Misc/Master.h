@@ -33,6 +33,11 @@
 #include "Dump.h"
 #include "../Seq/Sequencer.h"
 #include "XMLwrapper.h"
+#include "../Controls/Node.h"
+#include "../Controls/Control.h"
+#include "../Controls/Trigger.h"
+#include "LinInjFunc.h"
+#include "../Controls/FakeChildFactory.h"
 
 typedef enum { MUTEX_TRYLOCK, MUTEX_LOCK, MUTEX_UNLOCK } lockset;
 
@@ -47,13 +52,13 @@ typedef struct vuData_t {
 
 /** It sends Midi Messages to Parts, receives samples from parts,
  *  process them with system/insertion effects and mix them */
-class Master
+class Master:public Node
 {
     public:
         /** Constructor TODO make private*/
         Master();
         /** Destructor*/
-        ~Master();
+        virtual ~Master();
 
         static Master &getInstance();
 
@@ -65,7 +70,6 @@ class Master
         void add2XML(XMLwrapper *xml);
 
         void defaults();
-
 
         /**loads all settings from a XML file
          * @return 0 for ok or -1 if there is an error*/
@@ -93,8 +97,7 @@ class Master
         //void NRPN...
 
 
-        void ShutUp();
-        int shutup;
+        Trigger panic;
 
         void vuUpdate(const REALTYPE *outl, const REALTYPE *outr);
 
@@ -106,6 +109,8 @@ class Master
                                 REALTYPE *outl,
                                 REALTYPE *outr);
 
+        void handleEvent(Event *event);
+        void handleSyncEvent(Event *event);
 
         void partonoff(int npart, int what);
 
@@ -123,6 +128,12 @@ class Master
         void setPkeyshift(char Pkeyshift_);
         void setPsysefxvol(int Ppart, int Pefx, char Pvol);
         void setPsysefxsend(int Pefxfrom, int Pefxto, char Pvol);
+
+        //parameter reading
+        char getPvolume() const;
+        char getPkeyshift() const;
+        char getPsysefxvol(int Ppart, int Pefx) const;
+        char getPsysefxsend(int Pefxfrom, int Pefxto) const;
 
         //effects
         EffectMgr *sysefx[NUM_SYS_EFX]; //system
@@ -160,6 +171,13 @@ class Master
         pthread_mutex_t mutex;
         pthread_mutex_t vumutex;
 
+        Ranger masterVolume;
+        FakeChildFactory parts;
+
+    private:
+
+        //use panic control instead
+        void ShutUp();
 
     private:
         bool nullRun;

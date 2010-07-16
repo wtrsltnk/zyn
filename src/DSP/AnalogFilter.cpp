@@ -431,7 +431,8 @@ void AnalogFilter::filterout(REALTYPE *smp)
 
 REALTYPE AnalogFilter::H(REALTYPE freq)
 {
-    REALTYPE fr = freq / SAMPLE_RATE * PI * 2.0;
+    //REALTYPE fr = freq / SAMPLE_RATE * PI * 2.0;
+    const REALTYPE fr = freq * 2.0 * PI;
     REALTYPE x  = c[0], y = 0.0;
     for(int n = 1; n < 3; n++) {
         x += cos(n * fr) * c[n];
@@ -444,7 +445,9 @@ REALTYPE AnalogFilter::H(REALTYPE freq)
         x -= cos(n * fr) * d[n];
         y += sin(n * fr) * d[n];
     }
-    h = h / (x * x + y * y);
+    h /= (x * x + y * y);
+
+    printf("%f -> %f\n",freq,pow(h, (stages + 1.0) / 2.0));
     return pow(h, (stages + 1.0) / 2.0);
 }
 

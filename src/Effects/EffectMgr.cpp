@@ -35,7 +35,9 @@
 using namespace std;
 
 EffectMgr::EffectMgr(int insertion_, pthread_mutex_t *mutex_)
-    :insertion(insertion_),
+    :
+        Presets(NULL, "EffectMgr: FIXME"),
+        insertion(insertion_),
       efxoutl(new REALTYPE[SOUND_BUFFER_SIZE]),
       efxoutr(new REALTYPE[SOUND_BUFFER_SIZE]),
       filterpars(NULL), nefx(0), efx(NULL), mutex(mutex_), dryonly(false)

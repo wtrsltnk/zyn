@@ -21,6 +21,7 @@
 */
 #include <cxxtest/TestSuite.h>
 #include "../Misc/XMLwrapper.h"
+#include "testing.h"
 #include <string>
 using namespace std;
 

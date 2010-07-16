@@ -25,7 +25,8 @@
 using namespace std;
 
 PADnoteParameters::PADnoteParameters(FFTwrapper *fft_,
-                                     pthread_mutex_t *mutex_):Presets()
+                                     pthread_mutex_t *mutex_):
+    Presets(NULL, "PADnoteParameters: FIXME")
 {
     setpresettype("Ppadsyth");
 
@@ -33,21 +34,24 @@ PADnoteParameters::PADnoteParameters(FFTwrapper *fft_,
     mutex     = mutex_;
 
     resonance = new Resonance();
-    oscilgen  = new OscilGen(fft_, resonance);
+
+    //TODO: this oscilgen needs to be further controlified, right now it just sits there
+    oscilgen = new OscilGen(fft_, resonance, NULL, "OscilGen");
     oscilgen->ADvsPAD = true;
 
-    FreqEnvelope      = new EnvelopeParams(0, 0);
+    FreqEnvelope      = new EnvelopeParams(this, "FREQUENCY_ENVELOPE", 0, 0);
     FreqEnvelope->ASRinit(64, 50, 64, 60);
-    FreqLfo        = new LFOParams(70, 0, 64, 0, 0, 0, 0, 0);
+    FreqLfo     = new LFOParams(this, "FREQUENCY_LFO",70, 0, 64, 0, 0, 0, 0, 0);
 
-    AmpEnvelope    = new EnvelopeParams(64, 1);
+    AmpEnvelope = new EnvelopeParams(this, "AMPLITUDE_ENVELOPE", 64, 1);
     AmpEnvelope->ADSRinit_dB(0, 40, 127, 25);
-    AmpLfo         = new LFOParams(80, 0, 64, 0, 0, 0, 0, 1);
+    AmpLfo      = new LFOParams(this, "AMPLITUDE_LFO", 80, 0, 64, 0, 0, 0, 0, 1);
 
-    GlobalFilter   = new FilterParams(2, 94, 40);
-    FilterEnvelope = new EnvelopeParams(0, 1);
+    //TODO: controlify this
+    GlobalFilter   = new FilterParams(NULL, 2, 94, 40);
+    FilterEnvelope = new EnvelopeParams(this, "FILTER_ENVELOPE", 0, 1);
     FilterEnvelope->ADSRinit_filter(64, 40, 64, 70, 60, 64);
-    FilterLfo      = new LFOParams(80, 0, 64, 0, 0, 0, 0, 2);
+    FilterLfo      = new LFOParams(this, "FILTER_LFO", 80, 0, 64, 0, 0, 0, 0, 2);
 
     for(int i = 0; i < PAD_MAX_SAMPLES; i++)
         sample[i].smp = NULL;
@@ -486,7 +490,6 @@ void PADnoteParameters::generatespectrum_bandwidthMode(REALTYPE *spectrum,
  */
 void PADnoteParameters::generatespectrum_otherModes(REALTYPE *spectrum,
                                                     int size,
-                                                    REALTYPE basefreq)
 {
     for(int i = 0; i < size; i++)
         spectrum[i] = 0.0;

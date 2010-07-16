@@ -179,8 +179,10 @@ extern int OSCIL_SIZE;
  * dB
  */
 #define dB2rap(dB) ((exp((dB) * LOG_10 / 20.0)))
-#define rap2dB(rap) ((20 * log(rap) / LOG_10))
+#define rap2dB(rap) ((20.0 * log(rap) / LOG_10))
 
+
+extern int(*rand_func)();
 /*
  * The random generator (0.0..1.0)
  */

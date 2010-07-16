@@ -22,6 +22,7 @@
 
 #include "Part.h"
 #include "Microtonal.h"
+#include "db2rapInjFunc.h"
 #include "../Effects/EffectMgr.h"
 #include "../Params/ADnoteParameters.h"
 #include "../Params/SUBnoteParameters.h"
@@ -32,9 +33,55 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "../Misc/Bank.h"
 
-Part::Part(Microtonal *microtonal_, FFTwrapper *fft_, pthread_mutex_t *mutex_)
+using namespace std;
+
+REALINJFUNCFUNC(panningFunc,
+        pan2int, pan2real,
+        x * 127.0,
+        x / 127.0)
+
+Part::Part(Node *parent,
+           Microtonal *microtonal_,
+           FFTwrapper *fft_,
+           pthread_mutex_t *mutex_)
+    :Node(parent, "Part"),
+      instrument        (this, "INSTRUMENT"),
+      instrumentKit     (&instrument, "INSTRUMENT_KIT"),
+      tempInstrumentKitItem1 (&instrumentKit, "INSTRUMENT_KIT_ITEM"),
+      instrumentControl (this),
+      bankControl       (this),
+      minKey            (this, "min_key", 0),
+      maxKey            (this, "max_key", 127),
+      keyShift          (this, "key_shift", 64),
+      receiveChannel    (this, "ReceiveChannel", 0),
+      panning           (this, "panning", pan2real(64), new panningFunc()),
+      velSns            (this, "velocity_sensing", 64),
+      velOffs           (this, "velocity_offset", 64),
+      partVolume        (this, "volume", 30, new db2rapInjFunc<REALTYPE>(-40, 12.91666)),
+      enabled           (this, "enabled", false)
 {
+    instrumentControl.addRedirection(this, new TypeFilter(Event::NewValueEvent));
+    bankControl.addRedirection(this, new TypeFilter(Event::NewValueEvent));
+
+    receiveChannel.addOption("Channel 1");
+    receiveChannel.addOption("Channel 2");
+    receiveChannel.addOption("Channel 3");
+    receiveChannel.addOption("Channel 4");
+    receiveChannel.addOption("Channel 5");
+    receiveChannel.addOption("Channel 6");
+    receiveChannel.addOption("Channel 7");
+    receiveChannel.addOption("Channel 8");
+    receiveChannel.addOption("Channel 9");
+    receiveChannel.addOption("10(drums)");
+    receiveChannel.addOption("Channel 11");
+    receiveChannel.addOption("Channel 12");
+    receiveChannel.addOption("Channel 13");
+    receiveChannel.addOption("Channel 14");
+    receiveChannel.addOption("Channel 15");
+    receiveChannel.addOption("Channel 16");
+
     microtonal = microtonal_;
     fft = fft_;
     mutex      = mutex_;
@@ -50,7 +97,7 @@ Part::Part(Microtonal *microtonal_, FFTwrapper *fft_, pthread_mutex_t *mutex_)
         kit[n].padpars = NULL;
     }
 
-    kit[0].adpars  = new ADnoteParameters(fft);
+    kit[0].adpars  = new ADnoteParameters(&instrumentKit, fft);
     kit[0].subpars = new SUBnoteParameters();
     kit[0].padpars = new PADnoteParameters(fft, mutex);
 //    ADPartParameters=kit[0].adpars;
@@ -97,18 +144,18 @@ Part::Part(Microtonal *microtonal_, FFTwrapper *fft_, pthread_mutex_t *mutex_)
 
 void Part::defaults()
 {
-    Penabled    = 0;
-    Pminkey     = 0;
-    Pmaxkey     = 127;
+    enabled.defaults();
+    minKey.defaults();
+    maxKey.defaults();
     Pnoteon     = 1;
     Ppolymode   = 1;
     Plegatomode = 0;
     setPvolume(96);
-    Pkeyshift   = 64;
-    Prcvchn     = 0;
-    setPpanning(64);
-    Pvelsns     = 64;
-    Pveloffs    = 64;
+    keyShift.defaults();
+    receiveChannel.defaults();
+    panning.defaults();
+    velSns.defaults();
+    velOffs.defaults();
     Pkeylimit   = 15;
     defaultsinstrument();
     ctl.defaults();
@@ -127,6 +174,7 @@ void Part::defaultsinstrument()
 
     for(int n = 0; n < NUM_KIT_ITEMS; n++) {
         kit[n].Penabled    = 0;
+        //kit[n].enabled.setValue(false);
         kit[n].Pmuted      = 0;
         kit[n].Pminkey     = 0;
         kit[n].Pmaxkey     = 127;
@@ -139,6 +187,7 @@ void Part::defaultsinstrument()
             setkititemstatus(n, 0);
     }
     kit[0].Penabled   = 1;
+    //kit[0].enabled.setValue(true);
     kit[0].Padenabled = 1;
     kit[0].adpars->defaults();
     kit[0].subpars->defaults();
@@ -224,7 +273,7 @@ void Part::NoteOn(unsigned char note,
 
     if(Pnoteon == 0)
         return;
-    if((note < Pminkey) || (note > Pmaxkey))
+    if((note < minKey()) || (note > maxKey()))
         return;
 
     // MonoMem stuff:
@@ -311,10 +360,10 @@ void Part::NoteOn(unsigned char note,
         }
 
         //this computes the velocity sensing of the part
-        REALTYPE vel = VelF(velocity / 127.0, Pvelsns);
+        REALTYPE vel = VelF(velocity / 127.0, velSns());
 
         //compute the velocity offset
-        vel += (Pveloffs - 64.0) / 64.0;
+        vel += (velOffs() - 64.0) / 64.0;
         if(vel < 0.0)
             vel = 0.0;
         else
@@ -322,7 +371,7 @@ void Part::NoteOn(unsigned char note,
             vel = 1.0;
 
         //compute the keyshift
-        int partkeyshift = (int)Pkeyshift - 64;
+        int partkeyshift = keyShift() - 64;
         int keyshift     = masterkeyshift + partkeyshift;
 
         //initialise note frequency
@@ -423,10 +472,12 @@ void Part::NoteOn(unsigned char note,
 
                     partnote[pos].kititem[ci].sendtoparteffect  =
                         (kit[item].Psendtoparteffect <
-                    NUM_PART_EFX ? kit[item].Psendtoparteffect : NUM_PART_EFX);                                                                        //if this parameter is 127 for "unprocessed"
+                         NUM_PART_EFX ? kit[item].Psendtoparteffect :
+                         NUM_PART_EFX);                                                                                                                //if this parameter is 127 for "unprocessed"
                     partnote[posb].kititem[ci].sendtoparteffect =
                         (kit[item].Psendtoparteffect <
-                    NUM_PART_EFX ? kit[item].Psendtoparteffect : NUM_PART_EFX);
+                         NUM_PART_EFX ? kit[item].Psendtoparteffect :
+                         NUM_PART_EFX);
 
                     if((kit[item].Padenabled != 0) && (kit[item].adpars != NULL)
                        && (partnote[pos].kititem[ci].adnote != NULL)
@@ -577,8 +628,8 @@ void Part::NoteOn(unsigned char note,
 
                 partnote[pos].kititem[ci].sendtoparteffect =
                     (kit[item].Psendtoparteffect < NUM_PART_EFX ?
-                kit[item].
-                Psendtoparteffect : NUM_PART_EFX);                 //if this parameter is 127 for "unprocessed"
+                     kit[item].
+                     Psendtoparteffect : NUM_PART_EFX);            //if this parameter is 127 for "unprocessed"
 
                 if((kit[item].adpars != NULL) && ((kit[item].Padenabled) != 0))
                     partnote[pos].kititem[ci].adnote = new ADnote(
@@ -614,7 +665,8 @@ void Part::NoteOn(unsigned char note,
                 if(legatomodevalid) {
                     partnote[posb].kititem[ci].sendtoparteffect =
                         (kit[item].Psendtoparteffect <
-                    NUM_PART_EFX ? kit[item].Psendtoparteffect : NUM_PART_EFX);                                                                         //if this parameter is 127 for "unprocessed"
+                         NUM_PART_EFX ? kit[item].Psendtoparteffect :
+                         NUM_PART_EFX);                                                                                                                 //if this parameter is 127 for "unprocessed"
 
                     if((kit[item].adpars != NULL)
                        && ((kit[item].Padenabled) != 0))
@@ -710,7 +762,7 @@ void Part::SetController(unsigned int type, int par)
         break;
     case C_panning:
         ctl.setpanning(par);
-        setPpanning(Ppanning); //update the panning
+        panning.setInt(panning.getInt() + ctl.panning.pan);
         break;
     case C_filtercutoff:
         ctl.setfiltercutoff(par);
@@ -730,7 +782,7 @@ void Part::SetController(unsigned int type, int par)
     case C_volume:
         ctl.setvolume(par);
         if(ctl.volume.receive != 0)
-            volume = ctl.volume.volume;
+            partVolume.setInt(ctl.volume.volume);
         else
             setPvolume(Pvolume);
         break;
@@ -746,19 +798,19 @@ void Part::SetController(unsigned int type, int par)
         ctl.resetall();
         RelaseSustainedKeys();
         if(ctl.volume.receive != 0)
-            volume = ctl.volume.volume;
+            partVolume.setInt(ctl.volume.volume);
         else
             setPvolume(Pvolume);
         setPvolume(Pvolume); //update the volume
-        setPpanning(Ppanning); //update the panning
+        panning.setInt(panning.getInt() + ctl.panning.pan);
 
         for(int item = 0; item < NUM_KIT_ITEMS; item++) {
             if(kit[item].adpars == NULL)
                 continue;
-            kit[item].adpars->GlobalPar.Reson->
+            kit[item].adpars->Reson->
             sendcontroller(C_resonance_center, 1.0);
 
-            kit[item].adpars->GlobalPar.Reson->
+            kit[item].adpars->Reson->
             sendcontroller(C_resonance_bandwidth, 1.0);
         }
         //more update to add here if I add controllers
@@ -771,13 +823,13 @@ void Part::SetController(unsigned int type, int par)
         for(int item = 0; item < NUM_KIT_ITEMS; item++) {
             if(kit[item].adpars == NULL)
                 continue;
-            kit[item].adpars->GlobalPar.Reson->
+            kit[item].adpars->Reson->
             sendcontroller(C_resonance_center, ctl.resonancecenter.relcenter);
         }
         break;
     case C_resonance_bandwidth:
         ctl.setresonancebw(par);
-        kit[0].adpars->GlobalPar.Reson->
+        kit[0].adpars->Reson->
         sendcontroller(C_resonance_bandwidth, ctl.resonancebandwidth.relbw);
         break;
     }
@@ -1064,18 +1116,7 @@ void Part::ComputePartSmps()
 void Part::setPvolume(char Pvolume_)
 {
     Pvolume = Pvolume_;
-    volume  = dB2rap((Pvolume - 96.0) / 96.0 * 40.0) * ctl.expression.relvolume;
-}
-
-void Part::setPpanning(char Ppanning_)
-{
-    Ppanning = Ppanning_;
-    panning  = Ppanning / 127.0 + ctl.panning.pan;
-    if(panning < 0.0)
-        panning = 0.0;
-    else
-    if(panning > 1.0)
-        panning = 1.0;
+    partVolume.setInt(Pvolume_);
 }
 
 /*
@@ -1104,7 +1145,7 @@ void Part::setkititemstatus(int kititem, int Penabled_)
     }
     else {
         if(kit[kititem].adpars == NULL)
-            kit[kititem].adpars = new ADnoteParameters(fft);
+            kit[kititem].adpars = new ADnoteParameters(&instrumentKit, fft);
         if(kit[kititem].subpars == NULL)
             kit[kititem].subpars = new SUBnoteParameters();
         if(kit[kititem].padpars == NULL)
@@ -1188,20 +1229,20 @@ void Part::add2XMLinstrument(XMLwrapper *xml)
 void Part::add2XML(XMLwrapper *xml)
 {
     //parameters
-    xml->addparbool("enabled", Penabled);
-    if((Penabled == 0) && (xml->minimal))
+    xml->addparbool("enabled", enabled.getInt());
+    if((enabled()) && (xml->minimal))
         return;
 
     xml->addpar("volume", Pvolume);
-    xml->addpar("panning", Ppanning);
+    xml->addpar("panning", panning.getInt());
 
-    xml->addpar("min_key", Pminkey);
-    xml->addpar("max_key", Pmaxkey);
-    xml->addpar("key_shift", Pkeyshift);
-    xml->addpar("rcv_chn", Prcvchn);
+    xml->addpar("min_key", minKey());
+    xml->addpar("max_key", maxKey());
+    xml->addpar("key_shift", keyShift());
+    xml->addpar("rcv_chn", receiveChannel());
 
-    xml->addpar("velocity_sensing", Pvelsns);
-    xml->addpar("velocity_offset", Pveloffs);
+    xml->addpar("velocity_sensing", velSns());
+    xml->addpar("velocity_offset", velOffs());
 
     xml->addparbool("note_on", Pnoteon);
     xml->addparbool("poly_mode", Ppolymode);
@@ -1342,18 +1383,18 @@ void Part::getfromXMLinstrument(XMLwrapper *xml)
 
 void Part::getfromXML(XMLwrapper *xml)
 {
-    Penabled = xml->getparbool("enabled", Penabled);
+    enabled.setInt(xml->getparbool("enabled", enabled.getInt()));
 
     setPvolume(xml->getpar127("volume", Pvolume));
-    setPpanning(xml->getpar127("panning", Ppanning));
+    panning.setInt(xml->getpar127("panning", panning.getInt()));
 
-    Pminkey     = xml->getpar127("min_key", Pminkey);
-    Pmaxkey     = xml->getpar127("max_key", Pmaxkey);
-    Pkeyshift   = xml->getpar127("key_shift", Pkeyshift);
-    Prcvchn     = xml->getpar127("rcv_chn", Prcvchn);
+    minKey.setValue(xml->getpar127("min_key", minKey()));
+    maxKey.setValue(xml->getpar127("max_key", maxKey()));
+    keyShift.setValue(xml->getpar127("key_shift", keyShift()));
+    receiveChannel.setInt(xml->getpar127("rcv_chn", receiveChannel()));
 
-    Pvelsns     = xml->getpar127("velocity_sensing", Pvelsns);
-    Pveloffs    = xml->getpar127("velocity_offset", Pveloffs);
+    velSns.setValue(xml->getpar127("velocity_sensing", velSns()));
+    velOffs.setValue(xml->getpar127("velocity_offset", velOffs()));
 
     Pnoteon     = xml->getparbool("note_on", Pnoteon);
     Ppolymode   = xml->getparbool("poly_mode", Ppolymode);
@@ -1372,5 +1413,54 @@ void Part::getfromXML(XMLwrapper *xml)
         ctl.getfromXML(xml);
         xml->exitbranch();
     }
+}
+
+void Part::handleSyncEvent(Event *event)
+{
+    if(event->type() == Event::NewValueEvent) {
+        NewValueEvent *newValue = static_cast<NewValueEvent *>(event);
+
+        if(newValue->control == &instrumentControl) {
+            instrumentControl.bank->loadfromslot(instrumentControl.getInt(), this);
+
+            //The current nio implementation locks the master mutex before handling jobs etc, which
+            //means that we have to be careful not to lock the mutex from here.
+            applyparameters(false);
+        }
+    }
+}
+
+void Part::handleEvent(Event *event)
+{
+    if(event->type() == Event::NewValueEvent) {
+        NewValueEvent *newValue = static_cast<NewValueEvent *>(event);
+
+        if(newValue->control == &bankControl)
+
+            instrumentControl.loadBank(
+                    bankControl.bank->banks[bankControl()].dir);
+
+        else if (newValue->control == &instrumentControl) {
+
+            Job::push(new NodeJob(this, new NewValueEvent(*newValue)));
+
+        } else {
+
+            std::cout << "Part: NewValueEvent for unknown control" << std::endl;
+
+        }
+    }
+}
+
+void Part::enablePart()
+{
+    //if (Penabled) return;
+    //Penabled = true;
+}
+
+void Part::disablePart()
+{
+    //if (!Penabled) return;
+    //Penabled = false;
 }
 

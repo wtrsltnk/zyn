@@ -309,7 +309,7 @@ void JackEngine::handleMidi(unsigned long frames)
 
     while(jack_midi_event_get(&jack_midi_event, midi_buf,
                 event_index++) == 0) {
-        MidiEvent ev;
+        MidiDriverEvent ev;
         midi_data  = jack_midi_event.buffer;
         type       = midi_data[0] & 0xF0;
         ev.channel = midi_data[0] & 0x0F;

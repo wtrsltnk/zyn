@@ -24,18 +24,57 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
+#include <boost/bind.hpp>
+#include <functional>
 
 #include "OscilGen.h"
 #include "../Effects/Distorsion.h"
 
+#include "../Misc/LinInjFunc.h"
 
-OscilGen::OscilGen(FFTwrapper *fft_, Resonance *res_):Presets()
+using namespace std;
+using boost::bind;
+
+OscilGen::OscilGen(FFTwrapper *fft_, Resonance *res_,
+                   Node *parent, std::string id)
+    :Presets(parent, id),
+      harmonics(this, "HARMONICS"),
+      oscilSpectrum(this, "OscilSpectrum",bind1st(mem_fun(&OscilGen::getSpectrum), this)),
+      oscilBaseFunc(this, "base_function",bind1st(mem_fun(&OscilGen::getBasefunc), this)),
+      currentBaseFunc(this, "BaseFunc", 0),
+      baseParam(this, "BASE_PARAMETERS", 0.5, new LinInjFunc<REALTYPE>(0.0, 1.0))
 {
+    currentBaseFunc.addOption("Sin"); //0
+    currentBaseFunc.addOption("Triangle"); //1
+    currentBaseFunc.addOption("Pulse"); //2
+    currentBaseFunc.addOption("Saw"); //3
+    currentBaseFunc.addOption("Power"); //4
+    currentBaseFunc.addOption("Gauss"); //5
+    currentBaseFunc.addOption("Diode"); //6
+    currentBaseFunc.addOption("Abs sine"); //7
+    currentBaseFunc.addOption("Pulse sine"); //8
+    currentBaseFunc.addOption("Stretch sine"); //9
+    currentBaseFunc.addOption("Chirp"); //10
+    currentBaseFunc.addOption("Abs stretch sine"); //11
+    currentBaseFunc.addOption("Chebyshev"); //12
+    currentBaseFunc.addOption("Square"); //13
+
+    for (int i = 0; i < MAX_AD_HARMONICS; ++i) {
+        std::stringstream ss;
+        ss << "HARMONIC#" << i;
+        magnitude[i] = new DescRanger(&harmonics, ss.str(), 64);
+        magnitude[i]->addRedirection(this);
+        magnitude[i]->setOptions(NoXmlIfDefault);
+    }
+    baseParam.addRedirection(this);
+    currentBaseFunc.addRedirection(this);
+
     setpresettype("Poscilgen");
     fft     = fft_;
     res     = res_;
 
     tmpsmps = new REALTYPE[OSCIL_SIZE];
+    oscilOutTmp = new REALTYPE[OSCIL_SIZE];
     newFFTFREQS(&outoscilFFTfreqs, OSCIL_SIZE / 2);
     newFFTFREQS(&oscilFFTfreqs, OSCIL_SIZE / 2);
     newFFTFREQS(&basefuncFFTfreqs, OSCIL_SIZE / 2);
@@ -49,6 +88,9 @@ OscilGen::OscilGen(FFTwrapper *fft_, Resonance *res_):Presets()
 OscilGen::~OscilGen()
 {
     delete[] tmpsmps;
+    delete[] oscilOutTmp;
+    for (int i = 0; i < MAX_AD_HARMONICS; ++i)
+        delete magnitude[i];
     deleteFFTFREQS(&outoscilFFTfreqs);
     deleteFFTFREQS(&basefuncFFTfreqs);
     deleteFFTFREQS(&oscilFFTfreqs);
@@ -75,18 +117,18 @@ void OscilGen::defaults()
     for(int i = 0; i < MAX_AD_HARMONICS; i++) {
         hmag[i]    = 0.0;
         hphase[i]  = 0.0;
-        Phmag[i]   = 64;
+        magnitude[i]->setValue(64);
         Phphase[i] = 64;
     }
-    Phmag[0]  = 127;
+    (magnitude[0])->setValue(127);
     Phmagtype = 0;
     if(ADvsPAD)
         Prand = 127;       //max phase randomness (usefull if the oscil will be imported to a ADsynth from a PADsynth
     else
         Prand = 64; //no randomness
 
-    Pcurrentbasefunc = 0;
-    Pbasefuncpar     = 64;
+    currentBaseFunc.defaults();
+    baseParam.defaults();
 
     Pbasefuncmodulation     = 0;
     Pbasefuncmodulationpar1 = 64;
@@ -161,13 +203,13 @@ void OscilGen::convert2sine()
         REALTYPE newmag   = mag[i] / max;
         REALTYPE newphase = phase[i];
 
-        Phmag[i]   = (int) ((newmag) * 64.0) + 64;
+        magnitude[i]->setValue((int) ((newmag) * 64.0) + 64);
 
         Phphase[i] = 64 - (int) (64.0 * newphase / PI);
         if(Phphase[i] > 127)
             Phphase[i] = 127;
 
-        if(Phmag[i] == 64)
+        if((*magnitude[i])() == 64)
             Phphase[i] = 64;
     }
     deleteFFTFREQS(&freqs);
@@ -180,9 +222,7 @@ void OscilGen::convert2sine()
 void OscilGen::getbasefunction(REALTYPE *smps)
 {
     int      i;
-    REALTYPE par = (Pbasefuncpar + 0.5) / 128.0;
-    if(Pbasefuncpar == 64)
-        par = 0.5;
+    REALTYPE par = baseParam();
 
     REALTYPE basefuncmodulationpar1 = Pbasefuncmodulationpar1 / 127.0,
              basefuncmodulationpar2 = Pbasefuncmodulationpar2 / 127.0,
@@ -213,7 +253,7 @@ void OscilGen::getbasefunction(REALTYPE *smps)
         break;
     }
 
-    base_func func = getBaseFunction(Pcurrentbasefunc);
+    base_func func = getBaseFunction(currentBaseFunc());
 
     for(i = 0; i < OSCIL_SIZE; i++) {
         REALTYPE t = i * 1.0 / OSCIL_SIZE;
@@ -288,7 +328,7 @@ void OscilGen::oscilfilter()
  */
 void OscilGen::changebasefunction()
 {
-    if(Pcurrentbasefunc != 0) {
+    if(currentBaseFunc() != 0) {
         getbasefunction(tmpsmps);
         fft->smps2freqs(tmpsmps, basefuncFFTfreqs);
         basefuncFFTfreqs.c[0] = 0.0;
@@ -301,8 +341,8 @@ void OscilGen::changebasefunction()
         //in this case basefuncFFTfreqs_ are not used
     }
     oscilprepared = 0;
-    oldbasefunc   = Pcurrentbasefunc;
-    oldbasepar    = Pbasefuncpar;
+    oldbasefunc   = currentBaseFunc();
+    oldbasepar    = baseParam.getInt();
     oldbasefuncmodulation     = Pbasefuncmodulation;
     oldbasefuncmodulationpar1 = Pbasefuncmodulationpar1;
     oldbasefuncmodulationpar2 = Pbasefuncmodulationpar2;
@@ -559,7 +599,7 @@ void OscilGen::prepare()
     int      i, j, k;
     REALTYPE a, b, c, d, hmagnew;
 
-    if((oldbasepar != Pbasefuncpar) || (oldbasefunc != Pcurrentbasefunc)
+    if((oldbasepar != baseParam.getInt()) || (oldbasefunc != currentBaseFunc())
        || (oldbasefuncmodulation != Pbasefuncmodulation)
        || (oldbasefuncmodulationpar1 != Pbasefuncmodulationpar1)
        || (oldbasefuncmodulationpar2 != Pbasefuncmodulationpar2)
@@ -570,7 +610,7 @@ void OscilGen::prepare()
         hphase[i] = (Phphase[i] - 64.0) / 64.0 * PI / (i + 1);
 
     for(i = 0; i < MAX_AD_HARMONICS; i++) {
-        hmagnew = 1.0 - fabs(Phmag[i] / 64.0 - 1.0);
+        hmagnew = 1.0 - fabs((*magnitude[i])() / 64.0 - 1.0);
         switch(Phmagtype) {
         case 1:
             hmag[i] = exp(hmagnew * log(0.01));
@@ -589,13 +629,13 @@ void OscilGen::prepare()
             break;
         }
 
-        if(Phmag[i] < 64)
+        if((*magnitude[i])() < 64)
             hmag[i] = -hmag[i];
     }
 
     //remove the harmonics where Phmag[i]==64
     for(i = 0; i < MAX_AD_HARMONICS; i++)
-        if(Phmag[i] == 64)
+        if((*magnitude[i])() == 64)
             hmag[i] = 0.0;
 
 
@@ -603,7 +643,7 @@ void OscilGen::prepare()
         oscilFFTfreqs.c[i] = 0.0;
         oscilFFTfreqs.s[i] = 0.0;
     }
-    if(Pcurrentbasefunc == 0) { //the sine case
+    if(currentBaseFunc() == 0) { //the sine case
         for(i = 0; i < MAX_AD_HARMONICS; i++) {
             oscilFFTfreqs.c[i + 1] = -hmag[i] * sin(hphase[i] * (i + 1)) / 2.0;
             oscilFFTfreqs.s[i + 1] = hmag[i] * cos(hphase[i] * (i + 1)) / 2.0;
@@ -611,7 +651,7 @@ void OscilGen::prepare()
     }
     else {
         for(j = 0; j < MAX_AD_HARMONICS; j++) {
-            if(Phmag[j] == 64)
+            if((*magnitude[j])() == 64)
                 continue;
             for(i = 1; i < OSCIL_SIZE / 2; i++) {
                 k = i * (j + 1);
@@ -650,6 +690,9 @@ void OscilGen::prepare()
     oldharmonicshift = Pharmonicshift + Pharmonicshiftfirst * 256;
 
     oscilprepared    = 1;
+    oscilSpectrum.damage();
+    oscilBaseFunc.damage();
+
 }
 
 void OscilGen::adaptiveharmonic(FFTFREQS f, REALTYPE freq)
@@ -777,7 +820,7 @@ short int OscilGen::get(REALTYPE *smps, REALTYPE freqHz, int resonance)
     int i;
     int nyquist, outpos;
 
-    if((oldbasepar != Pbasefuncpar) || (oldbasefunc != Pcurrentbasefunc)
+    if((oldbasepar != baseParam.getInt()) || (oldbasefunc != currentBaseFunc())
        || (oldhmagtype != Phmagtype)
        || (oldwaveshaping != Pwaveshaping)
        || (oldwaveshapingfunction != Pwaveshapingfunction))
@@ -867,8 +910,7 @@ short int OscilGen::get(REALTYPE *smps, REALTYPE freqHz, int resonance)
 
     //Harmonic Amplitude Randomness
     if((freqHz > 0.1) && (!ADvsPAD)) {
-        unsigned int realrnd = rand();
-        srand(randseed);
+        //unsigned int realrnd = rand_func();
         REALTYPE power     = Pamprandpower / 127.0;
         REALTYPE normalize = 1.0 / (1.2 - power);
         switch(Pamprandtype) {
@@ -892,7 +934,6 @@ short int OscilGen::get(REALTYPE *smps, REALTYPE freqHz, int resonance)
             }
             break;
         }
-        srand(realrnd + 1);
     }
 
     if((freqHz > 0.1) && (resonance != 0))
@@ -944,7 +985,7 @@ void OscilGen::getspectrum(int n, REALTYPE *spc, int what)
             spc[i - 1] = sqrt(oscilFFTfreqs.c[i] * oscilFFTfreqs.c[i]
                               + oscilFFTfreqs.s[i] * oscilFFTfreqs.s[i]);
         else {
-            if(Pcurrentbasefunc == 0)
+            if(currentBaseFunc() == 0)
                 spc[i - 1] = ((i == 1) ? (1.0) : (0.0));
             else
                 spc[i - 1] = sqrt(basefuncFFTfreqs.c[i] * basefuncFFTfreqs.c[i]
@@ -978,18 +1019,31 @@ void OscilGen::useasbase()
         basefuncFFTfreqs.s[i] = oscilFFTfreqs.s[i];
     }
 
-    oldbasefunc = Pcurrentbasefunc = 127;
+    oldbasefunc = 127;
+    currentBaseFunc.setValue(127);
 
     prepare();
 }
 
+
+size_t OscilGen::getSpectrum(REALTYPE *spc)
+{
+    getspectrum(OSCIL_SIZE/2, spc, 0);
+    return OSCIL_SIZE/2;
+}
+
+size_t OscilGen::getBasefunc(REALTYPE *fnc)
+{
+    get(fnc, -1.0);
+    return OSCIL_SIZE;
+}
 
 /*
  * Get the base function for UI
  */
 void OscilGen::getcurrentbasefunction(REALTYPE *smps)
 {
-    if(Pcurrentbasefunc != 0)
+    if(currentBaseFunc() != 0)
         fft->freqs2smps(basefuncFFTfreqs, smps);
     else
         getbasefunction(smps);   //the sine case
@@ -1000,8 +1054,8 @@ void OscilGen::add2XML(XMLwrapper *xml)
 {
     xml->addpar("harmonic_mag_type", Phmagtype);
 
-    xml->addpar("base_function", Pcurrentbasefunc);
-    xml->addpar("base_function_par", Pbasefuncpar);
+    xml->addpar("base_function", currentBaseFunc());
+    xml->addpar("base_function_par", baseParam.getInt());
     xml->addpar("base_function_modulation", Pbasefuncmodulation);
     xml->addpar("base_function_modulation_par1", Pbasefuncmodulationpar1);
     xml->addpar("base_function_modulation_par2", Pbasefuncmodulationpar2);
@@ -1036,16 +1090,16 @@ void OscilGen::add2XML(XMLwrapper *xml)
 
     xml->beginbranch("HARMONICS");
     for(int n = 0; n < MAX_AD_HARMONICS; n++) {
-        if((Phmag[n] == 64) && (Phphase[n] == 64))
+        if(((*magnitude[n])() == 64) && (Phphase[n] == 64))
             continue;
         xml->beginbranch("HARMONIC", n + 1);
-        xml->addpar("mag", Phmag[n]);
+        xml->addpar("mag", (*magnitude[n])());
         xml->addpar("phase", Phphase[n]);
         xml->endbranch();
     }
     xml->endbranch();
 
-    if(Pcurrentbasefunc == 127) {
+    if(currentBaseFunc() == 127) {
         REALTYPE max = 0.0;
 
         for(int i = 0; i < OSCIL_SIZE / 2; i++) {
@@ -1077,8 +1131,8 @@ void OscilGen::getfromXML(XMLwrapper *xml)
 {
     Phmagtype = xml->getpar127("harmonic_mag_type", Phmagtype);
 
-    Pcurrentbasefunc    = xml->getpar127("base_function", Pcurrentbasefunc);
-    Pbasefuncpar        = xml->getpar127("base_function_par", Pbasefuncpar);
+    currentBaseFunc.setValue(xml->getpar127("base_function", currentBaseFunc()));
+    baseParam.setInt(xml->getpar127("base_function_par", baseParam.getInt()));
 
     Pbasefuncmodulation = xml->getpar127("base_function_modulation",
                                          Pbasefuncmodulation);
@@ -1137,19 +1191,19 @@ void OscilGen::getfromXML(XMLwrapper *xml)
 
 
     if(xml->enterbranch("HARMONICS")) {
-        Phmag[0]   = 64;
+        magnitude[0]->setValue(64);
         Phphase[0] = 64;
         for(int n = 0; n < MAX_AD_HARMONICS; n++) {
             if(xml->enterbranch("HARMONIC", n + 1) == 0)
                 continue;
-            Phmag[n]   = xml->getpar127("mag", 64);
+            magnitude[n]->setValue(xml->getpar127("mag", 64));
             Phphase[n] = xml->getpar127("phase", 64);
             xml->exitbranch();
         }
         xml->exitbranch();
     }
 
-    if(Pcurrentbasefunc != 0)
+    if(currentBaseFunc() != 0)
         changebasefunction();
 
 
@@ -1181,6 +1235,21 @@ void OscilGen::getfromXML(XMLwrapper *xml)
             if(basefuncFFTfreqs.s[i])
                 basefuncFFTfreqs.s[i] /= max;
         }
+    }
+}
+
+void OscilGen::handleSyncEvent(Event *event)
+{
+    if(event->type() == Event::NewValueEvent) {
+        //NewValueEvent *newValue = static_cast<NewValueEvent *>(event);
+        prepare();
+    }
+}
+
+void OscilGen::handleEvent(Event *event)
+{
+    if(event->type() == Event::NewValueEvent) {
+        Job::push(new NodeJob(this, new NewValueEvent(*(NewValueEvent*)(event))));
     }
 }
 

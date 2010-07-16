@@ -34,28 +34,50 @@
 #include <iostream>
 
 #include <unistd.h>
+#include "../Controls/Job.h"
+#include "db2rapInjFunc.h"
+#include "../Controls/Event.h"
 
 using namespace std;
 
 Master::Master()
+    :Node(NULL, "MASTER"),
+      panic(this, "Panic", "Panic!"),
+      masterVolume(this, "volume", -6.66,
+                   new db2rapInjFunc<REALTYPE>(-40, 12.91666)),
+      parts(this, "PARTS")
 {
+    Node::setRoot(this);
+
+    panic.addRedirection(this, new TypeFilter(Event::NewValueEvent));
+
+    //masterVolume.setDb2rapConversion(true);
+
+    Job::initialize();
+    Job::setEngineThread();
+
     swaplr = 0;
 
     pthread_mutex_init(&mutex, NULL);
     pthread_mutex_init(&vumutex, NULL);
+
     fft = new FFTwrapper(OSCIL_SIZE);
 
     tmpmixl   = new REALTYPE[SOUND_BUFFER_SIZE];
     tmpmixr   = new REALTYPE[SOUND_BUFFER_SIZE];
 
-    shutup     = 0;
+
     for(int npart = 0; npart < NUM_MIDI_PARTS; npart++) {
         vuoutpeakpart[npart] = 1e-9;
         fakepeakpart[npart]  = 0;
     }
 
-    for(int npart = 0; npart < NUM_MIDI_PARTS; npart++)
-        part[npart] = new Part(&microtonal, fft, &mutex);
+    parts.addType("Part");
+    for(int npart = 0; npart < NUM_MIDI_PARTS; npart++) {
+        Part *p = new Part(NULL, &microtonal, fft, &mutex);
+        part[npart] = p;
+        parts << p;
+    }
 
     //Insertion Effects init
     for(int nefx = 0; nefx < NUM_INS_EFX; nefx++)
@@ -71,13 +93,12 @@ Master::Master()
 
 void Master::defaults()
 {
-    volume = 1.0;
-    setPvolume(80);
+    masterVolume.setInt((char)80);
     setPkeyshift(64);
 
     for(int npart = 0; npart < NUM_MIDI_PARTS; npart++) {
         part[npart]->defaults();
-        part[npart]->Prcvchn = npart % NUM_MIDI_CHANNELS;
+        part[npart]->receiveChannel.setValue(npart % NUM_MIDI_CHANNELS);
     }
 
     partonoff(0, 1); //enable the first part
@@ -132,9 +153,9 @@ void Master::noteOn(char chan, char note, char velocity)
     int npart;
     if(velocity != 0) {
         for(npart = 0; npart < NUM_MIDI_PARTS; npart++) {
-            if(chan == part[npart]->Prcvchn) {
+            if(chan == part[npart]->receiveChannel()) {
                 fakepeakpart[npart] = velocity * 2;
-                if(part[npart]->Penabled != 0)
+                if(part[npart]->enabled())
                     part[npart]->NoteOn(note, velocity, keyshift);
             }
         }
@@ -151,7 +172,7 @@ void Master::noteOff(char chan, char note)
 {
     int npart;
     for(npart = 0; npart < NUM_MIDI_PARTS; npart++)
-        if((chan == part[npart]->Prcvchn) && (part[npart]->Penabled != 0))
+        if((chan == part[npart]->receiveChannel()) && (part[npart]->enabled()))
             part[npart]->NoteOff(note);
     ;
 }
@@ -159,8 +180,28 @@ void Master::noteOff(char chan, char note)
 /*
  * Controllers
  */
+/*
+void Master::SetController(unsigned char chan,
+                           unsigned int type,
+                           int par,
+                           int rawtype)
+{
+    dump.dumpcontroller(chan, type, par);
+
+    setcontroller(chan, type, par);
+
+    //TODO: FIX midievents
+    forward(new MidiEvent(chan, rawtype, par));
+}
+*/
+
+/*
+ * Internal Controllers
+ */
 void Master::setController(char chan, int type, int par)
 {
+    forward(new MidiEvent(chan, type, par));
+
     if((type == C_dataentryhi) || (type == C_dataentrylo)
        || (type == C_nrpnhi) || (type == C_nrpnlo)) { //Process RPN and NRPN by the Master (ignore the chan)
         ctl.setparameternumber(type, par);
@@ -184,7 +225,7 @@ void Master::setController(char chan, int type, int par)
     }
     else {  //other controllers
         for(int npart = 0; npart < NUM_MIDI_PARTS; npart++) //Send the controller to all part assigned to the channel
-            if((chan == part[npart]->Prcvchn) && (part[npart]->Penabled != 0))
+            if((chan == part[npart]->receiveChannel()) && (part[npart]->enabled()))
                 part[npart]->SetController(type, par);
         ;
 
@@ -228,7 +269,7 @@ void Master::vuUpdate(const REALTYPE *outl, const REALTYPE *outr)
     //Part Peak computation (for Part vumeters or fake part vumeters)
     for(int npart = 0; npart < NUM_MIDI_PARTS; npart++) {
         vuoutpeakpart[npart] = 1.0e-12;
-        if(part[npart]->Penabled != 0) {
+        if(part[npart]->enabled() != 0) {
             REALTYPE *outl = part[npart]->partoutl,
                      *outr = part[npart]->partoutr;
             for(int i = 0; i < SOUND_BUFFER_SIZE; i++) {
@@ -252,8 +293,8 @@ void Master::partonoff(int npart, int what)
     if(npart >= NUM_MIDI_PARTS)
         return;
     if(what == 0) { //disable part
-        fakepeakpart[npart]   = 0;
-        part[npart]->Penabled = 0;
+        fakepeakpart[npart] = 0;
+        part[npart]->enabled.setValue(false);
         part[npart]->cleanup();
         for(int nefx = 0; nefx < NUM_INS_EFX; nefx++) {
             if(Pinsparts[nefx] == npart)
@@ -262,8 +303,8 @@ void Master::partonoff(int npart, int what)
         }
     }
     else {  //enabled
-        part[npart]->Penabled = 1;
-        fakepeakpart[npart]   = 0;
+        part[npart]->enabled.setValue(true);
+        fakepeakpart[npart] = 0;
     }
 }
 
@@ -273,6 +314,9 @@ void Master::partonoff(int npart, int what)
 void Master::AudioOut(REALTYPE *outl, REALTYPE *outr)
 {
     int i, npart, nefx;
+
+    //TODO: see if maybe we can call this only once
+    Job::setEngineThread();
 
     /*    //test!!!!!!!!!!!!! se poate bloca aici (mutex)
         if (seq.play){
@@ -311,14 +355,14 @@ void Master::AudioOut(REALTYPE *outl, REALTYPE *outr)
 
     //Compute part samples and store them part[npart]->partoutl,partoutr
     for(npart = 0; npart < NUM_MIDI_PARTS; npart++)
-        if(part[npart]->Penabled != 0)
+        if(part[npart]->enabled())
             part[npart]->ComputePartSmps();
 
     //Insertion effects
     for(nefx = 0; nefx < NUM_INS_EFX; nefx++) {
         if(Pinsparts[nefx] >= 0) {
             int efxpart = Pinsparts[nefx];
-            if(part[efxpart]->Penabled != 0)
+            if(part[efxpart]->enabled())
                 insefx[nefx]->out(part[efxpart]->partoutl,
                                   part[efxpart]->partoutr);
         }
@@ -327,14 +371,14 @@ void Master::AudioOut(REALTYPE *outl, REALTYPE *outr)
 
     //Apply the part volumes and pannings (after insertion effects)
     for(npart = 0; npart < NUM_MIDI_PARTS; npart++) {
-        if(part[npart]->Penabled == 0)
+        if(part[npart]->enabled() == 0)
             continue;
 
-        REALTYPE newvol_l = part[npart]->volume;
-        REALTYPE newvol_r = part[npart]->volume;
+        REALTYPE newvol_l = part[npart]->partVolume.getValue();
+        REALTYPE newvol_r = part[npart]->partVolume.getValue();
         REALTYPE oldvol_l = part[npart]->oldvolumel;
         REALTYPE oldvol_r = part[npart]->oldvolumer;
-        REALTYPE pan      = part[npart]->panning;
+        REALTYPE pan      = part[npart]->panning();
         if(pan < 0.5)
             newvol_l *= pan * 2.0;
         else
@@ -384,7 +428,7 @@ void Master::AudioOut(REALTYPE *outl, REALTYPE *outr)
                 continue;
 
             //skip if the part is disabled
-            if(part[npart]->Penabled == 0)
+            if(part[npart]->enabled() == 0)
                 continue;
 
             //the output volume of each part to system effect
@@ -418,7 +462,7 @@ void Master::AudioOut(REALTYPE *outl, REALTYPE *outr)
 
     //Mix all parts
     for(npart = 0; npart < NUM_MIDI_PARTS; npart++) {
-        if(part[npart]->Penabled) { //only mix active parts
+        if(part[npart]->enabled()) { //only mix active parts
             for(i = 0; i < SOUND_BUFFER_SIZE; i++) { //the volume did not changed
                 outl[i] += part[npart]->partoutl[i];
                 outr[i] += part[npart]->partoutr[i];
@@ -434,8 +478,8 @@ void Master::AudioOut(REALTYPE *outl, REALTYPE *outr)
 
     //Master Volume
     for(i = 0; i < SOUND_BUFFER_SIZE; i++) {
-        outl[i] *= volume;
-        outr[i] *= volume;
+        outl[i] *= masterVolume();
+        outr[i] *= masterVolume();
     }
 
     if(!pthread_mutex_trylock(&vumutex)) {
@@ -444,6 +488,7 @@ void Master::AudioOut(REALTYPE *outl, REALTYPE *outr)
     }
 
 
+#if 0
     //Shutup if it is asked (with fade-out)
     if(shutup != 0) {
         for(i = 0; i < SOUND_BUFFER_SIZE; i++) {
@@ -454,15 +499,36 @@ void Master::AudioOut(REALTYPE *outl, REALTYPE *outr)
         }
         ShutUp();
     }
+#endif
 
     //update the LFO's time
     LFOParams::time++;
 
     dump.inctick();
+
+    Job::handleJobs();
+}
+
+static void recursiveRemoveDirections(Node *node)
+{
+    node->removeRedirections(NULL);
+
+    for (NodeIterator it = node->getChildren().begin();
+            it != node->getChildren().end();
+            it++) { 
+        recursiveRemoveDirections(*it);
+    }
 }
 
 Master::~Master()
 {
+
+    for (NodeIterator it = getChildren().begin();
+            it != getChildren().end();
+            it++) { 
+        recursiveRemoveDirections(*it);
+    }
+
     for(int npart = 0; npart < NUM_MIDI_PARTS; npart++)
         delete part[npart];
     for(int nefx = 0; nefx < NUM_INS_EFX; nefx++)
@@ -485,8 +551,9 @@ Master::~Master()
  */
 void Master::setPvolume(char Pvolume_)
 {
-    Pvolume = Pvolume_;
-    volume  = dB2rap((Pvolume - 96.0) / 96.0 * 40.0);
+    masterVolume.setInt(Pvolume_);
+    //Pvolume=Pvolume_;
+    //volume=dB2rap((Pvolume-96.0)/96.0*40.0);
 }
 
 void Master::setPkeyshift(char Pkeyshift_)
@@ -508,6 +575,25 @@ void Master::setPsysefxsend(int Pefxfrom, int Pefxto, char Pvol)
     sysefxsend[Pefxfrom][Pefxto]  = pow(0.1, (1.0 - Pvol / 96.0) * 2.0);
 }
 
+char Master::getPvolume() const
+{
+    return masterVolume.getValue();
+}
+
+char Master::getPkeyshift() const
+{
+    return Pkeyshift;
+}
+
+char Master::getPsysefxvol(int Ppart, int Pefx) const
+{
+    return Psysefxvol[Pefx][Ppart];
+}
+
+char Master::getPsysefxsend(int Pefxfrom, int Pefxto) const
+{
+    return Psysefxsend[Pefxfrom][Pefxto];
+}
 
 /*
  * Panic! (Clean up all parts and effects)
@@ -523,7 +609,6 @@ void Master::ShutUp()
     for(int nefx = 0; nefx < NUM_SYS_EFX; nefx++)
         sysefx[nefx]->cleanup();
     vuresetpeaks();
-    shutup = 0;
 }
 
 
@@ -556,6 +641,26 @@ vuData Master::getVuData()
     return tmp;
 }
 
+void Master::handleSyncEvent(Event *event)
+{
+    if(event->type() == Event::NewValueEvent) {
+        NewValueEvent *newValue = static_cast<NewValueEvent *>(event);
+
+        if(newValue->control == &panic) {
+            ShutUp();
+        }
+    }
+}
+
+void Master::handleEvent(Event *event)
+{
+    if(event->type() == Event::NewValueEvent) {
+        NewValueEvent *newValue = static_cast<NewValueEvent *>(event);
+        Job::push(new NodeJob(this, new NewValueEvent(*newValue)));
+
+    }
+}
+
 void Master::applyparameters(bool lockmutex)
 {
     for(int npart = 0; npart < NUM_MIDI_PARTS; npart++)
@@ -564,7 +669,7 @@ void Master::applyparameters(bool lockmutex)
 
 void Master::add2XML(XMLwrapper *xml)
 {
-    xml->addpar("volume", Pvolume);
+    xml->addpar("volume", masterVolume.getValue());
     xml->addpar("key_shift", Pkeyshift);
     xml->addparbool("nrpn_receive", ctl.NRPN.receive);
 
@@ -688,12 +793,13 @@ int Master::loadXML(const char *filename)
 
 void Master::getfromXML(XMLwrapper *xml)
 {
-    setPvolume(xml->getpar127("volume", Pvolume));
+    //TODO: make this work again
+    //masterVolume.setValue(xml->getpar127("volume",Pvolume));
     setPkeyshift(xml->getpar127("key_shift", Pkeyshift));
     ctl.NRPN.receive = xml->getparbool("nrpn_receive", ctl.NRPN.receive);
 
 
-    part[0]->Penabled = 0;
+    part[0]->enabled.setValue(false);
     for(int npart = 0; npart < NUM_MIDI_PARTS; npart++) {
         if(xml->enterbranch("PART", npart) == 0)
             continue;
