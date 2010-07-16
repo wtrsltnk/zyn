@@ -46,6 +46,7 @@ void ArrayControlHelper::newValueEvent(NewValueEvent *event)
 {
     //Could add a refence counting system instead of all of this silly allocation
     if(event->buf) {
+        puts("ARRAYCONTROLHELPER GOT NEW BUFFER");
         size_t size = max(2048,max(SOUND_BUFFER_SIZE,OSCIL_SIZE));
         REALTYPE *tmp = new REALTYPE[size];
         memcpy(tmp,event->buf,size*sizeof(float));

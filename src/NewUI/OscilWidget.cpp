@@ -26,6 +26,7 @@
 #include <QtDebug>
 #include <math.h>
 #include <cstring>
+#include <cstdio>
 #include "../globals.h"
 
 OscilWidget::OscilWidget(QWidget *parent)
@@ -43,6 +44,7 @@ OscilWidget::OscilWidget(QWidget *parent)
 void OscilWidget::readArray(const float *array)
 {
     memcpy(m_data, array, sizeof(float) * m_size);
+    printf("--------------%f\n",m_data[0]);
     update();
 }
 
@@ -57,23 +59,24 @@ void OscilWidget::paintEvent(QPaintEvent* event)
 
     p.setPen(palette().color(QPalette::Text));
 
-    int prev;
 
     REALTYPE max = -999;
     for (int i = 0; i < m_size; ++i) {
         if (fabs(m_data[i]) > max) {
             max = fabs(m_data[i]);
+            printf("MAX[%d] = %f\n",i,max);
         }
     }
     max=max*1.05;
+    printf("Found max %f\n", max);
 
+    int prev;
     for (int i=0;i<m_size;i++){
         REALTYPE x=m_data[i];
         float val=height() * 0.5 - (0.5 * height() * (x/max));
 
-        if (0 == i) {
+        if (0 == i)
             prev = val;
-        }
 
         p.drawLine(
                 QPointF(i * barwidth, val),
