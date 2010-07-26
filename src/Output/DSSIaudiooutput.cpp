@@ -304,12 +304,12 @@ const LADSPA_Descriptor* DSSIaudiooutput::getLadspaDescriptor(unsigned long inde
 const DSSI_Program_Descriptor* DSSIaudiooutput::getProgram (unsigned long index)
 {
     static DSSI_Program_Descriptor retVal;
-    return NULL;
 
     /* Make sure we have the list of banks loaded */
     initBanks();
 
     /* Make sure that the bank containing the instrument has been mapped */
+    std::cout << "Getting " << index << "\n";
     while (index >= programMap.size() && mapNextBank())
         /* DO NOTHING MORE */;
 
@@ -317,8 +317,7 @@ const DSSI_Program_Descriptor* DSSIaudiooutput::getProgram (unsigned long index)
     {
         /* No more instruments */
         return NULL;
-    }
-    else
+    } else
     {
         /* OK, return the instrument */
         retVal.Name =  programMap[index].name.c_str();
@@ -348,12 +347,14 @@ const DSSI_Program_Descriptor* DSSIaudiooutput::getProgram (unsigned long index)
 void DSSIaudiooutput::selectProgram(unsigned long bank, unsigned long program)
 {
     initBanks();
+
+    Job::setEngineThread();
+
     std::cerr << "selectProgram(" << (bank & 0x7F) << ':' << ((bank >> 7) & 0x7F) << "," << program  << ")" << '\n';
-#if 0
-    if(bank < MAX_NUM_BANKS && program < BANK_SIZE)
+    if(bank < master->bank.banks.size() && program < BANK_SIZE)
     {
-        char* bankdir = master->bank.banks[ bank ].dir;
-        if(bankdir != NULL)
+        std::string bankdir = master->bank.banks[ bank ].dir;
+        if(!bankdir.empty())
         {
             pthread_mutex_lock(&master->mutex);
 
@@ -375,7 +376,6 @@ void DSSIaudiooutput::selectProgram(unsigned long bank, unsigned long program)
             pthread_mutex_unlock(&master->mutex);
         }
     }
-#endif
 }
 
 /**
@@ -432,6 +432,8 @@ void DSSIaudiooutput::runSynth(unsigned long sample_count, snd_seq_event_t *even
     unsigned long to_frame = 0;
     LADSPA_Data *outl_loc = outl;
     LADSPA_Data *outr_loc = outr;
+
+    Job::setEngineThread();
 
     do {
         /* Find the time of the next event, if any */
@@ -625,6 +627,10 @@ DSSIaudiooutput::DSSIaudiooutput(unsigned long sampleRate)
     for (int i=0;i<SOUND_BUFFER_SIZE;i++) denormalkillbuf[i]=(RND-0.5)*1e-16;
 
     this->master = &Master::getInstance();
+
+    //assuming the thread calling this function is the main engine thread
+    Job::setEngineThread();
+
 }
 
 /**
@@ -657,7 +663,7 @@ void DSSIaudiooutput::initBanks(void)
  * @param _name [in] instrument / sample name
  * @return
  */
-DSSIaudiooutput::ProgramDescriptor::ProgramDescriptor(unsigned long _bank, unsigned long _program, char* _name) :
+DSSIaudiooutput::ProgramDescriptor::ProgramDescriptor(unsigned long _bank, unsigned long _program, const std::string& _name) :
             bank(_bank), program(_program), name(_name)
 {
 }
@@ -681,11 +687,11 @@ long DSSIaudiooutput::bankNoToMap = 1;
  */
 bool DSSIaudiooutput::mapNextBank()
 {
-#if 0
+    std::cout << "mapping " << bankNoToMap << "\n";
     pthread_mutex_lock(&master->mutex);
     Bank& bank = master->bank;
     bool retval;
-    if(bankNoToMap >= MAX_NUM_BANKS || bank.banks[bankNoToMap].dir == NULL)
+    if(bankNoToMap >= bank.banks.size() || bank.banks[bankNoToMap].dir.empty())
     {
         retval = false;
     }
@@ -694,16 +700,18 @@ bool DSSIaudiooutput::mapNextBank()
         bank.loadbank(bank.banks[bankNoToMap].dir);
         for(unsigned long instrument = 0; instrument < BANK_SIZE; instrument++)
         {
-            char* insName = bank.getname(instrument);
-            if(insName != NULL && insName[0] != '\0' && insName[0] != ' ')
+            std::string insName = bank.getname(instrument);
+            //if(insName != NULL && insName[0] != '\0' && insName[0] != ' ')
+            if(!insName.empty() && insName[0] != ' ')
             {
                 programMap.push_back(ProgramDescriptor(bankNoToMap,instrument,insName));
             }
+            //programMap.push_back(ProgramDescriptor(bankNoToMap,instrument,"fjols"));
+            //std::cout << "hei\n";
         }
         bankNoToMap ++;
         retval = true;
     }
     pthread_mutex_unlock(&master->mutex);
     return retval;
-#endif
 }
