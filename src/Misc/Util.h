@@ -82,5 +82,11 @@ T limit(T val, T min, T max)
     return (val < min ? min : (val > max ? max : val));
 }
 
+template <class T>
+T min(T a, T b)
+{
+    return (a < b)?a:b;
+}
+
 #endif
 

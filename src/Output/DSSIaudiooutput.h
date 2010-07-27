@@ -26,6 +26,7 @@
 
 #include "../globals.h"
 #include "../Misc/Master.h"
+#include "../Misc/Stereo.h"
 
 #include <dssi.h>
 #include <ladspa.h>
@@ -94,6 +95,15 @@ private:
     LADSPA_Data *outr;
     long sampleRate;
     Master* master;
+    Part *part;
+
+    static int nextChannel;
+    int channel;
+
+    Stereo<REALTYPE *> buffer;
+    unsigned int samplesReady;
+    unsigned int bufferOffset;
+
     static DSSI_Descriptor* dssiDescriptor;
     static std::string bankDirNames[];
     static

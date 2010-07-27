@@ -28,13 +28,21 @@
 //the DSSI (published by Steve Harris under public domain) as a template.
 
 #include <string.h>
+#include <assert.h>
 #include "DSSIaudiooutput.h"
 #include "../Misc/Config.h"
 #include "../Misc/Bank.h"
+#include "../Misc/Util.h"
 #include <limits.h>
 #include "../Nio/AudioOut.h"
 #include "../Nio/OutMgr.h"
 #include "../Nio/InMgr.h"
+
+// Initialization of static data
+
+// Each part has it's own channel, starting at 0. For each instantiated plugin, this variable will
+// be incremented.
+int DSSIaudiooutput::nextChannel = 0;
 
 //
 // Static stubs for LADSPA member functions
@@ -309,7 +317,6 @@ const DSSI_Program_Descriptor* DSSIaudiooutput::getProgram (unsigned long index)
     initBanks();
 
     /* Make sure that the bank containing the instrument has been mapped */
-    std::cout << "Getting " << index << "\n";
     while (index >= programMap.size() && mapNextBank())
         /* DO NOTHING MORE */;
 
@@ -371,7 +378,7 @@ void DSSIaudiooutput::selectProgram(unsigned long bank, unsigned long program)
             config.cfg.CheckPADsynth = save;
 
             /* Now load the instrument... */
-            master->bank.loadfromslot((unsigned int)program, master->part[0]);
+            master->bank.loadfromslot((unsigned int)program, part);
 
             pthread_mutex_unlock(&master->mutex);
         }
@@ -452,13 +459,41 @@ void DSSIaudiooutput::runSynth(unsigned long sample_count, snd_seq_event_t *even
             to_frame = sample_count;
         if(from_frame<to_frame)
         {
-            // call master to fill from `from_frame` to `to_frame`:
-            unsigned int size = to_frame - from_frame;
-            Stereo<REALTYPE *> tmp = OutMgr::getInstance().tick(size);
-            for(unsigned int i = 0; i < size; ++i) {
-                *(outl_loc++) = tmp.l()[i];
-                *(outr_loc++) = tmp.r()[i];
+            // fill samples from `from_frame` to `to_frame`:
+
+            unsigned int samplesNeeded = to_frame - from_frame;
+
+            while (samplesNeeded > 0) {
+
+                unsigned int toCopy = min(samplesNeeded, samplesReady);
+
+                for(unsigned int i = 0; i < toCopy; ++i) {
+                    *(outl_loc++) = buffer.l()[(bufferOffset + i) % SOUND_BUFFER_SIZE];
+                    *(outr_loc++) = buffer.r()[(bufferOffset + i) % SOUND_BUFFER_SIZE];
+                }
+
+                bufferOffset = (bufferOffset + toCopy) % SOUND_BUFFER_SIZE;
+                samplesReady -= toCopy;
+                samplesNeeded -= toCopy;
+
+                // we need to compute more samples
+                if (samplesNeeded > 0) {
+
+                    assert(samplesReady == 0);
+                    bufferOffset = 0;
+
+                    pthread_mutex_lock(&master->mutex);
+                    InMgr::getInstance().flush();
+                    part->ComputePartSmps();
+
+                    pthread_mutex_unlock(&master->mutex);
+
+                    samplesReady = SOUND_BUFFER_SIZE;
+                }
+
             }
+
+            //Stereo<REALTYPE *> tmp = OutMgr::getInstance().tick(size);
 
             // next sub-sample please...
             from_frame = to_frame;
@@ -490,6 +525,7 @@ void DSSIaudiooutput::runSynth(unsigned long sample_count, snd_seq_event_t *even
             }
             else
                 continue;
+            ev.channel = this->channel;
             InMgr::getInstance().putEvent(ev);
             event_index++;
         }
@@ -614,6 +650,8 @@ DSSIaudiooutput* DSSIaudiooutput::getInstance(LADSPA_Handle instance)
  * @return
  */
 DSSIaudiooutput::DSSIaudiooutput(unsigned long sampleRate)
+    :samplesReady(0),
+    bufferOffset(0)
 {
     this->sampleRate = sampleRate;
     this->banksInited = false;
@@ -627,6 +665,18 @@ DSSIaudiooutput::DSSIaudiooutput(unsigned long sampleRate)
     for (int i=0;i<SOUND_BUFFER_SIZE;i++) denormalkillbuf[i]=(RND-0.5)*1e-16;
 
     this->master = &Master::getInstance();
+
+    // assign the next channel to this plugin instance
+    this->channel = nextChannel;
+    nextChannel++;
+    //... which means this part is the one for this plugin
+    this->part = master->part[channel];
+
+    //enable the part
+    master->partonoff(channel, 1);
+
+    //point the buffer to the one found in Part
+    buffer = Stereo<REALTYPE *>(part->partoutl, part->partoutr);
 
     //assuming the thread calling this function is the main engine thread
     Job::setEngineThread();
@@ -687,7 +737,6 @@ long DSSIaudiooutput::bankNoToMap = 1;
  */
 bool DSSIaudiooutput::mapNextBank()
 {
-    std::cout << "mapping " << bankNoToMap << "\n";
     pthread_mutex_lock(&master->mutex);
     Bank& bank = master->bank;
     bool retval;
@@ -707,7 +756,6 @@ bool DSSIaudiooutput::mapNextBank()
                 programMap.push_back(ProgramDescriptor(bankNoToMap,instrument,insName));
             }
             //programMap.push_back(ProgramDescriptor(bankNoToMap,instrument,"fjols"));
-            //std::cout << "hei\n";
         }
         bankNoToMap ++;
         retval = true;
