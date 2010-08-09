@@ -358,12 +358,14 @@ void DSSIaudiooutput::selectProgram(unsigned long bank, unsigned long program)
     Job::setEngineThread();
 
     std::cerr << "selectProgram(" << (bank & 0x7F) << ':' << ((bank >> 7) & 0x7F) << "," << program  << ")" << '\n';
+
+    pthread_mutex_lock(&master->mutex);
+
     if(bank < master->bank.banks.size() && program < BANK_SIZE)
     {
         std::string bankdir = master->bank.banks[ bank ].dir;
         if(!bankdir.empty())
         {
-            pthread_mutex_lock(&master->mutex);
 
             /* We have to turn off the CheckPADsynth functionality, else
              * the program change takes way too long and we get timeouts
@@ -380,9 +382,10 @@ void DSSIaudiooutput::selectProgram(unsigned long bank, unsigned long program)
             /* Now load the instrument... */
             master->bank.loadfromslot((unsigned int)program, part);
 
-            pthread_mutex_unlock(&master->mutex);
         }
     }
+
+    pthread_mutex_unlock(&master->mutex);
 }
 
 /**
@@ -441,6 +444,7 @@ void DSSIaudiooutput::runSynth(unsigned long sample_count, snd_seq_event_t *even
     LADSPA_Data *outr_loc = outr;
 
     Job::setEngineThread();
+    Job::handleJobs();
 
     do {
         /* Find the time of the next event, if any */
@@ -483,7 +487,6 @@ void DSSIaudiooutput::runSynth(unsigned long sample_count, snd_seq_event_t *even
                     bufferOffset = 0;
 
                     pthread_mutex_lock(&master->mutex);
-                    InMgr::getInstance().flush();
                     part->ComputePartSmps();
 
                     pthread_mutex_unlock(&master->mutex);
@@ -493,8 +496,6 @@ void DSSIaudiooutput::runSynth(unsigned long sample_count, snd_seq_event_t *even
 
             }
 
-            //Stereo<REALTYPE *> tmp = OutMgr::getInstance().tick(size);
-
             // next sub-sample please...
             from_frame = to_frame;
         }
@@ -502,31 +503,26 @@ void DSSIaudiooutput::runSynth(unsigned long sample_count, snd_seq_event_t *even
         // Now process any event(s) at the current timing point
         while(events != NULL && event_index < event_count && events[event_index].time.tick == to_frame)
         {
-            MidiDriverEvent ev;
-
             if(events[event_index].type == SND_SEQ_EVENT_NOTEON) {
-                ev.type    = M_NOTE;
-                ev.channel = events[event_index].data.note.channel;
-                ev.num     = events[event_index].data.note.note;
-                ev.value     = events[event_index].data.note.velocity;
+                part->NoteOn(
+                        events[event_index].data.note.note,
+                        events[event_index].data.note.velocity,
+                        0 //masterkeyshift, for some reason
+                        );
 
             }
             else if(events[event_index].type == SND_SEQ_EVENT_NOTEOFF) {
-                ev.type    = M_NOTE;
-                ev.channel = events[event_index].data.note.channel;
-                ev.num     = events[event_index].data.note.note;
-                ev.value     = 0;
+                part->NoteOff( events[event_index].data.note.note);
             }
             else if(events[event_index].type == SND_SEQ_EVENT_CONTROLLER) {
-                ev.type    = M_NOTE;
-                ev.channel = events[event_index].data.control.channel;
-                ev.num     = events[event_index].data.control.param;
-                ev.value     = events[event_index].data.control.value;
+                std::cerr << "controller event unhandled\n";
+                //ev.type    = M_NOTE;
+                //ev.channel = events[event_index].data.control.channel;
+                //ev.num     = events[event_index].data.control.param;
+                //ev.value     = events[event_index].data.control.value;
             }
             else
                 continue;
-            ev.channel = this->channel;
-            InMgr::getInstance().putEvent(ev);
             event_index++;
         }
 
@@ -673,12 +669,13 @@ DSSIaudiooutput::DSSIaudiooutput(unsigned long sampleRate)
     this->part = master->part[channel];
 
     //enable the part
-    master->partonoff(channel, 1);
+    //master->partonoff(channel, 1);
+    part->enabled.setValue(true);
 
     //point the buffer to the one found in Part
     buffer = Stereo<REALTYPE *>(part->partoutl, part->partoutr);
 
-    //assuming the thread calling this function is the main engine thread
+    //assuming the thread calling this function is the main engine thread for now
     Job::setEngineThread();
 
 }
