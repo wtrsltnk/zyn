@@ -49,7 +49,7 @@ Alienwah::~Alienwah()
 void Alienwah::out(const Stereo<float *> &smp)
 {
     REALTYPE lfol, lfor; //Left/Right LFOs
-    complex<REALTYPE> clfol, clfor, out, tmp;
+    complex<REALTYPE> clfol, clfor;
     /**\todo Rework, as optimization can be used when the new complex type is
      * utilized.
      * Before all calculations needed to be done with individual REALTYPE,
@@ -64,10 +64,10 @@ void Alienwah::out(const Stereo<float *> &smp)
         REALTYPE x  = ((REALTYPE) i) / SOUND_BUFFER_SIZE;
         REALTYPE x1 = 1.0 - x;
         //left
-        tmp = clfol * x + oldclfol * x1;
+        complex<REALTYPE> tmp = clfol * x + oldclfol * x1;
 
-        out = tmp * oldl[oldk];
-        out.real() += (1 - fabs(fb)) * smp.l()[i] * (1.0 - panning);
+        complex<REALTYPE>out = tmp * oldl[oldk];
+        out.real() += (1 - fabs(fb)) * smp.l[i] * (1.0 - panning);
 
         oldl[oldk]  = out;
         REALTYPE l = out.real() * 10.0 * (fb + 0.1);
@@ -76,7 +76,7 @@ void Alienwah::out(const Stereo<float *> &smp)
         tmp = clfor * x + oldclfor * x1;
 
         out = tmp * oldr[oldk];
-        out.real() += (1 - fabs(fb)) * smp.r()[i] * (1.0 - panning);
+        out.real() += (1 - fabs(fb)) * smp.r[i] * (1.0 - panning);
 
         oldr[oldk]  = out;
         REALTYPE r = out.real() * 10.0 * (fb + 0.1);

@@ -158,7 +158,7 @@ class Master:public Node
         unsigned char fakepeakpart[NUM_MIDI_PARTS]; //this is used to compute the "peak" when the part is disabled
 
         Controller ctl;
-        int swaplr; //1 if L and R are swapped
+        bool swaplr; //if L and R are swapped
 
         //Sequencer
         Sequencer seq;
@@ -178,6 +178,7 @@ class Master:public Node
 
         //use panic control instead
         void ShutUp();
+        bool shutup;
 
     private:
         bool nullRun;
@@ -185,11 +186,6 @@ class Master:public Node
         REALTYPE volume;
         REALTYPE sysefxvol[NUM_SYS_EFX][NUM_MIDI_PARTS];
         REALTYPE sysefxsend[NUM_SYS_EFX][NUM_SYS_EFX];
-
-        //Temporary mixing samples for part samples which is sent to system effect
-        REALTYPE *tmpmixl;
-        REALTYPE *tmpmixr;
-
         int keyshift;
 };
 

@@ -68,9 +68,9 @@ pthread_t thr3, thr4;
 Master   *master;
 int  swaplr    = 0; //1 for left-right swapping
 
-#ifdef USE_LASH
+#if LASH
 #include "Misc/LASHClient.h"
-LASHClient *lash;
+LASHClient *lash = NULL;
 #endif
 
 int     Pexitprogram = 0; //if the UI set this to 1, the program will exit
@@ -88,23 +88,23 @@ void *thread3(void * /*arg*/)
     ui->showUI();
 
     while(Pexitprogram == 0) {
-#ifdef USE_LASH
+#if LASH
         string filename;
         switch(lash->checkevents(filename)) {
-        case LASHClient::Save:
-            ui->do_save_master(filename.c_str());
-            lash->confirmevent(LASHClient::Save);
-            break;
-        case LASHClient::Restore:
-            ui->do_load_master(filename.c_str());
-            lash->confirmevent(LASHClient::Restore);
-            break;
-        case LASHClient::Quit:
-            Pexitprogram = 1;
-        default:
-            break;
+            case LASHClient::Save:
+                ui->do_save_master(filename.c_str());
+                lash->confirmevent(LASHClient::Save);
+                break;
+            case LASHClient::Restore:
+                ui->do_load_master(filename.c_str());
+                lash->confirmevent(LASHClient::Restore);
+                break;
+            case LASHClient::Quit:
+                Pexitprogram = 1;
+            default:
+                break;
         }
-#endif //USE_LASH
+#endif //LASH
         Fl::wait();
     }
 
@@ -176,7 +176,7 @@ void *thread4(void *arg)
 void exitprogram();
 
 //cleanup on signaled exit
-void sigterm_exit(int sig)
+void sigterm_exit(int /*sig*/)
 {
     Pexitprogram = 1;
     sleep(1);
@@ -188,8 +188,12 @@ void sigterm_exit(int sig)
 /*
  * Program initialisation
  */
-void initprogram()
+void initprogram(int argc, char *argv[])
 {
+#if LASH
+    lash = new LASHClient(&argc, &argv);
+#endif
+
     cerr.precision(1);
     cerr << std::fixed;
     cerr << "\nSample Rate = \t\t" << SAMPLE_RATE << endl;
@@ -223,7 +227,7 @@ void exitprogram()
 #endif
 #endif
 
-#ifdef USE_LASH
+#if LASH
     delete lash;
 #endif
 
@@ -258,9 +262,6 @@ int opterr = 0;
 #ifndef VSTAUDIOOUT
 int main(int argc, char *argv[])
 {
-#ifdef USE_LASH
-    lash = new LASHClient(&argc, &argv);
-#endif
 
     //set the random function to the stdlib.h one.
     //this will be changed for testing mode
@@ -428,7 +429,7 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    initprogram();
+    initprogram(argc, argv);
 
 #if 0 //TODO update this code
 #ifdef USE_LASH

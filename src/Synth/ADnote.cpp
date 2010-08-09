@@ -19,13 +19,14 @@
   Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 */
 
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <cmath>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
 
 #include "../globals.h"
 #include "../Misc/Util.h"
+#include "OscilGen.h"
 #include "ADnote.h"
 
 
@@ -36,26 +37,14 @@ ADnote::ADnote(ADnoteParameters *pars,
                int portamento_,
                int midinote_,
                bool besilent)
+:SynthNote(freq, velocity, portamento_, midinote, besilent)
 {
-    ready    = 0;
+    ready    = false;
 
     tmpwavel = new REALTYPE [SOUND_BUFFER_SIZE];
     tmpwaver = new REALTYPE [SOUND_BUFFER_SIZE];
     bypassl  = new REALTYPE [SOUND_BUFFER_SIZE];
     bypassr  = new REALTYPE [SOUND_BUFFER_SIZE];
-
-    // Initialise some legato-specific vars
-    Legato.msg = LM_Norm;
-    Legato.fade.length      = (int)(SAMPLE_RATE * 0.005); // 0.005 seems ok.
-    if(Legato.fade.length < 1)
-        Legato.fade.length = 1;                    // (if something's fishy)
-    Legato.fade.step        = (1.0 / Legato.fade.length);
-    Legato.decounter        = -10;
-    Legato.param.freq       = freq;
-    Legato.param.vel        = velocity;
-    Legato.param.portamento = portamento_;
-    Legato.param.midinote   = midinote_;
-    Legato.silent  = besilent;
 
     partparams     = pars;
     ctl = ctl_;
@@ -67,43 +56,44 @@ ADnote::ADnote(ADnoteParameters *pars,
         velocity = 1.0;
     this->velocity = velocity;
     time   = 0.0;
-    stereo = pars->PStereo;
+    stereo = pars->GlobalPar.PStereo;
 
-    NoteGlobalPar.Detune      = pars->globalDetuneSet.get();
+    NoteGlobalPar.Detune      = pars->GlobalPar.detune.get();
 
     bandwidthDetuneMultiplier = pars->getBandwidthDetuneMultiplier();
 
-    if(pars->panning() == 0)
+    if(pars->GlobalPar.panning() == 0)
         NoteGlobalPar.Panning = RND;
     else
-        NoteGlobalPar.Panning = pars->panning() / 128.0;
+        NoteGlobalPar.Panning = pars->GlobalPar.panning() / 128.0;
 
 
-    NoteGlobalPar.FilterCenterPitch = pars->GlobalFilter->getfreq() //center freq
-                                      + pars->PFilterVelocityScale
-                                      / 127.0 * 6.0                                  //velocity sensing
+    NoteGlobalPar.FilterCenterPitch = pars->GlobalPar.GlobalFilter->getfreq() //center freq
+                                      + pars->GlobalPar.PFilterVelocityScale
+                                      / 127.0 * 6.0//velocity sensing
                                       * (VelF(velocity,
-                                              pars->
+                                              pars->GlobalPar.
                                               PFilterVelocityScaleFunction) - 1);
 
-    if(pars->PPunchStrength != 0) {
+    if(pars->GlobalPar.PPunchStrength != 0) {
         NoteGlobalPar.Punch.Enabled      = 1;
         NoteGlobalPar.Punch.t = 1.0; //start from 1.0 and to 0.0
         NoteGlobalPar.Punch.initialvalue =
-            ((pow(10, 1.5 * pars->PPunchStrength / 127.0) - 1.0)
+            ((pow(10, 1.5 * pars->GlobalPar.PPunchStrength / 127.0) - 1.0)
              * VelF(velocity,
-                    pars->PPunchVelocitySensing));
+                    pars->GlobalPar.PPunchVelocitySensing));
         REALTYPE time    =
-            pow(10, 3.0 * pars->PPunchTime / 127.0) / 10000.0;   //0.1 .. 100 ms
+            pow(10, 3.0 * pars->GlobalPar.PPunchTime / 127.0) / 10000.0;   //0.1 .. 100 ms
         REALTYPE stretch = pow(440.0 / freq,
-                               pars->PPunchStretch / 64.0);
+                               pars->GlobalPar.PPunchStretch / 64.0);
         NoteGlobalPar.Punch.dt = 1.0 / (time * SAMPLE_RATE * stretch);
     }
     else
         NoteGlobalPar.Punch.Enabled = 0;
 
     for(int nvoice = 0; nvoice < NUM_VOICES; nvoice++) {
-        pars->VoicePar[nvoice]->OscilSmp->newrandseed(rand());
+        ADnoteVoiceParam &vcePar = *pars->VoicePar[nvoice];
+        vcePar.OscilSmp->newrandseed(rand());
         NoteVoicePar[nvoice].OscilSmp = NULL;
         NoteVoicePar[nvoice].FMSmp    = NULL;
         NoteVoicePar[nvoice].VoiceOut = NULL;
@@ -111,14 +101,14 @@ ADnote::ADnote(ADnoteParameters *pars,
         NoteVoicePar[nvoice].FMVoice  = -1;
         unison_size[nvoice] = 1;
 
-        if(pars->VoicePar[nvoice]->Enabled() == 0) {
+        if(vcePar.Enabled() == 0) {
             NoteVoicePar[nvoice].Enabled = OFF;
             continue; //the voice is disabled
         }
 
         unison_stereo_spread[nvoice] =
-            pars->VoicePar[nvoice]->Unison_stereo_spread / 127.0;
-        int unison = pars->VoicePar[nvoice]->Unison_size;
+            vcePar.Unison_stereo_spread / 127.0;
+        int unison = vcePar.Unison_size;
         if(unison < 1)
             unison = 1;
 
@@ -131,8 +121,7 @@ ADnote::ADnote(ADnoteParameters *pars,
         REALTYPE unison_spread      = pars->getUnisonFrequencySpreadCents(
             nvoice);
         REALTYPE unison_real_spread = pow(2.0, (unison_spread * 0.5) / 1200.0);
-        REALTYPE unison_vibratto_a  = pars->VoicePar[nvoice]->Unison_vibratto
-                                      / 127.0;                                   //0.0 .. 1.0
+        REALTYPE unison_vibratto_a  = vcePar.Unison_vibratto / 127.0;//0.0 .. 1.0
 
 
         switch(unison) {
@@ -150,16 +139,12 @@ ADnote::ADnote(ADnoteParameters *pars,
             for(int k = 0; k < unison; k++) {
                 REALTYPE step = (k / (REALTYPE) (unison - 1)) * 2.0 - 1.0;  //this makes the unison spread more uniform
                 REALTYPE val  = step + (RND * 2.0 - 1.0) / (unison - 1);
-                unison_values[k] = val;
-                if(val > max)
-                    max = val;
-                if(val < min)
-                    min = val;
+                unison_values[k] = limit(val, min, max);
             }
             REALTYPE diff = max - min;
             for(int k = 0; k < unison; k++) {
                 unison_values[k] =
-                    (unison_values[k] - (max + min) * 0.5) / diff;                 //the lowest value will be -1 and the highest will be 1
+                    (unison_values[k] - (max + min) * 0.5) / diff; //the lowest value will be -1 and the highest will be 1
                 unison_base_freq_rap[nvoice][k] =
                     pow(2.0, (unison_spread * unison_values[k]) / 1200);
             }
@@ -170,11 +155,8 @@ ADnote::ADnote(ADnoteParameters *pars,
         if(unison > 1) {
             for(int k = 0; k < unison; k++) //reduce the frequency difference for larger vibrattos
                 unison_base_freq_rap[nvoice][k] = 1.0
-                                                  + (unison_base_freq_rap[
-                                                         nvoice][k]
-                                                     - 1.0)
-                                                  * (1.0 - unison_vibratto_a);
-            ;
+                    + (unison_base_freq_rap[nvoice][k] - 1.0)
+                    * (1.0 - unison_vibratto_a);
         }
         unison_vibratto[nvoice].step      = new REALTYPE[unison];
         unison_vibratto[nvoice].position  = new REALTYPE[unison];
@@ -184,16 +166,12 @@ ADnote::ADnote(ADnoteParameters *pars,
         REALTYPE increments_per_second = SAMPLE_RATE
                                          / (REALTYPE)SOUND_BUFFER_SIZE;
         REALTYPE vibratto_base_period  = 0.25
-                                         * pow(2.0,
-                                               (1.0
-                                                - pars->VoicePar[nvoice]->
-                                                Unison_vibratto_speed / 127.0) * 4.0);
+            * pow(2.0, (1.0 - vcePar.Unison_vibratto_speed / 127.0) * 4.0);
         for(int k = 0; k < unison; k++) {
             unison_vibratto[nvoice].position[k] = RND * 1.8 - 0.9;
-            REALTYPE vibratto_period = vibratto_base_period * pow(
-                2.0,
-                RND * 2.0
-                - 1.0);                                                        //make period to vary randomly from 50% to 200% vibratto base period
+            //make period to vary randomly from 50% to 200% vibratto base period
+            REALTYPE vibratto_period = vibratto_base_period
+                * pow(2.0, RND * 2.0 - 1.0);
 
             REALTYPE m = 4.0 / (vibratto_period * increments_per_second);
             if(RND < 0.5)
@@ -210,7 +188,7 @@ ADnote::ADnote(ADnoteParameters *pars,
         //phase invert for unison
         unison_invert_phase[nvoice][0] = false;
         if(unison != 1) {
-            int inv = pars->VoicePar[nvoice]->Unison_invert_phase;
+            int inv = vcePar.Unison_invert_phase;
             switch(inv) {
             case 0: for(int k = 0; k < unison; k++)
                     unison_invert_phase[nvoice][k] = false;
@@ -236,14 +214,14 @@ ADnote::ADnote(ADnoteParameters *pars,
         oscposloFM[nvoice]  = new REALTYPE[unison];
 
         NoteVoicePar[nvoice].Enabled     = ON;
-        NoteVoicePar[nvoice].fixedfreq   = pars->VoicePar[nvoice]->fixedFreq();
-        NoteVoicePar[nvoice].fixedfreqET = pars->VoicePar[nvoice]->fixedFreqET();
+        NoteVoicePar[nvoice].fixedfreq   = vcePar.fixedFreq();
+        NoteVoicePar[nvoice].fixedfreqET = vcePar.fixedFreqET();
 
         //use the Globalpars.detunetype if the detunetype is 0
-        NoteVoicePar[nvoice].Detune     = pars->VoicePar[nvoice]->detuneSet.getCoarse();
-        NoteVoicePar[nvoice].FineDetune = pars->VoicePar[nvoice]->detuneSet.getFine();
+        NoteVoicePar[nvoice].Detune     = vcePar.detuneSet.getCoarse();
+        NoteVoicePar[nvoice].FineDetune = vcePar.detuneSet.getFine();
 
-        NoteVoicePar[nvoice].FMDetune = pars->VoicePar[nvoice]->FMDetuneSet.get();
+        NoteVoicePar[nvoice].FMDetune = vcePar.FMDetuneSet.get();
 
         for(int k = 0; k < unison; k++) {
             oscposhi[nvoice][k]   = 0;
@@ -252,30 +230,27 @@ ADnote::ADnote(ADnoteParameters *pars,
             oscposloFM[nvoice][k] = 0.0;
         }
 
+        //the extra points contains the first point
         NoteVoicePar[nvoice].OscilSmp =
-            new REALTYPE[OSCIL_SIZE + OSCIL_SMP_EXTRA_SAMPLES];                        //the extra points contains the first point
+            new REALTYPE[OSCIL_SIZE + OSCIL_SMP_EXTRA_SAMPLES];
 
         //Get the voice's oscil or external's voice oscil
         int vc = nvoice;
-        if(pars->VoicePar[nvoice]->extoscil() != -1)
-            vc = pars->VoicePar[nvoice]->extoscil();
-        if(!pars->Hrandgrouping)
-            pars->VoicePar[vc]->OscilSmp->newrandseed(rand());
+        if(vcePar.extoscil() != -1)
+            vc = vcePar.extoscil();
+        if(!pars->GlobalPar.Hrandgrouping)
+            vcePar.OscilSmp->newrandseed(rand());
         int oscposhi_start =
-            pars->VoicePar[vc]->OscilSmp->get(NoteVoicePar[nvoice].OscilSmp,
-                                              getvoicebasefreq(
-                                                  nvoice),
-                                              pars->VoicePar[nvoice]->
-                                              resonance());
+            vcePar.OscilSmp->get(NoteVoicePar[nvoice].OscilSmp,
+                    getvoicebasefreq(nvoice), vcePar.resonance());
 
         //I store the first elments to the last position for speedups
         for(int i = 0; i < OSCIL_SMP_EXTRA_SAMPLES; i++)
-            NoteVoicePar[nvoice].OscilSmp[OSCIL_SIZE
-                                          + i] =
+            NoteVoicePar[nvoice].OscilSmp[OSCIL_SIZE + i] =
                 NoteVoicePar[nvoice].OscilSmp[i];
 
         oscposhi_start +=
-            (int)((pars->VoicePar[nvoice]->oscilphase()
+            (int)((vcePar.oscilphase()
                    - 64.0) / 128.0 * OSCIL_SIZE + OSCIL_SIZE * 4);
         oscposhi_start %= OSCIL_SIZE;
 
@@ -296,11 +271,11 @@ ADnote::ADnote(ADnoteParameters *pars,
         NoteVoicePar[nvoice].FilterLfo         = NULL;
 
         NoteVoicePar[nvoice].FilterCenterPitch =
-            pars->VoicePar[nvoice]->VoiceFilter->getfreq();
+            vcePar.VoiceFilter->getfreq();
         NoteVoicePar[nvoice].filterbypass      =
-            pars->VoicePar[nvoice]->filterBypass();
+            vcePar.filterBypass();
 
-        switch(pars->VoicePar[nvoice]->PFMEnabled) {
+        switch(vcePar.PFMEnabled) {
         case 1:
             NoteVoicePar[nvoice].FMEnabled = MORPH;
             break;
@@ -320,27 +295,27 @@ ADnote::ADnote(ADnoteParameters *pars,
             NoteVoicePar[nvoice].FMEnabled = NONE;
         }
 
-        NoteVoicePar[nvoice].FMVoice = pars->VoicePar[nvoice]->PFMVoice;
+        NoteVoicePar[nvoice].FMVoice = vcePar.PFMVoice;
         NoteVoicePar[nvoice].FMFreqEnvelope = NULL;
         NoteVoicePar[nvoice].FMAmpEnvelope  = NULL;
 
         //Compute the Voice's modulator volume (incl. damping)
         REALTYPE fmvoldamp = pow(440.0 / getvoicebasefreq(
                                      nvoice),
-                                 pars->VoicePar[nvoice]->PFMVolumeDamp / 64.0
+                                 vcePar.PFMVolumeDamp / 64.0
                                  - 1.0);
         switch(NoteVoicePar[nvoice].FMEnabled) {
         case PHASE_MOD:
             fmvoldamp =
                 pow(440.0 / getvoicebasefreq(
-                        nvoice), pars->VoicePar[nvoice]->PFMVolumeDamp / 64.0);
+                        nvoice), vcePar.PFMVolumeDamp / 64.0);
             NoteVoicePar[nvoice].FMVolume =
-                (exp(pars->VoicePar[nvoice]->PFMVolume / 127.0
+                (exp(vcePar.PFMVolume / 127.0
                      * FM_AMP_MULTIPLIER) - 1.0) * fmvoldamp * 4.0;
             break;
         case FREQ_MOD:
             NoteVoicePar[nvoice].FMVolume =
-                (exp(pars->VoicePar[nvoice]->PFMVolume / 127.0
+                (exp(vcePar.PFMVolume / 127.0
                      * FM_AMP_MULTIPLIER) - 1.0) * fmvoldamp * 4.0;
             break;
         //    case PITCH_MOD:NoteVoicePar[nvoice].FMVolume=(pars->VoicePar[nvoice]->PFMVolume/127.0*8.0)*fmvoldamp;//???????????
@@ -348,14 +323,13 @@ ADnote::ADnote(ADnoteParameters *pars,
         default:
             if(fmvoldamp > 1.0)
                 fmvoldamp = 1.0;
-            NoteVoicePar[nvoice].FMVolume = pars->VoicePar[nvoice]->PFMVolume
+            NoteVoicePar[nvoice].FMVolume = vcePar.PFMVolume
                                             / 127.0 * fmvoldamp;
         }
 
         //Voice's modulator velocity sensing
         NoteVoicePar[nvoice].FMVolume *=
-            VelF(velocity,
-                 partparams->VoicePar[nvoice]->PFMVelocityScaleFunction);
+            VelF(velocity,vcePar.PFMVelocityScaleFunction);
 
         FMoldsmp[nvoice] = new REALTYPE [unison];
         for(int k = 0; k < unison; k++)
@@ -363,7 +337,7 @@ ADnote::ADnote(ADnoteParameters *pars,
 
         firsttick[nvoice] = 1;
         NoteVoicePar[nvoice].DelayTicks =
-            (int)((exp(pars->VoicePar[nvoice]->delay() / 127.0
+            (int)((exp(vcePar.delay() / 127.0
                        * log(50.0))
                    - 1.0) / SOUND_BUFFER_SIZE / 10.0 * SAMPLE_RATE);
     }
@@ -372,7 +346,7 @@ ADnote::ADnote(ADnoteParameters *pars,
     for(int nvoice = 0; nvoice < NUM_VOICES; nvoice++)
         if(unison_size[nvoice] > max_unison)
             max_unison = unison_size[nvoice];
-    ;
+
 
     tmpwave_unison = new REALTYPE *[max_unison];
     for(int k = 0; k < max_unison; k++) {
@@ -381,46 +355,21 @@ ADnote::ADnote(ADnoteParameters *pars,
     }
 
     initparameters();
-    ready = 1;
+    ready = true;
 }
 
 // ADlegatonote: This function is (mostly) a copy of ADnote(...) and
 // initparameters() stuck together with some lines removed so that it
 // only alter the already playing note (to perform legato). It is
 // possible I left stuff that is not required for this.
-void ADnote::ADlegatonote(REALTYPE /*freq*/,
-                          REALTYPE /*velocity*/,
-                          int /*portamento_*/,
-                          int /*midinote_*/,
-                          bool /*externcall*/)
+void ADnote::legatonote(REALTYPE freq, REALTYPE velocity, int portamento_,
+                        int midinote_, bool externcall)
 {
-#if 0
     ADnoteParameters *pars = partparams;
-    //Controller *ctl_=ctl;
 
     // Manage legato stuff
-    if(externcall)
-        Legato.msg = LM_Norm;
-    if(Legato.msg != LM_CatchUp) {
-        Legato.lastfreq   = Legato.param.freq;
-        Legato.param.freq = freq;
-        Legato.param.vel  = velocity;
-        Legato.param.portamento = portamento_;
-        Legato.param.midinote   = midinote_;
-        if(Legato.msg == LM_Norm) {
-            if(Legato.silent) {
-                Legato.fade.m = 0.0;
-                Legato.msg    = LM_FadeIn;
-            }
-            else {
-                Legato.fade.m = 1.0;
-                Legato.msg    = LM_FadeOut;
-                return;
-            }
-        }
-        if(Legato.msg == LM_ToNorm)
-            Legato.msg = LM_Norm;
-    }
+    if(legato.update(freq, velocity, portamento_, midinote_, externcall))
+        return;
 
     portamento = portamento_;
     midinote   = midinote_;
@@ -430,74 +379,43 @@ void ADnote::ADlegatonote(REALTYPE /*freq*/,
         velocity = 1.0;
     this->velocity = velocity;
 
-    NoteGlobalPar.Detune      = pars->globalDetuneSet.get();
+    NoteGlobalPar.Detune      = pars->GlobalPar.detune.get();
 
     bandwidthDetuneMultiplier = pars->getBandwidthDetuneMultiplier();
 
-    if(pars->PPanning == 0)
+    if(pars->GlobalPar.panning() == 0)
         NoteGlobalPar.Panning = RND;
     else
-        NoteGlobalPar.Panning = pars->PPanning / 128.0;
+        NoteGlobalPar.Panning = pars->GlobalPar.panning() / 128.0;
 
-
-    NoteGlobalPar.FilterCenterPitch = pars->GlobalFilter->getfreq() //center freq
-                                      + pars->PFilterVelocityScale
-                                      / 127.0 * 6.0                                  //velocity sensing
-                                      * (VelF(velocity,
-                                              pars->
-                                              PFilterVelocityScaleFunction) - 1);
+    //center freq
+    NoteGlobalPar.FilterCenterPitch = pars->GlobalPar.GlobalFilter->getfreq()
+        + pars->GlobalPar.PFilterVelocityScale / 127.0 * 6.0 //velocity sensing
+        * (VelF(velocity, pars->GlobalPar.PFilterVelocityScaleFunction) - 1);
 
 
     for(int nvoice = 0; nvoice < NUM_VOICES; nvoice++) {
+        ADnoteVoiceParam &vcePar = *pars->VoicePar[nvoice];
         if(NoteVoicePar[nvoice].Enabled == OFF)
             continue; //(gf) Stay the same as first note in legato.
 
-        NoteVoicePar[nvoice].fixedfreq   = pars->VoicePar[nvoice]->fixedFreq();
-        NoteVoicePar[nvoice].fixedfreqET = pars->VoicePar[nvoice]->fixedFreqET();
+        NoteVoicePar[nvoice].fixedfreq   = vcePar.fixedFreq();
+        NoteVoicePar[nvoice].fixedfreqET = vcePar.fixedFreqET();
 
         //use the Globalpars.detunetype if the detunetype is 0
-        if(pars->VoicePar[nvoice]->detuneSet.isEnabled()) {
-            NoteVoicePar[nvoice].Detune     = 
-                pars->VoicePar[nvoice]->detuneSet.getCoarse();
-
-            NoteVoicePar[nvoice].FineDetune = 
-                pars->VoicePar[nvoice]->detuneSet.getFine();
-
-        }
-        else {
-            NoteVoicePar[nvoice].Detune     = getdetune(
-                pars->PDetuneType,
-                pars->VoicePar[nvoice]->detuneSet.coarseDetune(),
-                8192);                                                                         //coarse detune
-            NoteVoicePar[nvoice].FineDetune = getdetune(
-                pars->PDetuneType,
-                0,
-                pars->VoicePar[nvoice]->detuneSet.detune());                               //fine detune
-        }
-        if(pars->VoicePar[nvoice]->PFMDetuneType != 0)
-            NoteVoicePar[nvoice].FMDetune = getdetune(
-                pars->VoicePar[nvoice]->PFMDetuneType,
-                pars->VoicePar[nvoice]->
-                PFMCoarseDetune,
-                pars->VoicePar[nvoice]->PFMDetune);
-        else
-            NoteVoicePar[nvoice].FMDetune = getdetune(
-                pars->PDetuneType,
-                pars->VoicePar[nvoice]->
-                PFMCoarseDetune,
-                pars->VoicePar[nvoice]->PFMDetune);
-        ;
+        NoteVoicePar[nvoice].Detune     = vcePar.detuneSet.getCoarse();
+        NoteVoicePar[nvoice].FineDetune = vcePar.detuneSet.getFine();
 
         //Get the voice's oscil or external's voice oscil
         int vc = nvoice;
-        if(pars->VoicePar[nvoice]->extoscil() != -1)
-            vc = pars->VoicePar[nvoice]->extoscil();
-        if(!pars->Hrandgrouping)
+        if(vcePar.extoscil() != -1)
+            vc = vcePar.extoscil();
+        if(!pars->GlobalPar.Hrandgrouping)
             pars->VoicePar[vc]->OscilSmp->newrandseed(rand());
 
         pars->VoicePar[vc]->OscilSmp->get(NoteVoicePar[nvoice].OscilSmp,
                                           getvoicebasefreq(nvoice),
-                                          pars->VoicePar[nvoice]->resonance());                                                       //(gf)Modif of the above line.
+                                          vcePar.resonance());//(gf)Modif of the above line.
 
         //I store the first elments to the last position for speedups
         for(int i = 0; i < OSCIL_SMP_EXTRA_SAMPLES; i++)
@@ -506,32 +424,29 @@ void ADnote::ADlegatonote(REALTYPE /*freq*/,
                 NoteVoicePar[nvoice].OscilSmp[i];
 
 
-        NoteVoicePar[nvoice].FilterCenterPitch =
-            pars->VoicePar[nvoice]->VoiceFilter->getfreq();
-        NoteVoicePar[nvoice].filterbypass      =
-            pars->VoicePar[nvoice]->filterBypass();
+        NoteVoicePar[nvoice].FilterCenterPitch = vcePar.VoiceFilter->getfreq();
+        NoteVoicePar[nvoice].filterbypass      = vcePar.filterBypass();
 
 
-        NoteVoicePar[nvoice].FMVoice = pars->VoicePar[nvoice]->PFMVoice;
+        NoteVoicePar[nvoice].FMVoice = vcePar.PFMVoice;
 
         //Compute the Voice's modulator volume (incl. damping)
-        REALTYPE fmvoldamp = pow(440.0 / getvoicebasefreq(
-                                     nvoice),
-                                 pars->VoicePar[nvoice]->PFMVolumeDamp / 64.0
+        REALTYPE fmvoldamp = pow(440.0 / getvoicebasefreq(nvoice),
+                                 vcePar.PFMVolumeDamp / 64.0
                                  - 1.0);
 
         switch(NoteVoicePar[nvoice].FMEnabled) {
         case PHASE_MOD:
             fmvoldamp =
                 pow(440.0 / getvoicebasefreq(
-                        nvoice), pars->VoicePar[nvoice]->PFMVolumeDamp / 64.0);
+                        nvoice), vcePar.PFMVolumeDamp / 64.0);
             NoteVoicePar[nvoice].FMVolume =
-                (exp(pars->VoicePar[nvoice]->PFMVolume / 127.0
+                (exp(vcePar.PFMVolume / 127.0
                      * FM_AMP_MULTIPLIER) - 1.0) * fmvoldamp * 4.0;
             break;
         case FREQ_MOD:
             NoteVoicePar[nvoice].FMVolume =
-                (exp(pars->VoicePar[nvoice]->PFMVolume / 127.0
+                (exp(vcePar.PFMVolume / 127.0
                      * FM_AMP_MULTIPLIER) - 1.0) * fmvoldamp * 4.0;
             break;
         //    case PITCH_MOD:NoteVoicePar[nvoice].FMVolume=(pars->VoicePar[nvoice]->PFMVolume/127.0*8.0)*fmvoldamp;//???????????
@@ -539,18 +454,15 @@ void ADnote::ADlegatonote(REALTYPE /*freq*/,
         default:
             if(fmvoldamp > 1.0)
                 fmvoldamp = 1.0;
-            NoteVoicePar[nvoice].FMVolume = pars->VoicePar[nvoice]->PFMVolume
-                                            / 127.0 * fmvoldamp;
+            NoteVoicePar[nvoice].FMVolume = vcePar.PFMVolume / 127.0 * fmvoldamp;
         }
 
         //Voice's modulator velocity sensing
         NoteVoicePar[nvoice].FMVolume *=
-            VelF(velocity,
-                 partparams->VoicePar[nvoice]->PFMVelocityScaleFunction);
+            VelF(velocity, vcePar.PFMVelocityScaleFunction);
 
         NoteVoicePar[nvoice].DelayTicks =
-            (int)((exp(pars->VoicePar[nvoice]->delay() / 127.0
-                       * log(50.0))
+            (int)((exp(vcePar.delay() / 127.0 * log(50.0))
                    - 1.0) / SOUND_BUFFER_SIZE / 10.0 * SAMPLE_RATE);
     }
 
@@ -559,82 +471,82 @@ void ADnote::ADlegatonote(REALTYPE /*freq*/,
     ///////////////
     // Altered content of initparameters():
 
-    int nvoice, i, tmp[NUM_VOICES];
+    int tmp[NUM_VOICES];
 
     //NoteGlobalPar.Volume=4.0*pow(0.1,3.0*(1.0-partparams->GlobalPar.PVolume/96.0))//-60 dB .. 0 dB
-    NoteGlobalPar.Volume = partparams->volume()
+    NoteGlobalPar.Volume = partparams->GlobalPar.volume()
                            * VelF(
         velocity,
-        partparams->PAmpVelocityScaleFunction);                                                      //velocity sensing
+        partparams->GlobalPar.PAmpVelocityScaleFunction);                                                      //velocity sensing
 
     globalnewamplitude = NoteGlobalPar.Volume
                          * NoteGlobalPar.AmpEnvelope->envout_dB()
                          * NoteGlobalPar.AmpLfo->amplfoout();
 
-    NoteGlobalPar.FilterQ = partparams->GlobalFilter->getq();
+    NoteGlobalPar.FilterQ = partparams->GlobalPar.GlobalFilter->getq();
     NoteGlobalPar.FilterFreqTracking =
-        partparams->GlobalFilter->getfreqtracking(basefreq);
+        partparams->GlobalPar.GlobalFilter->getfreqtracking(basefreq);
 
     // Forbids the Modulation Voice to be greater or equal than voice
-    for(i = 0; i < NUM_VOICES; i++)
+    for(int i = 0; i < NUM_VOICES; i++)
         if(NoteVoicePar[i].FMVoice >= i)
             NoteVoicePar[i].FMVoice = -1;
 
     // Voice Parameter init
-    for(nvoice = 0; nvoice < NUM_VOICES; nvoice++) {
+    for(unsigned nvoice = 0; nvoice < NUM_VOICES; nvoice++) {
+        ADnoteVoiceParam &vcePar = *partparams->VoicePar[nvoice];
+
         if(NoteVoicePar[nvoice].Enabled == 0)
             continue;
 
-        NoteVoicePar[nvoice].noisetype = partparams->VoicePar[nvoice]->type();
+        NoteVoicePar[nvoice].noisetype = vcePar.type();
         /* Voice Amplitude Parameters Init */
-        NoteVoicePar[nvoice].Volume    = partparams->VoicePar[nvoice]->volume() // -60 dB .. 0 dB
-                                         * VelF(
-            velocity,
-            partparams->VoicePar[nvoice]->
-            PAmpVelocityScaleFunction);                                                                     //velocity
+        NoteVoicePar[nvoice].Volume    =
+            pow(0.1, 3.0 * (1.0 - vcePar.volume() / 127.0))  // -60 dB .. 0 dB
+            * VelF(velocity,
+                   vcePar.PAmpVelocityScaleFunction);//velocity
 
-        if(partparams->VoicePar[nvoice]->volumeMinus != 0)
+        if(vcePar.volumeMinus() != 0)
             NoteVoicePar[nvoice].Volume = -NoteVoicePar[nvoice].Volume;
 
-        if(partparams->VoicePar[nvoice]->PPanning == 0)
+        if(vcePar.panning() == 0)
             NoteVoicePar[nvoice].Panning = RND; // random panning
         else
-            NoteVoicePar[nvoice].Panning =
-                partparams->VoicePar[nvoice]->PPanning / 128.0;
+            NoteVoicePar[nvoice].Panning = vcePar.panning() / 128.0;
 
         newamplitude[nvoice] = 1.0;
-        if((partparams->VoicePar[nvoice]->PAmpEnvelopeEnabled != 0)
+        if((vcePar.PAmpEnvelopeEnabled != 0)
            && (NoteVoicePar[nvoice].AmpEnvelope != NULL))
             newamplitude[nvoice] *= NoteVoicePar[nvoice].AmpEnvelope->envout_dB();
-        ;
 
-        if((partparams->VoicePar[nvoice]->PAmpLfoEnabled != 0)
+
+        if((vcePar.PAmpLfoEnabled != 0)
            && (NoteVoicePar[nvoice].AmpLfo != NULL))
             newamplitude[nvoice] *= NoteVoicePar[nvoice].AmpLfo->amplfoout();
-        ;
 
 
-        NoteVoicePar[nvoice].FilterFreqTracking =
-            partparams->VoicePar[nvoice]->VoiceFilter->getfreqtracking(basefreq);
+
+        NoteVoicePar[nvoice].FilterFreqTracking = 
+            vcePar.VoiceFilter->getfreqtracking(basefreq);
 
         /* Voice Modulation Parameters Init */
         if((NoteVoicePar[nvoice].FMEnabled != NONE)
            && (NoteVoicePar[nvoice].FMVoice < 0)) {
-            partparams->VoicePar[nvoice]->FMSmp->newrandseed(rand());
+            vcePar.FMSmp->newrandseed(rand());
 
             //Perform Anti-aliasing only on MORPH or RING MODULATION
 
             int vc = nvoice;
-            if(partparams->VoicePar[nvoice]->extFMoscil() != -1)
-                vc = partparams->VoicePar[nvoice]->extFMoscil();
+            if(vcePar.extFMoscil() != -1)
+                vc = vcePar.extFMoscil();
 
             REALTYPE tmp = 1.0;
             if((partparams->VoicePar[vc]->FMSmp->Padaptiveharmonics != 0)
                || (NoteVoicePar[nvoice].FMEnabled == MORPH)
                || (NoteVoicePar[nvoice].FMEnabled == RING_MOD))
                 tmp = getFMvoicebasefreq(nvoice);
-            ;
-            if(!partparams->Hrandgrouping)
+
+            if(!partparams->GlobalPar.Hrandgrouping)
                 partparams->VoicePar[vc]->FMSmp->newrandseed(rand());
 
             ///oscposhiFM[nvoice]=(oscposhi[nvoice]+partparams->VoicePar[vc]->FMSmp->get(NoteVoicePar[nvoice].FMSmp,tmp)) % OSCIL_SIZE;
@@ -649,25 +561,21 @@ void ADnote::ADlegatonote(REALTYPE /*freq*/,
         FMnewamplitude[nvoice] = NoteVoicePar[nvoice].FMVolume
                                  * ctl->fmamp.relamp;
 
-        if((partparams->VoicePar[nvoice]->PFMAmpEnvelopeEnabled != 0)
+        if((vcePar.PFMAmpEnvelopeEnabled != 0)
            && (NoteVoicePar[nvoice].FMAmpEnvelope != NULL))
             FMnewamplitude[nvoice] *=
                 NoteVoicePar[nvoice].FMAmpEnvelope->envout_dB();
-        ;
+
     }
 
-    for(nvoice = 0; nvoice < NUM_VOICES; nvoice++) {
-        for(i = nvoice + 1; i < NUM_VOICES; i++)
+    for(int nvoice = 0; nvoice < NUM_VOICES; nvoice++) {
+        for(unsigned i = nvoice + 1; i < NUM_VOICES; i++)
             tmp[i] = 0;
-        for(i = nvoice + 1; i < NUM_VOICES; i++)
+        for(unsigned i = nvoice + 1; i < NUM_VOICES; i++)
             if((NoteVoicePar[i].FMVoice == nvoice) && (tmp[i] == 0))
                 tmp[i] = 1;
-        ;
-    }
-    ///////////////
 
-    // End of the ADlegatonote function.
-#endif
+    }
 }
 
 
@@ -685,7 +593,6 @@ void ADnote::KillVoice(int nvoice)
     delete [] oscposhiFM[nvoice];
     delete [] oscposloFM[nvoice];
 
-    delete [] NoteVoicePar[nvoice].OscilSmp;
     delete [] unison_base_freq_rap[nvoice];
     delete [] unison_freq_rap[nvoice];
     delete [] unison_invert_phase[nvoice];
@@ -693,55 +600,7 @@ void ADnote::KillVoice(int nvoice)
     delete [] unison_vibratto[nvoice].step;
     delete [] unison_vibratto[nvoice].position;
 
-    if(NoteVoicePar[nvoice].FreqEnvelope != NULL)
-        delete (NoteVoicePar[nvoice].FreqEnvelope);
-    NoteVoicePar[nvoice].FreqEnvelope = NULL;
-
-    if(NoteVoicePar[nvoice].FreqLfo != NULL)
-        delete (NoteVoicePar[nvoice].FreqLfo);
-    NoteVoicePar[nvoice].FreqLfo = NULL;
-
-    if(NoteVoicePar[nvoice].AmpEnvelope != NULL)
-        delete (NoteVoicePar[nvoice].AmpEnvelope);
-    NoteVoicePar[nvoice].AmpEnvelope = NULL;
-
-    if(NoteVoicePar[nvoice].AmpLfo != NULL)
-        delete (NoteVoicePar[nvoice].AmpLfo);
-    NoteVoicePar[nvoice].AmpLfo = NULL;
-
-    if(NoteVoicePar[nvoice].VoiceFilterL != NULL)
-        delete (NoteVoicePar[nvoice].VoiceFilterL);
-    NoteVoicePar[nvoice].VoiceFilterL = NULL;
-
-    if(NoteVoicePar[nvoice].VoiceFilterR != NULL)
-        delete (NoteVoicePar[nvoice].VoiceFilterR);
-    NoteVoicePar[nvoice].VoiceFilterR = NULL;
-
-    if(NoteVoicePar[nvoice].FilterEnvelope != NULL)
-        delete (NoteVoicePar[nvoice].FilterEnvelope);
-    NoteVoicePar[nvoice].FilterEnvelope = NULL;
-
-    if(NoteVoicePar[nvoice].FilterLfo != NULL)
-        delete (NoteVoicePar[nvoice].FilterLfo);
-    NoteVoicePar[nvoice].FilterLfo = NULL;
-
-    if(NoteVoicePar[nvoice].FMFreqEnvelope != NULL)
-        delete (NoteVoicePar[nvoice].FMFreqEnvelope);
-    NoteVoicePar[nvoice].FMFreqEnvelope = NULL;
-
-    if(NoteVoicePar[nvoice].FMAmpEnvelope != NULL)
-        delete (NoteVoicePar[nvoice].FMAmpEnvelope);
-    NoteVoicePar[nvoice].FMAmpEnvelope = NULL;
-
-    if((NoteVoicePar[nvoice].FMEnabled != NONE)
-       && (NoteVoicePar[nvoice].FMVoice < 0))
-        delete [] NoteVoicePar[nvoice].FMSmp;
-
-    if(NoteVoicePar[nvoice].VoiceOut != NULL)
-        memset(NoteVoicePar[nvoice].VoiceOut, 0, SOUND_BUFFER_SIZE
-                * sizeof(REALTYPE));//do not delete, yet: perhaps is used by another voice
-
-    NoteVoicePar[nvoice].Enabled = OFF;
+    NoteVoicePar[nvoice].kill();
 }
 
 /*
@@ -749,26 +608,16 @@ void ADnote::KillVoice(int nvoice)
  */
 void ADnote::KillNote()
 {
-    int nvoice;
-    for(nvoice = 0; nvoice < NUM_VOICES; nvoice++) {
+    for(unsigned nvoice = 0; nvoice < NUM_VOICES; nvoice++) {
         if(NoteVoicePar[nvoice].Enabled == ON)
             KillVoice(nvoice);
 
-        //delete VoiceOut
-        if(NoteVoicePar[nvoice].VoiceOut != NULL)
-            delete (NoteVoicePar[nvoice].VoiceOut);
+        if(NoteVoicePar[nvoice].VoiceOut)
+            delete NoteVoicePar[nvoice].VoiceOut;
         NoteVoicePar[nvoice].VoiceOut = NULL;
     }
 
-    delete (NoteGlobalPar.FreqEnvelope);
-    delete (NoteGlobalPar.FreqLfo);
-    delete (NoteGlobalPar.AmpEnvelope);
-    delete (NoteGlobalPar.AmpLfo);
-    delete (NoteGlobalPar.GlobalFilterL);
-    if(stereo != 0)
-        delete (NoteGlobalPar.GlobalFilterR);
-    delete (NoteGlobalPar.FilterEnvelope);
-    delete (NoteGlobalPar.FilterLfo);
+    NoteGlobalPar.kill();
 
     NoteEnabled = OFF;
 }
@@ -792,152 +641,106 @@ ADnote::~ADnote()
  */
 void ADnote::initparameters()
 {
-    int nvoice, i, tmp[NUM_VOICES];
+    int tmp[NUM_VOICES];
 
     // Global Parameters
-    NoteGlobalPar.FreqEnvelope = new Envelope(
-        partparams->FreqEnvelope,
-        basefreq);
-    NoteGlobalPar.FreqLfo      = new LFO(partparams->FreqLfo,
-                                         basefreq);
-
-    NoteGlobalPar.AmpEnvelope  = new Envelope(partparams->AmpEnvelope,
-                                              basefreq);
-    NoteGlobalPar.AmpLfo = new LFO(partparams->AmpLfo, basefreq);
-
-    NoteGlobalPar.Volume = partparams->volume()
-                           * VelF(
-        velocity,
-        partparams->PAmpVelocityScaleFunction);                                                      //velocity sensing
+    NoteGlobalPar.initparameters(partparams->GlobalPar, basefreq, velocity,
+                                 stereo);
 
     NoteGlobalPar.AmpEnvelope->envout_dB(); //discard the first envelope output
     globalnewamplitude = NoteGlobalPar.Volume
                          * NoteGlobalPar.AmpEnvelope->envout_dB()
                          * NoteGlobalPar.AmpLfo->amplfoout();
 
-    NoteGlobalPar.GlobalFilterL = new Filter(partparams->GlobalFilter);
-    if(stereo != 0)
-        NoteGlobalPar.GlobalFilterR = new Filter(
-            partparams->GlobalFilter);
-
-    NoteGlobalPar.FilterEnvelope     = new Envelope(
-        partparams->FilterEnvelope,
-        basefreq);
-    NoteGlobalPar.FilterLfo          = new LFO(partparams->FilterLfo,
-                                               basefreq);
-    NoteGlobalPar.FilterQ = partparams->GlobalFilter->getq();
-    NoteGlobalPar.FilterFreqTracking =
-        partparams->GlobalFilter->getfreqtracking(basefreq);
-
     // Forbids the Modulation Voice to be greater or equal than voice
-    for(i = 0; i < NUM_VOICES; i++)
+    for(int i = 0; i < NUM_VOICES; i++)
         if(NoteVoicePar[i].FMVoice >= i)
             NoteVoicePar[i].FMVoice = -1;
 
     // Voice Parameter init
-    for(nvoice = 0; nvoice < NUM_VOICES; nvoice++) {
-        if(NoteVoicePar[nvoice].Enabled == 0)
+    for(int nvoice = 0; nvoice < NUM_VOICES; nvoice++) {
+        Voice &vce = NoteVoicePar[nvoice];
+        ADnoteVoiceParam &param = *partparams->VoicePar[nvoice];
+
+        if(vce.Enabled == 0)
             continue;
 
-        NoteVoicePar[nvoice].noisetype = partparams->VoicePar[nvoice]->type();
+        vce.noisetype = param.type();
         /* Voice Amplitude Parameters Init */
-        NoteVoicePar[nvoice].Volume    = partparams->VoicePar[nvoice]->volume() // -60 dB .. 0 dB
-                                         * VelF(
-            velocity,
-            partparams->VoicePar[nvoice]->
-            PAmpVelocityScaleFunction);                                                                     //velocity
+        vce.Volume  = pow(0.1, 3.0 * (1.0 - param.volume() / 127.0))// -60dB..0dB
+                      * VelF(velocity, param.PAmpVelocityScaleFunction);
 
-        if(partparams->VoicePar[nvoice]->volumeMinus() != 0)
-            NoteVoicePar[nvoice].Volume = -NoteVoicePar[nvoice].Volume;
+        if(param.volumeMinus())
+            vce.Volume *= -1;
 
-        if(partparams->VoicePar[nvoice]->panning() == 0)
-            NoteVoicePar[nvoice].Panning = RND; // random panning
+        if(param.panning() == 0)
+            vce.Panning = RND; // random panning
         else
-            NoteVoicePar[nvoice].Panning =
-                partparams->VoicePar[nvoice]->panning() / 128.0;
+            vce.Panning = param.panning() / 128.0;
 
         newamplitude[nvoice] = 1.0;
-        if(partparams->VoicePar[nvoice]->PAmpEnvelopeEnabled != 0) {
-            NoteVoicePar[nvoice].AmpEnvelope = new Envelope(
-                partparams->VoicePar[nvoice]->AmpEnvelope,
-                basefreq);
-            NoteVoicePar[nvoice].AmpEnvelope->envout_dB(); //discard the first envelope sample
-            newamplitude[nvoice] *= NoteVoicePar[nvoice].AmpEnvelope->envout_dB();
+        if(param.PAmpEnvelopeEnabled) {
+            vce.AmpEnvelope = new Envelope(param.AmpEnvelope, basefreq);
+            vce.AmpEnvelope->envout_dB(); //discard the first envelope sample
+            newamplitude[nvoice] *= vce.AmpEnvelope->envout_dB();
         }
 
-        if(partparams->VoicePar[nvoice]->PAmpLfoEnabled != 0) {
-            NoteVoicePar[nvoice].AmpLfo = new LFO(
-                partparams->VoicePar[nvoice]->AmpLfo,
-                basefreq);
-            newamplitude[nvoice] *= NoteVoicePar[nvoice].AmpLfo->amplfoout();
+        if(param.PAmpLfoEnabled) {
+            vce.AmpLfo = new LFO(param.AmpLfo, basefreq);
+            newamplitude[nvoice] *= vce.AmpLfo->amplfoout();
         }
 
         /* Voice Frequency Parameters Init */
-        if(partparams->VoicePar[nvoice]->freqEnvelopeEnabled() != 0)
-            NoteVoicePar[nvoice].FreqEnvelope = new Envelope(
-                partparams->VoicePar[nvoice]->FreqEnvelope,
-                basefreq);
+        if(param.freqEnvelopeEnabled() != 0)
+            vce.FreqEnvelope = new Envelope(param.FreqEnvelope, basefreq);
 
-        if(partparams->VoicePar[nvoice]->freqLfoEnabled() != 0)
-            NoteVoicePar[nvoice].FreqLfo = new LFO(
-                partparams->VoicePar[nvoice]->FreqLfo,
-                basefreq);
+        if(param.freqLfoEnabled() != 0)
+            vce.FreqLfo = new LFO(param.FreqLfo, basefreq);
 
         /* Voice Filter Parameters Init */
-        if(partparams->VoicePar[nvoice]->PFilterEnabled != 0) {
-            NoteVoicePar[nvoice].VoiceFilterL = new Filter(
-                partparams->VoicePar[nvoice]->VoiceFilter);
-            NoteVoicePar[nvoice].VoiceFilterR = new Filter(
-                partparams->VoicePar[nvoice]->VoiceFilter);
+        if(param.PFilterEnabled != 0) {
+            vce.VoiceFilterL = new Filter(param.VoiceFilter);
+            vce.VoiceFilterR = new Filter(param.VoiceFilter);
         }
 
-        if(partparams->VoicePar[nvoice]->PFilterEnvelopeEnabled != 0)
-            NoteVoicePar[nvoice].FilterEnvelope = new Envelope(
-                partparams->VoicePar[nvoice]->FilterEnvelope,
-                basefreq);
+        if(param.PFilterEnvelopeEnabled != 0)
+            vce.FilterEnvelope = new Envelope(param.FilterEnvelope, basefreq);
 
-        if(partparams->VoicePar[nvoice]->PFilterLfoEnabled != 0)
-            NoteVoicePar[nvoice].FilterLfo =
-                new LFO(partparams->VoicePar[nvoice]->FilterLfo, basefreq);
+        if(param.PFilterLfoEnabled != 0)
+            vce.FilterLfo = new LFO(param.FilterLfo, basefreq);
 
-        NoteVoicePar[nvoice].FilterFreqTracking =
-            partparams->VoicePar[nvoice]->VoiceFilter->getfreqtracking(basefreq);
+        vce.FilterFreqTracking =
+            param.VoiceFilter->getfreqtracking(basefreq);
 
         /* Voice Modulation Parameters Init */
-        if((NoteVoicePar[nvoice].FMEnabled != NONE)
-           && (NoteVoicePar[nvoice].FMVoice < 0)) {
-            partparams->VoicePar[nvoice]->FMSmp->newrandseed(rand());
-            NoteVoicePar[nvoice].FMSmp =
-                new REALTYPE[OSCIL_SIZE + OSCIL_SMP_EXTRA_SAMPLES];
+        if((vce.FMEnabled != NONE) && (vce.FMVoice < 0)) {
+            param.FMSmp->newrandseed(rand());
+            vce.FMSmp = new REALTYPE[OSCIL_SIZE + OSCIL_SMP_EXTRA_SAMPLES];
 
             //Perform Anti-aliasing only on MORPH or RING MODULATION
 
             int vc = nvoice;
-            if(partparams->VoicePar[nvoice]->extFMoscil() != -1)
-                vc = partparams->VoicePar[nvoice]->extFMoscil();
+            if(param.extFMoscil() != -1)
+                vc = param.extFMoscil();
 
             REALTYPE tmp = 1.0;
             if((partparams->VoicePar[vc]->FMSmp->Padaptiveharmonics != 0)
-               || (NoteVoicePar[nvoice].FMEnabled == MORPH)
-               || (NoteVoicePar[nvoice].FMEnabled == RING_MOD))
+               || (vce.FMEnabled == MORPH)
+               || (vce.FMEnabled == RING_MOD))
                 tmp = getFMvoicebasefreq(nvoice);
-            ;
-            if(!partparams->Hrandgrouping)
+
+            if(!partparams->GlobalPar.Hrandgrouping)
                 partparams->VoicePar[vc]->FMSmp->newrandseed(rand());
 
             for(int k = 0; k < unison_size[nvoice]; k++)
-                oscposhiFM[nvoice][k] =
-                    (oscposhi[nvoice][k]
-                     + partparams->VoicePar[vc]->FMSmp->get(NoteVoicePar[nvoice
-                                                            ].
-                                                            FMSmp,
-                                                            tmp)) % OSCIL_SIZE;
-            ;
+                oscposhiFM[nvoice][k] = (oscposhi[nvoice][k]
+                     + partparams->VoicePar[vc]->FMSmp->get(vce.FMSmp, tmp))
+                     % OSCIL_SIZE;
+
             for(int i = 0; i < OSCIL_SMP_EXTRA_SAMPLES; i++)
-                NoteVoicePar[nvoice].FMSmp[OSCIL_SIZE
-                                           + i] = NoteVoicePar[nvoice].FMSmp[i];
+                vce.FMSmp[OSCIL_SIZE + i] = vce.FMSmp[i];
             int oscposhiFM_add =
-                (int)((partparams->VoicePar[nvoice]->FMoscilphase()
+                (int)((param.FMoscilphase()
                        - 64.0) / 128.0 * OSCIL_SIZE + OSCIL_SIZE * 4);
             for(int k = 0; k < unison_size[nvoice]; k++) {
                 oscposhiFM[nvoice][k] += oscposhiFM_add;
@@ -945,33 +748,27 @@ void ADnote::initparameters()
             }
         }
 
-        if(partparams->VoicePar[nvoice]->PFMFreqEnvelopeEnabled != 0)
-            NoteVoicePar[nvoice].FMFreqEnvelope = new Envelope(
-                partparams->VoicePar[nvoice]->FMFreqEnvelope,
-                basefreq);
+        if(param.PFMFreqEnvelopeEnabled != 0)
+            vce.FMFreqEnvelope = new Envelope(param.FMFreqEnvelope, basefreq);
 
-        FMnewamplitude[nvoice] = NoteVoicePar[nvoice].FMVolume
-                                 * ctl->fmamp.relamp;
+        FMnewamplitude[nvoice] = vce.FMVolume * ctl->fmamp.relamp;
 
-        if(partparams->VoicePar[nvoice]->PFMAmpEnvelopeEnabled != 0) {
-            NoteVoicePar[nvoice].FMAmpEnvelope = new Envelope(
-                partparams->VoicePar[nvoice]->FMAmpEnvelope,
-                basefreq);
-            FMnewamplitude[nvoice] *=
-                NoteVoicePar[nvoice].FMAmpEnvelope->envout_dB();
+        if(param.PFMAmpEnvelopeEnabled != 0) {
+            vce.FMAmpEnvelope = new Envelope(param.FMAmpEnvelope, basefreq);
+            FMnewamplitude[nvoice] *= vce.FMAmpEnvelope->envout_dB();
         }
     }
 
-    for(nvoice = 0; nvoice < NUM_VOICES; nvoice++) {
-        for(i = nvoice + 1; i < NUM_VOICES; i++)
+    for(int nvoice = 0; nvoice < NUM_VOICES; nvoice++) {
+        for(int i = nvoice + 1; i < NUM_VOICES; i++)
             tmp[i] = 0;
-        for(i = nvoice + 1; i < NUM_VOICES; i++)
+        for(int i = nvoice + 1; i < NUM_VOICES; i++)
             if((NoteVoicePar[i].FMVoice == nvoice) && (tmp[i] == 0)) {
                 NoteVoicePar[nvoice].VoiceOut = new REALTYPE[SOUND_BUFFER_SIZE];
                 tmp[i] = 1;
             }
-        ;
-        if(NoteVoicePar[nvoice].VoiceOut != NULL)
+
+        if(NoteVoicePar[nvoice].VoiceOut)
             memset(NoteVoicePar[nvoice].VoiceOut, 0, SOUND_BUFFER_SIZE * sizeof(REALTYPE));
     }
 }
@@ -1117,7 +914,7 @@ void ADnote::computecurrentparameters()
         portamentofreqrap = ctl->portamento.freqrap;
         if(ctl->portamento.used == 0) //the portamento has finished
             portamento = 0; //this note is no longer "portamented"
-        ;
+
     }
 
     //compute parameters for all voices
@@ -1214,7 +1011,7 @@ inline void ADnote::fadein(REALTYPE *smps) const
     int zerocrossings = 0;
     for(int i = 1; i < SOUND_BUFFER_SIZE; i++)
         if((smps[i - 1] < 0.0) && (smps[i] > 0.0))
-            zerocrossings++;                                  //this is only the possitive crossings
+            zerocrossings++; //this is only the possitive crossings
 
     REALTYPE tmp = (SOUND_BUFFER_SIZE - 1.0) / (zerocrossings + 1) / 3.0;
     if(tmp < 8.0)
@@ -1469,7 +1266,7 @@ inline void ADnote::ComputeVoiceOscillatorFrequencyModulation(int nvoice,
                                                FMnewamplitude[nvoice],
                                                i,
                                                SOUND_BUFFER_SIZE);
-            ;
+
         }
     }
     else {
@@ -1574,8 +1371,6 @@ inline void ADnote::ComputeVoiceNoise(int nvoice)
  */
 int ADnote::noteout(REALTYPE *outl, REALTYPE *outr)
 {
-    int i, nvoice;
-
     memcpy(outl, denormalkillbuf, SOUND_BUFFER_SIZE * sizeof(REALTYPE));
     memcpy(outr, denormalkillbuf, SOUND_BUFFER_SIZE * sizeof(REALTYPE));
 
@@ -1586,7 +1381,7 @@ int ADnote::noteout(REALTYPE *outl, REALTYPE *outr)
     memset(bypassr, 0, SOUND_BUFFER_SIZE * sizeof(REALTYPE));
     computecurrentparameters();
 
-    for(nvoice = 0; nvoice < NUM_VOICES; nvoice++) {
+    for(unsigned nvoice = 0; nvoice < NUM_VOICES; nvoice++) {
         if((NoteVoicePar[nvoice].Enabled != ON)
            || (NoteVoicePar[nvoice].DelayTicks > 0))
             continue;
@@ -1636,7 +1431,7 @@ int ADnote::noteout(REALTYPE *outl, REALTYPE *outr)
                 }
                 else
                     stereo_pos *= stereo_spread;
-                ;
+
                 if(unison_size[nvoice] == 1)
                     stereo_pos = 0.0;
                 REALTYPE panning = (stereo_pos + 1.0) * 0.5;
@@ -1655,15 +1450,15 @@ int ADnote::noteout(REALTYPE *outl, REALTYPE *outr)
                     rvol = -rvol;
                 }
 
-                for(i = 0; i < SOUND_BUFFER_SIZE; i++)
+                for(int i = 0; i < SOUND_BUFFER_SIZE; i++)
                     tmpwavel[i] += tw[i] * lvol;
-                for(i = 0; i < SOUND_BUFFER_SIZE; i++)
+                for(int i = 0; i < SOUND_BUFFER_SIZE; i++)
                     tmpwaver[i] += tw[i] * rvol;
             }
             else
-                for(i = 0; i < SOUND_BUFFER_SIZE; i++)
+                for(int i = 0; i < SOUND_BUFFER_SIZE; i++)
                     tmpwavel[i] += tw[i];
-            ;
+
         }
 
 
@@ -1686,7 +1481,7 @@ int ADnote::noteout(REALTYPE *outl, REALTYPE *outr)
                         tmpwaver[i] *= oldam;
             }
             // Amplitude interpolation
-            for(i = 0; i < rest; i++) {
+            for(int i = 0; i < rest; i++) {
                 REALTYPE amp = INTERPOLATE_AMPLITUDE(oldam, newam, i, rest);
                 tmpwavel[i + (SOUND_BUFFER_SIZE - rest)] *= amp;
                 if(stereo)
@@ -1694,10 +1489,10 @@ int ADnote::noteout(REALTYPE *outl, REALTYPE *outr)
             }
         }
         else {
-            for(i = 0; i < SOUND_BUFFER_SIZE; i++)
+            for(int i = 0; i < SOUND_BUFFER_SIZE; i++)
                 tmpwavel[i] *= newam;
             if(stereo)
-                for(i = 0; i < SOUND_BUFFER_SIZE; i++)
+                for(int i = 0; i < SOUND_BUFFER_SIZE; i++)
                     tmpwaver[i] *= newam;
         }
 
@@ -1719,11 +1514,11 @@ int ADnote::noteout(REALTYPE *outl, REALTYPE *outr)
         //check if the amplitude envelope is finished, if yes, the voice will be fadeout
         if(NoteVoicePar[nvoice].AmpEnvelope != NULL) {
             if(NoteVoicePar[nvoice].AmpEnvelope->finished() != 0) {
-                for(i = 0; i < SOUND_BUFFER_SIZE; i++)
+                for(int i = 0; i < SOUND_BUFFER_SIZE; i++)
                     tmpwavel[i] *= 1.0 - (REALTYPE)i
                                    / (REALTYPE)SOUND_BUFFER_SIZE;
                 if(stereo)
-                    for(i = 0; i < SOUND_BUFFER_SIZE; i++)
+                    for(int i = 0; i < SOUND_BUFFER_SIZE; i++)
                         tmpwaver[i] *= 1.0 - (REALTYPE)i
                                        / (REALTYPE)SOUND_BUFFER_SIZE;
             }
@@ -1734,20 +1529,20 @@ int ADnote::noteout(REALTYPE *outl, REALTYPE *outr)
         // Put the ADnote samples in VoiceOut (without appling Global volume, because I wish to use this voice as a modullator)
         if(NoteVoicePar[nvoice].VoiceOut != NULL) {
             if(stereo)
-                for(i = 0; i < SOUND_BUFFER_SIZE; i++)
+                for(int i = 0; i < SOUND_BUFFER_SIZE; i++)
                     NoteVoicePar[nvoice].VoiceOut[i] = tmpwavel[i]
                                                        + tmpwaver[i];
             else   //mono
-                for(i = 0; i < SOUND_BUFFER_SIZE; i++)
+                for(int i = 0; i < SOUND_BUFFER_SIZE; i++)
                     NoteVoicePar[nvoice].VoiceOut[i] = tmpwavel[i];
-            ;
+
         }
 
 
         // Add the voice that do not bypass the filter to out
         if(NoteVoicePar[nvoice].filterbypass == 0) { //no bypass
             if(stereo) {
-                for(i = 0; i < SOUND_BUFFER_SIZE; i++) { //stereo
+                for(int i = 0; i < SOUND_BUFFER_SIZE; i++) { //stereo
                     outl[i] += tmpwavel[i] * NoteVoicePar[nvoice].Volume
                                * NoteVoicePar[nvoice].Panning * 2.0;
                     outr[i] += tmpwaver[i] * NoteVoicePar[nvoice].Volume
@@ -1755,13 +1550,13 @@ int ADnote::noteout(REALTYPE *outl, REALTYPE *outr)
                 }
             }
             else
-                for(i = 0; i < SOUND_BUFFER_SIZE; i++)
-                    outl[i] += tmpwavel[i] * NoteVoicePar[nvoice].Volume;                          //mono
-            ;
+                for(int i = 0; i < SOUND_BUFFER_SIZE; i++)//mono
+                    outl[i] += tmpwavel[i] * NoteVoicePar[nvoice].Volume;
+
         }
         else {  //bypass the filter
             if(stereo) {
-                for(i = 0; i < SOUND_BUFFER_SIZE; i++) { //stereo
+                for(int i = 0; i < SOUND_BUFFER_SIZE; i++) { //stereo
                     bypassl[i] += tmpwavel[i] * NoteVoicePar[nvoice].Volume
                                   * NoteVoicePar[nvoice].Panning * 2.0;
                     bypassr[i] += tmpwaver[i] * NoteVoicePar[nvoice].Volume
@@ -1769,15 +1564,15 @@ int ADnote::noteout(REALTYPE *outl, REALTYPE *outr)
                 }
             }
             else
-                for(i = 0; i < SOUND_BUFFER_SIZE; i++)
-                    bypassl[i] += tmpwavel[i] * NoteVoicePar[nvoice].Volume;                          //mono
-            ;
+                for(int i = 0; i < SOUND_BUFFER_SIZE; i++) //mono
+                    bypassl[i] += tmpwavel[i] * NoteVoicePar[nvoice].Volume;
+
         }
         // chech if there is necesary to proces the voice longer (if the Amplitude envelope isn't finished)
         if(NoteVoicePar[nvoice].AmpEnvelope != NULL)
             if(NoteVoicePar[nvoice].AmpEnvelope->finished() != 0)
                 KillVoice(nvoice);
-        ;
+
     }
 
 
@@ -1791,14 +1586,14 @@ int ADnote::noteout(REALTYPE *outl, REALTYPE *outr)
     else
         NoteGlobalPar.GlobalFilterR->filterout(&outr[0]);
 
-    for(i = 0; i < SOUND_BUFFER_SIZE; i++) {
+    for(int i = 0; i < SOUND_BUFFER_SIZE; i++) {
         outl[i] += bypassl[i];
         outr[i] += bypassr[i];
     }
 
     if(ABOVE_AMPLITUDE_THRESHOLD(globaloldamplitude, globalnewamplitude)) {
         // Amplitude Interpolation
-        for(i = 0; i < SOUND_BUFFER_SIZE; i++) {
+        for(int i = 0; i < SOUND_BUFFER_SIZE; i++) {
             REALTYPE tmpvol = INTERPOLATE_AMPLITUDE(globaloldamplitude,
                                                     globalnewamplitude,
                                                     i,
@@ -1808,15 +1603,15 @@ int ADnote::noteout(REALTYPE *outl, REALTYPE *outr)
         }
     }
     else {
-        for(i = 0; i < SOUND_BUFFER_SIZE; i++) {
+        for(int i = 0; i < SOUND_BUFFER_SIZE; i++) {
             outl[i] *= globalnewamplitude * NoteGlobalPar.Panning;
             outr[i] *= globalnewamplitude * (1.0 - NoteGlobalPar.Panning);
         }
     }
 
-//Apply the punch
+    //Apply the punch
     if(NoteGlobalPar.Punch.Enabled != 0) {
-        for(i = 0; i < SOUND_BUFFER_SIZE; i++) {
+        for(int i = 0; i < SOUND_BUFFER_SIZE; i++) {
             REALTYPE punchamp = NoteGlobalPar.Punch.initialvalue
                                 * NoteGlobalPar.Punch.t + 1.0;
             outl[i] *= punchamp;
@@ -1831,85 +1626,13 @@ int ADnote::noteout(REALTYPE *outl, REALTYPE *outr)
 
 
     // Apply legato-specific sound signal modifications
-    if(Legato.silent)    // Silencer
-        if(Legato.msg != LM_FadeIn) {
-            memset(outl, 0, SOUND_BUFFER_SIZE * sizeof(REALTYPE));
-            memset(outr, 0, SOUND_BUFFER_SIZE * sizeof(REALTYPE));
-        }
-    switch(Legato.msg) {
-    case LM_CatchUp:  // Continue the catch-up...
-        if(Legato.decounter == -10)
-            Legato.decounter = Legato.fade.length;
-        for(i = 0; i < SOUND_BUFFER_SIZE; i++) { //Yea, could be done without the loop...
-            Legato.decounter--;
-            if(Legato.decounter < 1) {
-                // Catching-up done, we can finally set
-                // the note to the actual parameters.
-                Legato.decounter = -10;
-                Legato.msg = LM_ToNorm;
-                ADlegatonote(Legato.param.freq,
-                             Legato.param.vel,
-                             Legato.param.portamento,
-                             Legato.param.midinote,
-                             false);
-                break;
-            }
-        }
-        break;
-    case LM_FadeIn:  // Fade-in
-        if(Legato.decounter == -10)
-            Legato.decounter = Legato.fade.length;
-        Legato.silent = false;
-        for(i = 0; i < SOUND_BUFFER_SIZE; i++) {
-            Legato.decounter--;
-            if(Legato.decounter < 1) {
-                Legato.decounter = -10;
-                Legato.msg = LM_Norm;
-                break;
-            }
-            Legato.fade.m += Legato.fade.step;
-            outl[i] *= Legato.fade.m;
-            outr[i] *= Legato.fade.m;
-        }
-        break;
-    case LM_FadeOut:  // Fade-out, then set the catch-up
-        if(Legato.decounter == -10)
-            Legato.decounter = Legato.fade.length;
-        for(i = 0; i < SOUND_BUFFER_SIZE; i++) {
-            Legato.decounter--;
-            if(Legato.decounter < 1) {
-                for(int j = i; j < SOUND_BUFFER_SIZE; j++) {
-                    outl[j] = 0.0;
-                    outr[j] = 0.0;
-                }
-                Legato.decounter = -10;
-                Legato.silent    = true;
-                // Fading-out done, now set the catch-up :
-                Legato.decounter = Legato.fade.length;
-                Legato.msg = LM_CatchUp;
-                REALTYPE catchupfreq = Legato.param.freq
-                                       * (Legato.param.freq / Legato.lastfreq);            //This freq should make this now silent note to catch-up (or should I say resync ?) with the heard note for the same length it stayed at the previous freq during the fadeout.
-                ADlegatonote(catchupfreq,
-                             Legato.param.vel,
-                             Legato.param.portamento,
-                             Legato.param.midinote,
-                             false);
-                break;
-            }
-            Legato.fade.m -= Legato.fade.step;
-            outl[i] *= Legato.fade.m;
-            outr[i] *= Legato.fade.m;
-        }
-        break;
-    default:
-        break;
-    }
+    legato.apply(*this,outl,outr);
 
 
-// Check if the global amplitude is finished.
-// If it does, disable the note
-    if(NoteGlobalPar.AmpEnvelope->finished() != 0) {
-        for(i = 0; i < SOUND_BUFFER_SIZE; i++) { //fade-out
+    // Check if the global amplitude is finished.
+    // If it does, disable the note
+    if(NoteGlobalPar.AmpEnvelope->finished()) {
+        for(int i = 0; i < SOUND_BUFFER_SIZE; i++) { //fade-out
             REALTYPE tmp = 1.0 - (REALTYPE)i / (REALTYPE)SOUND_BUFFER_SIZE;
             outl[i] *= tmp;
             outr[i] *= tmp;
@@ -1925,21 +1648,8 @@ int ADnote::noteout(REALTYPE *outl, REALTYPE *outr)
  */
 void ADnote::relasekey()
 {
-    int nvoice;
-    for(nvoice = 0; nvoice < NUM_VOICES; nvoice++) {
-        if(NoteVoicePar[nvoice].Enabled == 0)
-            continue;
-        if(NoteVoicePar[nvoice].AmpEnvelope != NULL)
-            NoteVoicePar[nvoice].AmpEnvelope->relasekey();
-        if(NoteVoicePar[nvoice].FreqEnvelope != NULL)
-            NoteVoicePar[nvoice].FreqEnvelope->relasekey();
-        if(NoteVoicePar[nvoice].FilterEnvelope != NULL)
-            NoteVoicePar[nvoice].FilterEnvelope->relasekey();
-        if(NoteVoicePar[nvoice].FMFreqEnvelope != NULL)
-            NoteVoicePar[nvoice].FMFreqEnvelope->relasekey();
-        if(NoteVoicePar[nvoice].FMAmpEnvelope != NULL)
-            NoteVoicePar[nvoice].FMAmpEnvelope->relasekey();
-    }
+    for(int nvoice = 0; nvoice < NUM_VOICES; nvoice++)
+        NoteVoicePar[nvoice].releasekey();
     NoteGlobalPar.FreqEnvelope->relasekey();
     NoteGlobalPar.FilterEnvelope->relasekey();
     NoteGlobalPar.AmpEnvelope->relasekey();
@@ -1956,3 +1666,82 @@ int ADnote::finished() const
         return 1;
 }
 
+void ADnote::Voice::releasekey()
+{
+    if(!Enabled)
+        return;
+    if(AmpEnvelope)
+        AmpEnvelope->relasekey();
+    if(FreqEnvelope)
+        FreqEnvelope->relasekey();
+    if(FilterEnvelope)
+        FilterEnvelope->relasekey();
+    if(FMFreqEnvelope)
+        FMFreqEnvelope->relasekey();
+    if(FMAmpEnvelope)
+        FMAmpEnvelope->relasekey();
+}
+
+template<class T>
+static inline void nullify(T &t) {delete t; t=NULL;}
+
+void ADnote::Voice::kill()
+{
+    nullify(OscilSmp);
+    nullify(FreqEnvelope);
+    nullify(FreqLfo);
+    nullify(AmpEnvelope);
+    nullify(AmpLfo);
+    nullify(VoiceFilterL);
+    nullify(VoiceFilterR);
+    nullify(FilterEnvelope);
+    nullify(FilterLfo);
+    nullify(FMFreqEnvelope);
+    nullify(FMAmpEnvelope);
+
+    if((FMEnabled != NONE) && (FMVoice < 0)) {
+        delete[] FMSmp;
+        FMSmp = NULL;
+    }
+
+    if(VoiceOut)
+        memset(VoiceOut, 0, SOUND_BUFFER_SIZE * sizeof(REALTYPE));
+    //do not delete, yet: perhaps is used by another voice
+
+    Enabled = OFF;
+}
+
+void ADnote::Global::kill()
+{
+    nullify(FreqEnvelope);
+    nullify(FreqLfo);
+    nullify(AmpEnvelope);
+    nullify(AmpLfo);
+    nullify(GlobalFilterL);
+    nullify(GlobalFilterR);
+    nullify(FilterEnvelope);
+    nullify(FilterLfo);
+}
+
+void ADnote::Global::initparameters(const ADnoteGlobalParam &param,
+                                    REALTYPE basefreq, REALTYPE velocity,
+                                    bool stereo)
+{
+    FreqEnvelope = new Envelope(param.FreqEnvelope, basefreq);
+    FreqLfo      = new LFO(param.FreqLfo, basefreq);
+
+    AmpEnvelope  = new Envelope(param.AmpEnvelope, basefreq);
+    AmpLfo = new LFO(param.AmpLfo, basefreq);
+
+    Volume = 4.0 * pow(0.1, 3.0 * (1.0 - param.volume() / 96.0)) //-60 dB .. 0 dB
+                 * VelF(velocity, param.PAmpVelocityScaleFunction); //sensing
+
+    GlobalFilterL = new Filter(param.GlobalFilter);
+    if(stereo)
+        GlobalFilterR = new Filter(param.GlobalFilter);
+
+    FilterEnvelope     = new Envelope(param.FilterEnvelope, basefreq);
+    FilterLfo          = new LFO(param.FilterLfo, basefreq);
+    FilterQ = param.GlobalFilter->getq();
+    FilterFreqTracking = param.GlobalFilter->getfreqtracking(basefreq);
+}

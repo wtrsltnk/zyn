@@ -66,7 +66,7 @@ class OscilGen:public Presets
         void defaults();
         void getfromXML(XMLwrapper *xml);
 
-        void convert2sine(int magtype);
+        void convert2sine();
 
         //Parameters
 

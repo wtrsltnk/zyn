@@ -25,9 +25,15 @@
 #include <math.h>
 
 #include "ADnoteParameters.h"
+#include "FilterParams.h"
 #include "EnvelopeParams.h"
 #include "LFOParams.h"
 #include "../Misc/db2rapInjFunc.h"
+#include "../Misc/XMLwrapper.h"
+#include "../DSP/FFTwrapper.h"
+#include "../Synth/OscilGen.h"
+#include "../Synth/Resonance.h"
+#include "FilterParams.h"
 
 int ADnote_unison_sizes[] =
 {1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 0};
@@ -65,65 +71,77 @@ ADnoteVoiceParam::ADnoteVoiceParam(Node *parent, std::string id, ADnoteParameter
       filterBypass         (this, "filter_bypass",0),
       fixedFreq            (this, "fixed_freq",0),
       fixedFreqET          (this, "fixed_freq_et", 0),
-      detuneSet            (this, "", 0, &par->globalDetuneSet),
+      detuneSet            (this, "", 0, &par->GlobalPar.detune),
       freqEnvelopeEnabled  (this, "freq_envelope_enabled", 0),
       freqLfoEnabled       (this, "freq_lfo_enabled", 0),
       panning              (this, "panning", 64),
       volume               (this, "volume", 0.23, new VoiceVolumeConv),
       volumeMinus          (this, "volume_minus", 0),
-      FMDetuneSet          (this, "FM", 0, &par->globalDetuneSet)
+      FMDetuneSet          (this, "FM", 0, &par->GlobalPar.detune)
 {}
 
 ADnoteParameters::ADnoteParameters(Node *parent, FFTwrapper *fft_)
     :PresetsArray(parent, "ADnoteParameters"),
-      volume               (this, "volume", 10, new VolumeConv),
-      //note: the original conversion functon is found in ADnote.cpp:337
-      globalDetuneSet      (this, "", 1),
-      panning              (this, "panning", 64),
-
-      voices               (this, "Voices")
+     GlobalPar(this),
+     voices(this, "Voices")
 {
     setpresettype("Padsyth");
     fft = fft_;
-
     voices.addType("Voice");
 
-    FreqEnvelope = new EnvelopeParams(this, "FREQUENCY_ENVELOPE", 0, 0);
-    FreqEnvelope->ASRinit(64, 50, 64, 60);
-    FreqLfo      = new LFOParams(this, "FREQUENCY_LFO", 70, 0, 64, 0, 0, 0, 0, 0);
-
-    AmpEnvelope  = new EnvelopeParams(this, "AMPLITUDE_ENVELOPE", 64, 1);
-    AmpEnvelope->ADSRinit_dB(0, 40, 127, 25);
-    AmpLfo = new LFOParams(this, "AMPLITUDE_LFO", 80, 0, 64, 0, 0, 0, 0, 1);
-
-    GlobalFilter   = new FilterParams(this, 2, 94, 40);
-    FilterEnvelope = new EnvelopeParams(this, "FILTER_ENVELOPE", 0, 1);
-    FilterEnvelope->ADSRinit_filter(64, 40, 64, 70, 60, 64);
-    FilterLfo      = new LFOParams(this, "FILTER_LFO", 80, 0, 64, 0, 0, 0, 0, 2);
-    Reson = new Resonance();
-
-    for(int nvoice = 0; nvoice < NUM_VOICES; nvoice++)
-        EnableVoice(nvoice, this);
+    //TODO make allocation here of Voices
+    for(int nvoice = 0; nvoice < NUM_VOICES; nvoice++) {
+        VoicePar[nvoice] = new ADnoteVoiceParam(&voices, "VoiceParam", this);
+        EnableVoice(nvoice);
+        voices << VoicePar[nvoice];
+        voices.createChild("Voice");
+    }
 
     defaults();
 }
 
-void ADnoteParameters::defaults()
+ADnoteGlobalParam::ADnoteGlobalParam(Node *par)
+      :volume(par, "volume", 10, new VolumeConv),
+      //note: the original conversion functon is found in ADnote.cpp:337
+      detune (par, "", 1),
+      panning(par, "panning", 64)
 {
-    defaults(false);
+    FreqEnvelope = new EnvelopeParams(par, "FREQUENCY_ENVELOPE", 0, 0);
+    FreqEnvelope->ASRinit(64, 50, 64, 60);
+    FreqLfo      = new LFOParams(par, "FREQUENCY_LFO", 70, 0, 64, 0, 0, 0, 0, 0);
+
+    AmpEnvelope  = new EnvelopeParams(par, "AMPLITUDE_ENVELOPE", 64, 1);
+    AmpEnvelope->ADSRinit_dB(0, 40, 127, 25);
+    AmpLfo = new LFOParams(par, "AMPLITUDE_LFO", 80, 0, 64, 0, 0, 0, 0, 1);
+
+    GlobalFilter   = new FilterParams(par, 2, 94, 40);
+    FilterEnvelope = new EnvelopeParams(par, "FILTER_ENVELOPE", 0, 1);
+    FilterEnvelope->ADSRinit_filter(64, 40, 64, 70, 60, 64);
+    FilterLfo      = new LFOParams(par, "FILTER_LFO", 80, 0, 64, 0, 0, 0, 0, 2);
+    Reson = new Resonance();
 }
 
-void ADnoteParameters::defaults(bool init)
+void ADnoteParameters::defaults()
 {
     //Default Parameters
+    GlobalPar.defaults();
+
+    for(int nvoice = 0; nvoice < NUM_VOICES; nvoice++)
+        defaults(nvoice);
+
+    VoicePar[0]->Enabled = 1;
+}
+
+void ADnoteGlobalParam::defaults()
+{
     /* Frequency Global Parameters */
     PStereo = 1; //stereo
+    detune.defaults();
     FreqEnvelope->defaults();
     FreqLfo->defaults();
     PBandwidth = 64;
 
     /* Amplitude Global Parameters */
-    //GlobalPar.PVolume=90;
     volume.defaults();
 
     panning.defaults(); //center
@@ -143,12 +161,6 @@ void ADnoteParameters::defaults(bool init)
     FilterEnvelope->defaults();
     FilterLfo->defaults();
     Reson->defaults();
-
-
-    for(int nvoice = 0; nvoice < NUM_VOICES; nvoice++)
-        defaults(nvoice,init);
-    ;
-    VoicePar[0]->Enabled = 1;
 }
 
 /*
@@ -156,110 +168,106 @@ void ADnoteParameters::defaults(bool init)
  */
 void ADnoteParameters::defaults(int n)
 {
-    defaults(n, false);
+    VoicePar[n]->defaults();
 }
 
-void ADnoteParameters::defaults(int n, bool init)
+void ADnoteVoiceParam::defaults()
 {
-    int nvoice = n;
-    VoicePar[nvoice]->Enabled     = 0;
+    Enabled     = 0;
 
-    VoicePar[nvoice]->Unison_size = 1;
-    VoicePar[nvoice]->Unison_frequency_spread = 60;
-    VoicePar[nvoice]->Unison_stereo_spread    = 64;
-    VoicePar[nvoice]->Unison_vibratto = 64;
-    VoicePar[nvoice]->Unison_vibratto_speed   = 64;
-    VoicePar[nvoice]->Unison_invert_phase     = 0;
+    Unison_size = 1;
+    Unison_frequency_spread = 60;
+    Unison_stereo_spread    = 64;
+    Unison_vibratto = 64;
+    Unison_vibratto_speed   = 64;
+    Unison_invert_phase     = 0;
 
-    if(!init) {
-        VoicePar[nvoice]->type.defaults();
-        VoicePar[nvoice]->fixedFreq.defaults();
-        VoicePar[nvoice]->fixedFreqET.defaults();
-        VoicePar[nvoice]->resonance.defaults();
-        VoicePar[nvoice]->filterBypass.defaults();
-        VoicePar[nvoice]->extoscil.defaults();
-        VoicePar[nvoice]->extFMoscil.defaults();
-        VoicePar[nvoice]->oscilphase.defaults();
-        VoicePar[nvoice]->FMoscilphase.defaults();
-        VoicePar[nvoice]->delay.defaults();
-        //VoicePar[nvoice]->PVolume=100;
-        VoicePar[nvoice]->volumeMinus.defaults();
-        VoicePar[nvoice]->panning.defaults(); //center
-        VoicePar[nvoice]->detuneSet.defaults();
-        VoicePar[nvoice]->freqLfoEnabled.defaults();
-        VoicePar[nvoice]->freqEnvelopeEnabled.defaults();
-    }
-    VoicePar[nvoice]->PAmpEnvelopeEnabled       = 0;
-    VoicePar[nvoice]->PAmpLfoEnabled            = 0;
-    VoicePar[nvoice]->PAmpVelocityScaleFunction = 127;
-    VoicePar[nvoice]->PFilterEnabled            = 0;
-    VoicePar[nvoice]->PFilterEnvelopeEnabled    = 0;
-    VoicePar[nvoice]->PFilterLfoEnabled         = 0;
-    VoicePar[nvoice]->PFMEnabled                = 0;
+    type.defaults();
+    
+    fixedFreq.defaults();
+    fixedFreqET.defaults();
+    resonance.defaults();
+    filterBypass.defaults();
+    extoscil.defaults();
+    extFMoscil.defaults();
+    oscilphase.defaults();
+    FMoscilphase.defaults();
+    delay.defaults();
+    volume.defaults();
+    volumeMinus.defaults();
+    panning.defaults();
+    detuneSet.defaults();
+    freqLfoEnabled.defaults();
+    freqEnvelopeEnabled.defaults();
+    PAmpEnvelopeEnabled       = 0;
+    PAmpLfoEnabled            = 0;
+    PAmpVelocityScaleFunction = 127;
+    PFilterEnabled            = 0;
+    PFilterEnvelopeEnabled    = 0;
+    PFilterLfoEnabled         = 0;
+    PFMEnabled                = 0;
 
     //I use the internal oscillator (-1)
-    VoicePar[nvoice]->PFMVoice  = -1;
+    PFMVoice  = -1;
 
-    VoicePar[nvoice]->PFMVolume = 90;
-    VoicePar[nvoice]->PFMVolumeDamp   = 64;
+    PFMVolume = 90;
+    PFMVolumeDamp   = 64;
+    FMDetuneSet.defaults();
+    //PFMDetune       = 8192;
+    //PFMCoarseDetune = 0;
+    //PFMDetuneType   = 0;
+    PFMFreqEnvelopeEnabled   = 0;
+    PFMAmpEnvelopeEnabled    = 0;
+    PFMVelocityScaleFunction = 64;
 
-    VoicePar[nvoice]->PFMFreqEnvelopeEnabled   = 0;
-    VoicePar[nvoice]->PFMAmpEnvelopeEnabled    = 0;
-    VoicePar[nvoice]->PFMVelocityScaleFunction = 64;
+    OscilSmp->defaults();
+    FMSmp->defaults();
 
-    if(!init) {
-        VoicePar[nvoice]->OscilSmp->defaults();
-        VoicePar[nvoice]->FMSmp->defaults();
+    AmpEnvelope->defaults();
+    AmpLfo->defaults();
 
-        VoicePar[nvoice]->AmpEnvelope->defaults();
-        VoicePar[nvoice]->AmpLfo->defaults();
+    FreqEnvelope->defaults();
+    FreqLfo->defaults();
 
-        VoicePar[nvoice]->FreqEnvelope->defaults();
-        VoicePar[nvoice]->FreqLfo->defaults();
+    VoiceFilter->defaults();
+    FilterEnvelope->defaults();
+    FilterLfo->defaults();
 
-        VoicePar[nvoice]->VoiceFilter->defaults();
-        VoicePar[nvoice]->FilterEnvelope->defaults();
-        VoicePar[nvoice]->FilterLfo->defaults();
-
-        VoicePar[nvoice]->FMFreqEnvelope->defaults();
-        VoicePar[nvoice]->FMAmpEnvelope->defaults();
-    }
+    FMFreqEnvelope->defaults();
+    FMAmpEnvelope->defaults();
 }
 
 
 /*
  * Init the voice parameters
  */
-void ADnoteParameters::EnableVoice(int nvoice, ADnoteParameters *par)
+void ADnoteParameters::EnableVoice(int nvoice)
 {
-    ADnoteVoiceParam *param = new ADnoteVoiceParam(NULL, "VoiceParam", par);
-    VoicePar.push_back(param);
+    VoicePar[nvoice]->enable(fft, GlobalPar.Reson);
+}
 
-    voices << VoicePar[nvoice];
-    voices.createChild("Voice");
+void ADnoteVoiceParam::enable(FFTwrapper *fft, Resonance *Reson)
+{
+    OscilSmp = new OscilGen(fft, Reson, this, "OSCIL");
+    FMSmp    = new OscilGen(fft, NULL, this, "FMSmp");
 
-    VoicePar[nvoice]->OscilSmp = new OscilGen(fft, Reson,
-                                              param, "OSCIL");
-    VoicePar[nvoice]->FMSmp    = new OscilGen(fft, NULL,
-                                              param, "FMSmp");
+    AmpEnvelope    = new EnvelopeParams(this, "AMPLITUDE_ENVELOPE", 64, 1);
+    AmpEnvelope->ADSRinit_dB(0, 100, 127, 100);
+    AmpLfo         = new LFOParams(this, "AMPLITUDE_LFO", 90, 32, 64, 0, 0, 30, 0, 1);
 
-    VoicePar[nvoice]->AmpEnvelope    = new EnvelopeParams(param, "AMPLITUDE_ENVELOPE", 64, 1);
-    VoicePar[nvoice]->AmpEnvelope->ADSRinit_dB(0, 100, 127, 100);
-    VoicePar[nvoice]->AmpLfo         = new LFOParams(param, "AMPLITUDE_LFO", 90, 32, 64, 0, 0, 30, 0, 1);
+    FreqEnvelope   = new EnvelopeParams(this, "FREQUENCY_ENVELOPE", 0, 0);
+    FreqEnvelope->ASRinit(30, 40, 64, 60);
+    FreqLfo        = new LFOParams(this, "FREQUENCY_LFO", 50, 40, 0, 0, 0, 0, 0, 0);
 
-    VoicePar[nvoice]->FreqEnvelope   = new EnvelopeParams(param, "FREQUENCY_ENVELOPE", 0, 0);
-    VoicePar[nvoice]->FreqEnvelope->ASRinit(30, 40, 64, 60);
-    VoicePar[nvoice]->FreqLfo        = new LFOParams(param, "FREQUENCY_LFO", 50, 40, 0, 0, 0, 0, 0, 0);
+    VoiceFilter    = new FilterParams(this, 2, 50, 60);
+    FilterEnvelope = new EnvelopeParams(this, "FILTER_ENVELOPE", 0, 0);
+    FilterEnvelope->ADSRinit_filter(90, 70, 40, 70, 10, 40);
+    FilterLfo      = new LFOParams(this, "FILTER_LFO", 50, 20, 64, 0, 0, 0, 0, 2);
 
-    VoicePar[nvoice]->VoiceFilter    = new FilterParams(param, 2, 50, 60);
-    VoicePar[nvoice]->FilterEnvelope = new EnvelopeParams(param, "FILTER_ENVELOPE", 0, 0);
-    VoicePar[nvoice]->FilterEnvelope->ADSRinit_filter(90, 70, 40, 70, 10, 40);
-    VoicePar[nvoice]->FilterLfo      = new LFOParams(param, "FILTER_LFO", 50, 20, 64, 0, 0, 0, 0, 2);
-
-    VoicePar[nvoice]->FMFreqEnvelope = new EnvelopeParams(param, "FMFreqEnvelope", 0, 0);
-    VoicePar[nvoice]->FMFreqEnvelope->ASRinit(20, 90, 40, 80);
-    VoicePar[nvoice]->FMAmpEnvelope  = new EnvelopeParams(param, "FMAmpEnvelope", 64, 1);
-    VoicePar[nvoice]->FMAmpEnvelope->ADSRinit(80, 90, 127, 100);
+    FMFreqEnvelope = new EnvelopeParams(this, "FMFreqEnvelope", 0, 0);
+    FMFreqEnvelope->ASRinit(20, 90, 40, 80);
+    FMAmpEnvelope  = new EnvelopeParams(this, "FMAmpEnvelope",64, 1);
+    FMAmpEnvelope->ADSRinit(80, 90, 127, 100);
 }
 
 /*
@@ -267,10 +275,8 @@ void ADnoteParameters::EnableVoice(int nvoice, ADnoteParameters *par)
  */
 REALTYPE ADnoteParameters::getBandwidthDetuneMultiplier()
 {
-    REALTYPE bw = (PBandwidth - 64.0) / 64.0;
-    bw = pow(2.0, bw * pow(fabs(bw), 0.2) * 5.0);
-
-    return bw;
+    REALTYPE bw = (GlobalPar.PBandwidth - 64.0) / 64.0;
+    return pow(2.0, bw * pow(fabs(bw), 0.2) * 5.0);
 }
 
 /*
@@ -288,39 +294,48 @@ REALTYPE ADnoteParameters::getUnisonFrequencySpreadCents(int nvoice) {
  */
 void ADnoteParameters::KillVoice(int nvoice)
 {
-    delete (VoicePar[nvoice]->OscilSmp);
-    delete (VoicePar[nvoice]->FMSmp);
+    VoicePar[nvoice]->kill();
+}
 
-    delete (VoicePar[nvoice]->AmpEnvelope);
-    delete (VoicePar[nvoice]->AmpLfo);
+void ADnoteVoiceParam::kill()
+{
+    delete OscilSmp;
+    delete FMSmp;
 
-    delete (VoicePar[nvoice]->FreqEnvelope);
-    delete (VoicePar[nvoice]->FreqLfo);
+    delete AmpEnvelope;
+    delete AmpLfo;
 
-    delete (VoicePar[nvoice]->VoiceFilter);
-    delete (VoicePar[nvoice]->FilterEnvelope);
-    delete (VoicePar[nvoice]->FilterLfo);
+    delete FreqEnvelope;
+    delete FreqLfo;
 
-    delete (VoicePar[nvoice]->FMFreqEnvelope);
-    delete (VoicePar[nvoice]->FMAmpEnvelope);
+    delete VoiceFilter;
+    delete FilterEnvelope;
+    delete FilterLfo;
 
-    delete VoicePar[nvoice];
+    delete FMFreqEnvelope;
+    delete FMAmpEnvelope;
+}
+
+
+ADnoteGlobalParam::~ADnoteGlobalParam()
+{
+    delete FreqEnvelope;
+    delete FreqLfo;
+    delete AmpEnvelope;
+    delete AmpLfo;
+    delete GlobalFilter;
+    delete FilterEnvelope;
+    delete FilterLfo;
+    delete Reson;
 }
 
 ADnoteParameters::~ADnoteParameters()
 {
-    delete (FreqEnvelope);
-    delete (FreqLfo);
-    delete (AmpEnvelope);
-    delete (AmpLfo);
-    delete (GlobalFilter);
-    delete (FilterEnvelope);
-    delete (FilterLfo);
-    delete (Reson);
-
     for(int nvoice = 0; nvoice < NUM_VOICES; nvoice++)
         KillVoice(nvoice);
-    ;
+    
+    for(int nvoice = 0; nvoice < NUM_VOICES; nvoice++)
+        delete VoicePar[nvoice];
 }
 
 int ADnoteParameters::get_unison_size_index(int nvoice) {
@@ -332,10 +347,10 @@ int ADnoteParameters::get_unison_size_index(int nvoice) {
     while(1) {
         if(ADnote_unison_sizes[index] >= unison)
             return index;
-        ;
+
         if(ADnote_unison_sizes[index] == 0)
             return index - 1;
-        ;
+
         index++;
     }
     return 0;
@@ -376,137 +391,136 @@ void ADnoteParameters::add2XMLsection(XMLwrapper *xml, int n)
         && (fmoscilused == 0)) && (xml->minimal))
         return;
 
+    VoicePar[nvoice]->add2XML(xml,fmoscilused);
+}
 
-    xml->addpar("type", VoicePar[nvoice]->type());
+void ADnoteVoiceParam::add2XML(XMLwrapper *xml, bool fmoscilused)
+{
+    xml->addpar("type", type());
 
-    xml->addpar("unison_size", VoicePar[nvoice]->Unison_size);
+    xml->addpar("unison_size", Unison_size);
     xml->addpar("unison_frequency_spread",
-                VoicePar[nvoice]->Unison_frequency_spread);
-    xml->addpar("unison_stereo_spread", VoicePar[nvoice]->Unison_stereo_spread);
-    xml->addpar("unison_vibratto", VoicePar[nvoice]->Unison_vibratto);
-    xml->addpar("unison_vibratto_speed",
-                VoicePar[nvoice]->Unison_vibratto_speed);
-    xml->addpar("unison_invert_phase", VoicePar[nvoice]->Unison_invert_phase);
+                Unison_frequency_spread);
+    xml->addpar("unison_stereo_spread", Unison_stereo_spread);
+    xml->addpar("unison_vibratto", Unison_vibratto);
+    xml->addpar("unison_vibratto_speed", Unison_vibratto_speed);
+    xml->addpar("unison_invert_phase", Unison_invert_phase);
 
-    xml->addpar("delay", VoicePar[nvoice]->delay());
-    xml->addparbool("resonance", VoicePar[nvoice]->resonance());
+    xml->addpar("delay", delay());
+    xml->addparbool("resonance", resonance());
 
-    xml->addpar("ext_oscil", VoicePar[nvoice]->extoscil());
-    xml->addpar("ext_fm_oscil", VoicePar[nvoice]->extFMoscil());
+    xml->addpar("ext_oscil", extoscil());
+    xml->addpar("ext_fm_oscil", extFMoscil());
 
-    xml->addpar("oscil_phase", VoicePar[nvoice]->oscilphase());
-    xml->addpar("oscil_fm_phase", VoicePar[nvoice]->FMoscilphase());
+    xml->addpar("oscil_phase", oscilphase());
+    xml->addpar("oscil_fm_phase", FMoscilphase());
 
-    xml->addparbool("filter_enabled", VoicePar[nvoice]->PFilterEnabled);
-    xml->addparbool("filter_bypass", VoicePar[nvoice]->filterBypass());
+    xml->addparbool("filter_enabled", PFilterEnabled);
+    xml->addparbool("filter_bypass", filterBypass());
 
-    xml->addpar("fm_enabled", VoicePar[nvoice]->PFMEnabled);
+    xml->addpar("fm_enabled", PFMEnabled);
 
     xml->beginbranch("OSCIL");
-    VoicePar[nvoice]->OscilSmp->add2XML(xml);
+    OscilSmp->add2XML(xml);
     xml->endbranch();
 
 
     xml->beginbranch("AMPLITUDE_PARAMETERS");
-    ADDPAR(VoicePar[nvoice]->panning, "panning");
-    xml->addpar("volume", VoicePar[nvoice]->volume.getInt());
-    ADDPAR(VoicePar[nvoice]->volumeMinus, "volume_minus");
-    xml->addpar("velocity_sensing", VoicePar[nvoice]->PAmpVelocityScaleFunction);
+    xml->addpar("panning", panning());
+    xml->addpar("volume", volume());
+    xml->addparbool("volume_minus", volumeMinus());
+    xml->addpar("velocity_sensing", PAmpVelocityScaleFunction);
 
     xml->addparbool("amp_envelope_enabled",
-                    VoicePar[nvoice]->PAmpEnvelopeEnabled);
-    if((VoicePar[nvoice]->PAmpEnvelopeEnabled != 0) || (!xml->minimal)) {
+                    PAmpEnvelopeEnabled);
+    if((PAmpEnvelopeEnabled != 0) || (!xml->minimal)) {
         xml->beginbranch("AMPLITUDE_ENVELOPE");
-        VoicePar[nvoice]->AmpEnvelope->add2XML(xml);
+        AmpEnvelope->add2XML(xml);
         xml->endbranch();
     }
-    xml->addparbool("amp_lfo_enabled", VoicePar[nvoice]->PAmpLfoEnabled);
-    if((VoicePar[nvoice]->PAmpLfoEnabled != 0) || (!xml->minimal)) {
+    xml->addparbool("amp_lfo_enabled", PAmpLfoEnabled);
+    if((PAmpLfoEnabled != 0) || (!xml->minimal)) {
         xml->beginbranch("AMPLITUDE_LFO");
-        VoicePar[nvoice]->AmpLfo->add2XML(xml);
+        AmpLfo->add2XML(xml);
         xml->endbranch();
     }
     xml->endbranch();
 
     xml->beginbranch("FREQUENCY_PARAMETERS");
-    xml->addparbool("fixed_freq", VoicePar[nvoice]->fixedFreq());
-    xml->addpar("fixed_freq_et", VoicePar[nvoice]->fixedFreqET());
-
-    VoicePar[nvoice]->detuneSet.add2XMLsection(xml);
+    xml->addparbool("fixed_freq", fixedFreq());
+    xml->addpar("fixed_freq_et", fixedFreqET());
+    detuneSet.add2XMLsection(xml);
 
     xml->addparbool("freq_envelope_enabled",
-                    VoicePar[nvoice]->freqEnvelopeEnabled());
-    if((VoicePar[nvoice]->freqEnvelopeEnabled() != 0) || (!xml->minimal)) {
+                    freqEnvelopeEnabled());
+    if((freqEnvelopeEnabled() != 0) || (!xml->minimal)) {
         xml->beginbranch("FREQUENCY_ENVELOPE");
-        VoicePar[nvoice]->FreqEnvelope->add2XML(xml);
+        FreqEnvelope->add2XML(xml);
         xml->endbranch();
     }
-    xml->addparbool("freq_lfo_enabled", VoicePar[nvoice]->freqLfoEnabled());
-    if((VoicePar[nvoice]->freqLfoEnabled() != 0) || (!xml->minimal)) {
+    xml->addparbool("freq_lfo_enabled", freqLfoEnabled());
+    if((freqLfoEnabled() != 0) || (!xml->minimal)) {
         xml->beginbranch("FREQUENCY_LFO");
-        VoicePar[nvoice]->FreqLfo->add2XML(xml);
+        FreqLfo->add2XML(xml);
         xml->endbranch();
     }
     xml->endbranch();
 
 
-    if((VoicePar[nvoice]->PFilterEnabled != 0) || (!xml->minimal)) {
+    if((PFilterEnabled != 0) || (!xml->minimal)) {
         xml->beginbranch("FILTER_PARAMETERS");
         xml->beginbranch("FILTER");
-        VoicePar[nvoice]->VoiceFilter->add2XML(xml);
+        VoiceFilter->add2XML(xml);
         xml->endbranch();
 
         xml->addparbool("filter_envelope_enabled",
-                        VoicePar[nvoice]->PFilterEnvelopeEnabled);
-        if((VoicePar[nvoice]->PFilterEnvelopeEnabled != 0)
-           || (!xml->minimal)) {
+                        PFilterEnvelopeEnabled);
+        if((PFilterEnvelopeEnabled != 0) || (!xml->minimal)) {
             xml->beginbranch("FILTER_ENVELOPE");
-            VoicePar[nvoice]->FilterEnvelope->add2XML(xml);
+            FilterEnvelope->add2XML(xml);
             xml->endbranch();
         }
 
         xml->addparbool("filter_lfo_enabled",
-                        VoicePar[nvoice]->PFilterLfoEnabled);
-        if((VoicePar[nvoice]->PFilterLfoEnabled != 0) || (!xml->minimal)) {
+                        PFilterLfoEnabled);
+        if((PFilterLfoEnabled != 0) || (!xml->minimal)) {
             xml->beginbranch("FILTER_LFO");
-            VoicePar[nvoice]->FilterLfo->add2XML(xml);
+            FilterLfo->add2XML(xml);
             xml->endbranch();
         }
         xml->endbranch();
     }
 
-    if((VoicePar[nvoice]->PFMEnabled != 0) || (fmoscilused != 0)
+    if((PFMEnabled != 0) || (fmoscilused != 0)
        || (!xml->minimal)) {
         xml->beginbranch("FM_PARAMETERS");
-        xml->addpar("input_voice", VoicePar[nvoice]->PFMVoice);
+        xml->addpar("input_voice", PFMVoice);
 
-        xml->addpar("volume", VoicePar[nvoice]->PFMVolume);
-        xml->addpar("volume_damp", VoicePar[nvoice]->PFMVolumeDamp);
+        xml->addpar("volume", PFMVolume);
+        xml->addpar("volume_damp", PFMVolumeDamp);
         xml->addpar("velocity_sensing",
-                    VoicePar[nvoice]->PFMVelocityScaleFunction);
+                    PFMVelocityScaleFunction);
 
         xml->addparbool("amp_envelope_enabled",
-                        VoicePar[nvoice]->PFMAmpEnvelopeEnabled);
-        if((VoicePar[nvoice]->PFMAmpEnvelopeEnabled != 0) || (!xml->minimal)) {
+                        PFMAmpEnvelopeEnabled);
+        if((PFMAmpEnvelopeEnabled != 0) || (!xml->minimal)) {
             xml->beginbranch("AMPLITUDE_ENVELOPE");
-            VoicePar[nvoice]->FMAmpEnvelope->add2XML(xml);
+            FMAmpEnvelope->add2XML(xml);
             xml->endbranch();
         }
         xml->beginbranch("MODULATOR");
-
-        VoicePar[nvoice]->FMDetuneSet.add2XMLsection(xml);
+        FMDetuneSet.add2XMLsection(xml);
 
         xml->addparbool("freq_envelope_enabled",
-                        VoicePar[nvoice]->PFMFreqEnvelopeEnabled);
-        if((VoicePar[nvoice]->PFMFreqEnvelopeEnabled != 0)
-           || (!xml->minimal)) {
+                        PFMFreqEnvelopeEnabled);
+        if((PFMFreqEnvelopeEnabled != 0) || (!xml->minimal)) {
             xml->beginbranch("FREQUENCY_ENVELOPE");
-            VoicePar[nvoice]->FMFreqEnvelope->add2XML(xml);
+            FMFreqEnvelope->add2XML(xml);
             xml->endbranch();
         }
 
         xml->beginbranch("OSCIL");
-        VoicePar[nvoice]->FMSmp->add2XML(xml);
+        FMSmp->add2XML(xml);
         xml->endbranch();
 
         xml->endbranch();
@@ -514,15 +528,13 @@ void ADnoteParameters::add2XMLsection(XMLwrapper *xml, int n)
     }
 }
 
-
-void ADnoteParameters::add2XML(XMLwrapper *xml)
+void ADnoteGlobalParam::add2XML(XMLwrapper *xml)
 {
     xml->addparbool("stereo", PStereo);
 
     xml->beginbranch("AMPLITUDE_PARAMETERS");
-    //xml->addpar("volume",PVolume);
-    xml->addpar("volume", volume.getInt());
-    ADDPAR(panning, "panning");
+    xml->addpar("volume", volume());
+    xml->addpar("panning", panning());
     xml->addpar("velocity_sensing", PAmpVelocityScaleFunction);
     xml->addpar("punch_strength", PPunchStrength);
     xml->addpar("punch_time", PPunchTime);
@@ -540,8 +552,7 @@ void ADnoteParameters::add2XML(XMLwrapper *xml)
     xml->endbranch();
 
     xml->beginbranch("FREQUENCY_PARAMETERS");
-
-    globalDetuneSet.add2XMLsection(xml);
+    detune.add2XMLsection(xml);
 
     xml->addpar("bandwidth", PBandwidth);
 
@@ -575,7 +586,11 @@ void ADnoteParameters::add2XML(XMLwrapper *xml)
     xml->beginbranch("RESONANCE");
     Reson->add2XML(xml);
     xml->endbranch();
+}
 
+void ADnoteParameters::add2XML(XMLwrapper *xml)
+{
+    GlobalPar.add2XML(xml);
     for(int nvoice = 0; nvoice < NUM_VOICES; nvoice++) {
         xml->beginbranch("VOICE", nvoice);
         add2XMLsection(xml, nvoice);
@@ -584,30 +599,22 @@ void ADnoteParameters::add2XML(XMLwrapper *xml)
 }
 
 
-void ADnoteParameters::getfromXML(XMLwrapper *xml)
+void ADnoteGlobalParam::getfromXML(XMLwrapper *xml)
 {
     PStereo = xml->getparbool("stereo", PStereo);
 
     if(xml->enterbranch("AMPLITUDE_PARAMETERS")) {
-        //PVolume=xml->getpar127("volume",PVolume);
-        volume.setInt(int(xml->getpar127("volume", volume.getInt())));
-        GETPAR(panning, "panning");
-        PAmpVelocityScaleFunction = xml->getpar127(
-            "velocity_sensing",
-            
+        GETPAR(volume,"volume");
+        GETPAR(panning,"panning");
+        PAmpVelocityScaleFunction = xml->getpar127("velocity_sensing",
             PAmpVelocityScaleFunction);
 
-        PPunchStrength = xml->getpar127("punch_strength",
-                                                  PPunchStrength);
-        PPunchTime     = xml->getpar127("punch_time",
-                                                  PPunchTime);
-        PPunchStretch  = xml->getpar127("punch_stretch",
-                                                  PPunchStretch);
-        PPunchVelocitySensing = xml->getpar127(
-            "punch_velocity_sensing",
+        PPunchStrength = xml->getpar127("punch_strength", PPunchStrength);
+        PPunchTime     = xml->getpar127("punch_time", PPunchTime);
+        PPunchStretch  = xml->getpar127("punch_stretch", PPunchStretch);
+        PPunchVelocitySensing = xml->getpar127("punch_velocity_sensing",
             PPunchVelocitySensing);
-        Hrandgrouping  = xml->getpar127(
-            "harmonic_randomness_grouping",
+        Hrandgrouping  = xml->getpar127("harmonic_randomness_grouping",
             Hrandgrouping);
 
         if(xml->enterbranch("AMPLITUDE_ENVELOPE")) {
@@ -624,11 +631,8 @@ void ADnoteParameters::getfromXML(XMLwrapper *xml)
     }
 
     if(xml->enterbranch("FREQUENCY_PARAMETERS")) {
-
-        globalDetuneSet.getFromXMLsection(xml);
-
-        PBandwidth    = xml->getpar127("bandwidth",
-                                                 PBandwidth);
+        detune.getFromXMLsection(xml);
+        PBandwidth    = xml->getpar127("bandwidth", PBandwidth);
 
         xml->enterbranch("FREQUENCY_ENVELOPE");
         FreqEnvelope->getfromXML(xml);
@@ -643,11 +647,9 @@ void ADnoteParameters::getfromXML(XMLwrapper *xml)
 
 
     if(xml->enterbranch("FILTER_PARAMETERS")) {
-        PFilterVelocityScale = xml->getpar127(
-            "velocity_sensing_amplitude",
+        PFilterVelocityScale = xml->getpar127("velocity_sensing_amplitude",
             PFilterVelocityScale);
-        PFilterVelocityScaleFunction = xml->getpar127(
-            "velocity_sensing",
+        PFilterVelocityScaleFunction = xml->getpar127("velocity_sensing",
             PFilterVelocityScaleFunction);
 
         xml->enterbranch("FILTER");
@@ -668,6 +670,11 @@ void ADnoteParameters::getfromXML(XMLwrapper *xml)
         Reson->getfromXML(xml);
         xml->exitbranch();
     }
+}
+
+void ADnoteParameters::getfromXML(XMLwrapper *xml)
+{
+    GlobalPar.getfromXML(xml);
 
     for(int nvoice = 0; nvoice < NUM_VOICES; nvoice++) {
         VoicePar[nvoice]->Enabled = 0;
@@ -684,123 +691,77 @@ void ADnoteParameters::getfromXMLsection(XMLwrapper *xml, int n)
     if(nvoice >= NUM_VOICES)
         return;
 
-    VoicePar[nvoice]->Enabled     = xml->getparbool("enabled", 0);
+    VoicePar[nvoice]->getfromXML(xml, nvoice);
+}
 
-    VoicePar[nvoice]->Unison_size =
-        xml->getpar127("unison_size", VoicePar[nvoice]->Unison_size);
-    VoicePar[nvoice]->Unison_frequency_spread = xml->getpar127(
-        "unison_frequency_spread",
-        VoicePar[nvoice]->Unison_frequency_spread);
-    VoicePar[nvoice]->Unison_stereo_spread    = xml->getpar127(
-        "unison_stereo_spread",
-        VoicePar[nvoice]->Unison_stereo_spread);
-    VoicePar[nvoice]->Unison_vibratto = xml->getpar127(
-        "unison_vibratto",
-        VoicePar[nvoice]->
-        Unison_vibratto);
-    VoicePar[nvoice]->Unison_vibratto_speed   = xml->getpar127(
-        "unison_vibratto_speed",
-        VoicePar[nvoice]->Unison_vibratto_speed);
-    VoicePar[nvoice]->Unison_invert_phase     = xml->getpar127(
-        "unison_invert_phase",
-        VoicePar[nvoice]->Unison_invert_phase);
 
-    VoicePar[nvoice]->type.setValue(xml->getpar127("type",
-                                            VoicePar[nvoice]->type()));
-    VoicePar[nvoice]->delay.setValue(xml->getpar127("delay",
-                                                  VoicePar[nvoice]->delay()));
-    VoicePar[nvoice]->resonance.setValue(
-        xml->getparbool("resonance", VoicePar[nvoice]->resonance()));
+void ADnoteVoiceParam::getfromXML(XMLwrapper *xml, unsigned nvoice)
+{
+    Enabled     = xml->getparbool("enabled", 0);
+    Unison_size = xml->getpar127("unison_size", Unison_size);
+    Unison_frequency_spread = xml->getpar127( "unison_frequency_spread",
+        Unison_frequency_spread);
+    Unison_stereo_spread    = xml->getpar127( "unison_stereo_spread",
+            Unison_stereo_spread);
+    Unison_vibratto = xml->getpar127( "unison_vibratto", Unison_vibratto);
+    Unison_vibratto_speed   = xml->getpar127( "unison_vibratto_speed", Unison_vibratto_speed);
+    Unison_invert_phase     = xml->getpar127( "unison_invert_phase", Unison_invert_phase);
 
-    VoicePar[nvoice]->extoscil.setValue(xml->getpar("ext_oscil",
-                                                   -1,
-                                                   -1,
-                                                   nvoice - 1));
-    VoicePar[nvoice]->extFMoscil.setValue(xml->getpar("ext_fm_oscil",
-                                                   -1,
-                                                   -1,
-                                                   nvoice - 1));
+    GETPAR(type,"type");
+    GETPAR(delay,"delay");
+    GETPAR(resonance,"resonance");
 
-    VoicePar[nvoice]->oscilphase.setValue(
-        xml->getpar127("oscil_phase", VoicePar[nvoice]->oscilphase()));
-    VoicePar[nvoice]->FMoscilphase.setValue(xml->getpar127(
-        "oscil_fm_phase", VoicePar[nvoice]->FMoscilphase()));
+    extoscil.setValue(xml->getpar("ext_oscil", -1, -1, nvoice - 1));
+    extFMoscil.setValue(xml->getpar("ext_fm_oscil", -1, -1, nvoice - 1));
 
-    VoicePar[nvoice]->PFilterEnabled = xml->getparbool(
-        "filter_enabled",
-        VoicePar[nvoice]->
-        PFilterEnabled);
-    VoicePar[nvoice]->filterBypass.setValue(xml->getparbool(
-        "filter_bypass",
-        VoicePar[nvoice]->filterBypass()));
-
-    VoicePar[nvoice]->PFMEnabled     =
-        xml->getpar127("fm_enabled", VoicePar[nvoice]->PFMEnabled);
+    GETPAR(oscilphase, "oscil_phase");
+    GETPAR(FMoscilphase, "oscil_fm_phase");
+    PFilterEnabled = xml->getparbool("filter_enabled", PFilterEnabled);
+    GETPAR(filterBypass, "filter_bypass");
+    PFMEnabled     = xml->getpar127("fm_enabled", PFMEnabled);
 
     if(xml->enterbranch("OSCIL")) {
-        VoicePar[nvoice]->OscilSmp->getfromXML(xml);
+        OscilSmp->getfromXML(xml);
         xml->exitbranch();
     }
 
 
     if(xml->enterbranch("AMPLITUDE_PARAMETERS")) {
-        GETPAR(VoicePar[nvoice]->panning, "panning");
+        GETPAR(panning,"panning");
+        GETPAR(volume,"volume");
+        GETPAR(volumeMinus, "volume_minus");
+        PAmpVelocityScaleFunction = xml->getpar127("velocity_sensing", PAmpVelocityScaleFunction);
 
-        VoicePar[nvoice]->volume.setInt(xml->getpar127("volume",
-                                                             VoicePar[nvoice]->
-                                                             volume.
-                                                             getInt()));
-
-        GETPAR(VoicePar[nvoice]->volumeMinus, "volume_minus");
-
-        VoicePar[nvoice]->PAmpVelocityScaleFunction = xml->getpar127(
-            "velocity_sensing",
-            VoicePar[nvoice]->PAmpVelocityScaleFunction);
-
-        VoicePar[nvoice]->PAmpEnvelopeEnabled = xml->getparbool(
-            "amp_envelope_enabled",
-            VoicePar[nvoice]->PAmpEnvelopeEnabled);
+        PAmpEnvelopeEnabled = xml->getparbool("amp_envelope_enabled", PAmpEnvelopeEnabled);
         if(xml->enterbranch("AMPLITUDE_ENVELOPE")) {
-            VoicePar[nvoice]->AmpEnvelope->getfromXML(xml);
+            AmpEnvelope->getfromXML(xml);
             xml->exitbranch();
         }
 
-        VoicePar[nvoice]->PAmpLfoEnabled = xml->getparbool(
-            "amp_lfo_enabled",
-            VoicePar[nvoice]->
-            PAmpLfoEnabled);
+        PAmpLfoEnabled = xml->getparbool("amp_lfo_enabled", PAmpLfoEnabled);
         if(xml->enterbranch("AMPLITUDE_LFO")) {
-            VoicePar[nvoice]->AmpLfo->getfromXML(xml);
+            AmpLfo->getfromXML(xml);
             xml->exitbranch();
         }
         xml->exitbranch();
     }
 
     if(xml->enterbranch("FREQUENCY_PARAMETERS")) {
-        VoicePar[nvoice]->fixedFreq.setValue(xml->getparbool(
-            "fixed_freq",
-            VoicePar[nvoice]->fixedFreq()));
-        VoicePar[nvoice]->fixedFreqET.setValue(xml->getpar127(
-            "fixed_freq_et",
-            VoicePar[nvoice]->fixedFreqET()));
+        GETPAR(fixedFreq, "fixed_freq");
+        GETPAR(fixedFreqET, "fixed_freq_et");
+        detuneSet.getFromXMLsection(xml);
+        freqEnvelopeEnabled = 
+            xml->getparbool("freq_envelope_enabled", freqEnvelopeEnabled());
 
-
-        VoicePar[nvoice]->detuneSet.getFromXMLsection(xml);
-
-
-        VoicePar[nvoice]->freqEnvelopeEnabled.setValue(xml->getparbool(
-            "freq_envelope_enabled",
-            VoicePar[nvoice]->freqEnvelopeEnabled()));
         if(xml->enterbranch("FREQUENCY_ENVELOPE")) {
-            VoicePar[nvoice]->FreqEnvelope->getfromXML(xml);
+            FreqEnvelope->getfromXML(xml);
             xml->exitbranch();
         }
 
-        VoicePar[nvoice]->freqLfoEnabled.setValue(xml->getparbool(
-            "freq_lfo_enabled",
-            VoicePar[nvoice]->freqLfoEnabled()));
+        freqLfoEnabled = xml->getparbool("freq_lfo_enabled", freqLfoEnabled());
+
         if(xml->enterbranch("FREQUENCY_LFO")) {
-            VoicePar[nvoice]->FreqLfo->getfromXML(xml);
+            FreqLfo->getfromXML(xml);
             xml->exitbranch();
         }
         xml->exitbranch();
@@ -808,67 +769,48 @@ void ADnoteParameters::getfromXMLsection(XMLwrapper *xml, int n)
 
     if(xml->enterbranch("FILTER_PARAMETERS")) {
         if(xml->enterbranch("FILTER")) {
-            VoicePar[nvoice]->VoiceFilter->getfromXML(xml);
+            VoiceFilter->getfromXML(xml);
             xml->exitbranch();
         }
 
-        VoicePar[nvoice]->PFilterEnvelopeEnabled = xml->getparbool(
-            "filter_envelope_enabled",
-            VoicePar[nvoice]->PFilterEnvelopeEnabled);
+        PFilterEnvelopeEnabled = xml->getparbool("filter_envelope_enabled", PFilterEnvelopeEnabled);
         if(xml->enterbranch("FILTER_ENVELOPE")) {
-            VoicePar[nvoice]->FilterEnvelope->getfromXML(xml);
+            FilterEnvelope->getfromXML(xml);
             xml->exitbranch();
         }
 
-        VoicePar[nvoice]->PFilterLfoEnabled = xml->getparbool(
-            "filter_lfo_enabled",
-            VoicePar[nvoice]->PFilterLfoEnabled);
+        PFilterLfoEnabled = xml->getparbool("filter_lfo_enabled", PFilterLfoEnabled);
         if(xml->enterbranch("FILTER_LFO")) {
-            VoicePar[nvoice]->FilterLfo->getfromXML(xml);
+            FilterLfo->getfromXML(xml);
             xml->exitbranch();
         }
         xml->exitbranch();
     }
 
     if(xml->enterbranch("FM_PARAMETERS")) {
-        VoicePar[nvoice]->PFMVoice =
-            xml->getpar("input_voice",
-                        VoicePar[nvoice]->PFMVoice,
-                        -1,
-                        nvoice - 1);
+        PFMVoice = xml->getpar("input_voice", PFMVoice, -1, nvoice - 1);
+        PFMVolume     = xml->getpar127("volume", PFMVolume);
+        PFMVolumeDamp = xml->getpar127("volume_damp", PFMVolumeDamp);
+        PFMVelocityScaleFunction = xml->getpar127("velocity_sensing", PFMVelocityScaleFunction);
 
-        VoicePar[nvoice]->PFMVolume     =
-            xml->getpar127("volume", VoicePar[nvoice]->PFMVolume);
-        VoicePar[nvoice]->PFMVolumeDamp = xml->getpar127(
-            "volume_damp",
-            VoicePar[nvoice]->
-            PFMVolumeDamp);
-        VoicePar[nvoice]->PFMVelocityScaleFunction = xml->getpar127(
-            "velocity_sensing",
-            VoicePar[nvoice]->PFMVelocityScaleFunction);
-
-        VoicePar[nvoice]->PFMAmpEnvelopeEnabled    = xml->getparbool(
-            "amp_envelope_enabled",
-            VoicePar[nvoice]->PFMAmpEnvelopeEnabled);
+        PFMAmpEnvelopeEnabled    = xml->getparbool("amp_envelope_enabled", PFMAmpEnvelopeEnabled);
         if(xml->enterbranch("AMPLITUDE_ENVELOPE")) {
-            VoicePar[nvoice]->FMAmpEnvelope->getfromXML(xml);
+            FMAmpEnvelope->getfromXML(xml);
             xml->exitbranch();
         }
 
         if(xml->enterbranch("MODULATOR")) {
+            FMDetuneSet.getFromXMLsection(xml);
 
-            VoicePar[nvoice]->FMDetuneSet.getFromXMLsection(xml);
-
-            VoicePar[nvoice]->PFMFreqEnvelopeEnabled = xml->getparbool(
-                "freq_envelope_enabled",
-                VoicePar[nvoice]->PFMFreqEnvelopeEnabled);
+            PFMFreqEnvelopeEnabled = xml->getparbool("freq_envelope_enabled",
+                    PFMFreqEnvelopeEnabled);
             if(xml->enterbranch("FREQUENCY_ENVELOPE")) {
-                VoicePar[nvoice]->FMFreqEnvelope->getfromXML(xml);
+                FMFreqEnvelope->getfromXML(xml);
                 xml->exitbranch();
             }
 
             if(xml->enterbranch("OSCIL")) {
-                VoicePar[nvoice]->FMSmp->getfromXML(xml);
+                FMSmp->getfromXML(xml);
                 xml->exitbranch();
             }
 
