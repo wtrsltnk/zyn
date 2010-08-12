@@ -7,6 +7,7 @@
 #include "InMgr.h"
 #include "WavEngine.h"
 #include "../Misc/Master.h"
+#include "../Controls/Job.h"
 #include "../Misc/Util.h"//for set_realtime()
 
 using namespace std;
@@ -51,6 +52,7 @@ OutMgr::~OutMgr()
  */
 const Stereo<REALTYPE *> OutMgr::tick(unsigned int frameSize)
 {
+    Job::setEngineThread();
     pthread_mutex_lock(&(master.mutex));
     InMgr::getInstance().flush();
     pthread_mutex_unlock(&(master.mutex));

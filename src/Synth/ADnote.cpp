@@ -474,7 +474,7 @@ void ADnote::legatonote(REALTYPE freq, REALTYPE velocity, int portamento_,
     int tmp[NUM_VOICES];
 
     //NoteGlobalPar.Volume=4.0*pow(0.1,3.0*(1.0-partparams->GlobalPar.PVolume/96.0))//-60 dB .. 0 dB
-    NoteGlobalPar.Volume = partparams->GlobalPar.volume()
+    NoteGlobalPar.Volume = partparams->GlobalPar.volume.getInt()
                            * VelF(
         velocity,
         partparams->GlobalPar.PAmpVelocityScaleFunction);                                                      //velocity sensing
@@ -502,7 +502,7 @@ void ADnote::legatonote(REALTYPE freq, REALTYPE velocity, int portamento_,
         NoteVoicePar[nvoice].noisetype = vcePar.type();
         /* Voice Amplitude Parameters Init */
         NoteVoicePar[nvoice].Volume    =
-            pow(0.1, 3.0 * (1.0 - vcePar.volume() / 127.0))  // -60 dB .. 0 dB
+            pow(0.1, 3.0 * (1.0 - vcePar.volume.getInt() / 127.0))  // -60 dB .. 0 dB
             * VelF(velocity,
                    vcePar.PAmpVelocityScaleFunction);//velocity
 
@@ -667,7 +667,7 @@ void ADnote::initparameters()
 
         vce.noisetype = param.type();
         /* Voice Amplitude Parameters Init */
-        vce.Volume  = pow(0.1, 3.0 * (1.0 - param.volume() / 127.0))// -60dB..0dB
+        vce.Volume  = pow(0.1, 3.0 * (1.0 - param.volume.getInt() / 127.0))// -60dB..0dB
                       * VelF(velocity, param.PAmpVelocityScaleFunction);
 
         if(param.volumeMinus())
@@ -1733,7 +1733,7 @@ void ADnote::Global::initparameters(const ADnoteGlobalParam &param,
     AmpEnvelope  = new Envelope(param.AmpEnvelope, basefreq);
     AmpLfo = new LFO(param.AmpLfo, basefreq);
 
-    Volume = 4.0 * pow(0.1, 3.0 * (1.0 - param.volume() / 96.0)) //-60 dB .. 0 dB
+    Volume = 4.0 * pow(0.1, 3.0 * (1.0 - param.volume.getInt() / 96.0)) //-60 dB .. 0 dB
                  * VelF(velocity, param.PAmpVelocityScaleFunction); //sensing
 
     GlobalFilterL = new Filter(param.GlobalFilter);
