@@ -2,6 +2,7 @@
 #include "EventClasses.h"
 #include "../Misc/Util.h"
 #include <cassert>
+#include <stdio.h>
 
 using std::string;
 

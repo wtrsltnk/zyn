@@ -1,4 +1,5 @@
 #include "EventClasses.h"
+#include <stdio.h>
 
 ConnEvent::ConnEvent(GenControl *control, const float *buf)
     :Event(Event::ConnEvent), control(control),
