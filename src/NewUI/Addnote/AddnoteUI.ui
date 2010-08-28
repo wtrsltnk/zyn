@@ -109,6 +109,110 @@
         </property>
        </widget>
       </item>
+      <item row="0" column="7">
+       <widget class="QWidget" name="widget" native="true">
+        <layout class="QVBoxLayout" name="verticalLayout_5">
+         <item>
+          <widget class="CheckBox" name="checkBox_2">
+           <property name="text">
+            <string>Stereo</string>
+           </property>
+           <property name="controlId" stdset="0">
+            <string>stereo</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="0" column="3">
+       <widget class="Dial" name="mastervolume_16">
+        <property name="maximum">
+         <number>127</number>
+        </property>
+        <property name="pageStep">
+         <number>32</number>
+        </property>
+        <property name="wrapping">
+         <bool>false</bool>
+        </property>
+        <property name="notchTarget">
+         <double>4.699999999999999</double>
+        </property>
+        <property name="notchesVisible">
+         <bool>true</bool>
+        </property>
+        <property name="controlId" stdset="0">
+         <string>punch_strength</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="4">
+       <widget class="Dial" name="mastervolume_17">
+        <property name="maximum">
+         <number>127</number>
+        </property>
+        <property name="pageStep">
+         <number>32</number>
+        </property>
+        <property name="wrapping">
+         <bool>false</bool>
+        </property>
+        <property name="notchTarget">
+         <double>4.699999999999999</double>
+        </property>
+        <property name="notchesVisible">
+         <bool>true</bool>
+        </property>
+        <property name="controlId" stdset="0">
+         <string>punch_time</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="5">
+       <widget class="Dial" name="mastervolume_18">
+        <property name="maximum">
+         <number>127</number>
+        </property>
+        <property name="pageStep">
+         <number>32</number>
+        </property>
+        <property name="wrapping">
+         <bool>false</bool>
+        </property>
+        <property name="notchTarget">
+         <double>4.699999999999999</double>
+        </property>
+        <property name="notchesVisible">
+         <bool>true</bool>
+        </property>
+        <property name="controlId" stdset="0">
+         <string>punch_stretch</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="6">
+       <widget class="Dial" name="mastervolume_19">
+        <property name="maximum">
+         <number>127</number>
+        </property>
+        <property name="pageStep">
+         <number>32</number>
+        </property>
+        <property name="wrapping">
+         <bool>false</bool>
+        </property>
+        <property name="notchTarget">
+         <double>4.699999999999999</double>
+        </property>
+        <property name="notchesVisible">
+         <bool>true</bool>
+        </property>
+        <property name="controlId" stdset="0">
+         <string>punch_velocity_sensing</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
