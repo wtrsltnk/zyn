@@ -54,11 +54,10 @@ struct ADnoteGlobalParam {
     void defaults();
     void add2XML(XMLwrapper *xml);
     void getfromXML(XMLwrapper *xml);
-    /* The instrument type  - MONO/STEREO
-       If the mode is MONO, the panning of voices are not used
-       Stereo=1, Mono=0. */
 
-    unsigned char PStereo;
+    /* The instrument type  - MONO/STEREO
+       If the mode is MONO, the panning of voices are not used */
+    Toggle stereo;
     Ranger volume;
 
     /******************************************
@@ -66,7 +65,7 @@ struct ADnoteGlobalParam {
      ******************************************/
     DetuneControlSet detune;
 
-    unsigned char      PBandwidth; //how much the relative fine detunes of the voices are changed
+    DescRanger      bandwidth; //how much the relative fine detunes of the voices are changed
 
     EnvelopeParams    *FreqEnvelope; //Frequency Envelope
 
@@ -81,14 +80,14 @@ struct ADnoteGlobalParam {
        127 - right */
     DescRanger panning;
 
-    unsigned char   PAmpVelocityScaleFunction;
+    DescRanger   ampVelocityScaleFunction;
 
     EnvelopeParams *AmpEnvelope;
 
     LFOParams      *AmpLfo;
 
-    unsigned char   PPunchStrength, PPunchTime, PPunchStretch,
-                    PPunchVelocitySensing;
+    DescRanger   punchStrength, punchTime, punchStretch,
+                    punchVelocitySensing;
 
     /******************************************
      *        FILTER GLOBAL PARAMETERS        *
@@ -96,10 +95,10 @@ struct ADnoteGlobalParam {
     FilterParams *GlobalFilter;
 
     // filter velocity sensing
-    unsigned char PFilterVelocityScale;
+    DescRanger filterVelocityScale;
 
     // filter velocity sensing
-    unsigned char   PFilterVelocityScaleFunction;
+    DescRanger   filterVelocityScaleFunction;
 
     EnvelopeParams *FilterEnvelope;
 

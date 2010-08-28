@@ -56,7 +56,7 @@ ADnote::ADnote(ADnoteParameters *pars,
         velocity = 1.0;
     this->velocity = velocity;
     time   = 0.0;
-    stereo = pars->GlobalPar.PStereo;
+    stereo = pars->GlobalPar.stereo();
 
     NoteGlobalPar.Detune      = pars->GlobalPar.detune.get();
 
@@ -69,23 +69,23 @@ ADnote::ADnote(ADnoteParameters *pars,
 
 
     NoteGlobalPar.FilterCenterPitch = pars->GlobalPar.GlobalFilter->getfreq() //center freq
-                                      + pars->GlobalPar.PFilterVelocityScale
+                                      + pars->GlobalPar.filterVelocityScale()
                                       / 127.0 * 6.0//velocity sensing
                                       * (VelF(velocity,
                                               pars->GlobalPar.
-                                              PFilterVelocityScaleFunction) - 1);
+                                              filterVelocityScaleFunction()) - 1);
 
-    if(pars->GlobalPar.PPunchStrength != 0) {
+    if(pars->GlobalPar.punchStrength() != 0) {
         NoteGlobalPar.Punch.Enabled      = 1;
         NoteGlobalPar.Punch.t = 1.0; //start from 1.0 and to 0.0
         NoteGlobalPar.Punch.initialvalue =
-            ((pow(10, 1.5 * pars->GlobalPar.PPunchStrength / 127.0) - 1.0)
+            ((pow(10, 1.5 * pars->GlobalPar.punchStrength() / 127.0) - 1.0)
              * VelF(velocity,
-                    pars->GlobalPar.PPunchVelocitySensing));
+                    pars->GlobalPar.punchVelocitySensing()));
         REALTYPE time    =
-            pow(10, 3.0 * pars->GlobalPar.PPunchTime / 127.0) / 10000.0;   //0.1 .. 100 ms
+            pow(10, 3.0 * pars->GlobalPar.punchTime() / 127.0) / 10000.0;   //0.1 .. 100 ms
         REALTYPE stretch = pow(440.0 / freq,
-                               pars->GlobalPar.PPunchStretch / 64.0);
+                               pars->GlobalPar.punchStretch() / 64.0);
         NoteGlobalPar.Punch.dt = 1.0 / (time * SAMPLE_RATE * stretch);
     }
     else
@@ -390,8 +390,8 @@ void ADnote::legatonote(REALTYPE freq, REALTYPE velocity, int portamento_,
 
     //center freq
     NoteGlobalPar.FilterCenterPitch = pars->GlobalPar.GlobalFilter->getfreq()
-        + pars->GlobalPar.PFilterVelocityScale / 127.0 * 6.0 //velocity sensing
-        * (VelF(velocity, pars->GlobalPar.PFilterVelocityScaleFunction) - 1);
+        + pars->GlobalPar.filterVelocityScale() / 127.0 * 6.0 //velocity sensing
+        * (VelF(velocity, pars->GlobalPar.filterVelocityScaleFunction()) - 1);
 
 
     for(int nvoice = 0; nvoice < NUM_VOICES; nvoice++) {
@@ -477,7 +477,7 @@ void ADnote::legatonote(REALTYPE freq, REALTYPE velocity, int portamento_,
     NoteGlobalPar.Volume = partparams->GlobalPar.volume.getInt()
                            * VelF(
         velocity,
-        partparams->GlobalPar.PAmpVelocityScaleFunction);                                                      //velocity sensing
+        partparams->GlobalPar.ampVelocityScaleFunction());                                                      //velocity sensing
 
     globalnewamplitude = NoteGlobalPar.Volume
                          * NoteGlobalPar.AmpEnvelope->envout_dB()
@@ -1734,7 +1734,7 @@ void ADnote::Global::initparameters(const ADnoteGlobalParam &param,
     AmpLfo = new LFO(param.AmpLfo, basefreq);
 
     Volume = 4.0 * pow(0.1, 3.0 * (1.0 - param.volume.getInt() / 96.0)) //-60 dB .. 0 dB
-                 * VelF(velocity, param.PAmpVelocityScaleFunction); //sensing
+                 * VelF(velocity, param.ampVelocityScaleFunction()); //sensing
 
     GlobalFilterL = new Filter(param.GlobalFilter);
     if(stereo)
