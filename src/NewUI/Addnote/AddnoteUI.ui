@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>836</width>
-    <height>562</height>
+    <height>572</height>
    </rect>
   </property>
   <property name="font">
@@ -24,14 +24,8 @@
      <property name="title">
       <string>Global</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout_3">
-      <property name="margin">
-       <number>0</number>
-      </property>
-      <property name="spacing">
-       <number>0</number>
-      </property>
-      <item row="0" column="0">
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
        <widget class="Dial" name="mastervolume">
         <property name="maximum">
          <number>127</number>
@@ -53,7 +47,7 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
+      <item>
        <widget class="Dial" name="a_dt_14">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -66,7 +60,7 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="2">
+      <item>
        <widget class="Dial" name="a_dt_15">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -79,53 +73,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_76">
-        <property name="text">
-         <string>Volume</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QLabel" name="label_77">
-        <property name="text">
-         <string>V. Sns</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
-       <widget class="QLabel" name="label_78">
-        <property name="text">
-         <string>Pan</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="7">
-       <widget class="QWidget" name="widget" native="true">
-        <layout class="QVBoxLayout" name="verticalLayout_5">
-         <item>
-          <widget class="CheckBox" name="checkBox_2">
-           <property name="text">
-            <string>Stereo</string>
-           </property>
-           <property name="controlId" stdset="0">
-            <string>stereo</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item row="0" column="3">
+      <item>
        <widget class="Dial" name="mastervolume_16">
         <property name="maximum">
          <number>127</number>
@@ -147,7 +95,7 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="4">
+      <item>
        <widget class="Dial" name="mastervolume_17">
         <property name="maximum">
          <number>127</number>
@@ -169,7 +117,7 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="5">
+      <item>
        <widget class="Dial" name="mastervolume_18">
         <property name="maximum">
          <number>127</number>
@@ -191,7 +139,7 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="6">
+      <item>
        <widget class="Dial" name="mastervolume_19">
         <property name="maximum">
          <number>127</number>
@@ -211,6 +159,22 @@
         <property name="controlId" stdset="0">
          <string>punch_velocity_sensing</string>
         </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QWidget" name="widget" native="true">
+        <layout class="QVBoxLayout" name="verticalLayout_5">
+         <item>
+          <widget class="CheckBox" name="checkBox_2">
+           <property name="text">
+            <string>Stereo</string>
+           </property>
+           <property name="controlId" stdset="0">
+            <string>stereo</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </item>
      </layout>
