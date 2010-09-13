@@ -191,7 +191,7 @@ void sigterm_exit(int /*sig*/)
 void initprogram(int argc, char *argv[])
 {
 #if LASH
-    //lash = new LASHClient(&argc, &argv);
+    lash = new LASHClient(&argc, &argv);
 #endif
 
     cerr.precision(1);
