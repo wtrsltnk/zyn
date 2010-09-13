@@ -21,8 +21,10 @@
 */
 
 #include "Util.h"
+#include <vector>
 #include <math.h>
 #include <stdio.h>
+#include <algorithm>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -37,6 +39,7 @@
 #include <windows.h>
 #endif
 
+using namespace std;
 
 int SAMPLE_RATE = 44100;
 int SOUND_BUFFER_SIZE = 256;
@@ -199,5 +202,69 @@ std::string legalizeFilename(std::string filename)
             filename[i] = '_';
     }
     return filename;
+}
+
+REALTYPE *getUiBuf()
+{
+    size_t size = max(2048,max(SOUND_BUFFER_SIZE,OSCIL_SIZE));
+    return new REALTYPE[size];
+}
+
+void returnUiBuf(REALTYPE *ptr)
+{
+    delete[] ptr;
+}
+
+void invSignal(REALTYPE *sig, size_t len)
+{
+    for(size_t i = 0; i < len; i++)
+        sig[i] *= -1.0f;
+}
+
+void crossover(REALTYPE &a, REALTYPE &b, REALTYPE crossover)
+{
+    REALTYPE tmpa = a;
+    REALTYPE tmpb = b;
+    a = tmpa * (1.0 - crossover) + tmpb * crossover;
+    b = tmpb * (1.0 - crossover) + tmpa * crossover;
+}
+
+//Some memory pools for short term buffer use
+//(avoid the use of new in RT thread(s))
+
+struct pool_entry{
+    bool free;
+    REALTYPE *dat;
+};
+typedef std::vector<pool_entry> pool_t;
+typedef pool_t::iterator pool_itr_t;
+
+pool_t pool;
+
+REALTYPE *getTmpBuffer()
+{
+    for(pool_itr_t itr = pool.begin(); itr != pool.end(); ++itr) {
+        if(itr->free) { //Use Pool
+            itr->free = false;
+            return itr->dat;
+        }
+    }
+    pool_entry p; //Extend Pool
+    p.free = false;
+    p.dat = new REALTYPE[SOUND_BUFFER_SIZE];
+    pool.push_back(p);
+
+    return p.dat;
+}
+
+void returnTmpBuffer(REALTYPE *buf)
+{
+    for(pool_itr_t itr = pool.begin(); itr != pool.end(); ++itr) {
+        if(itr->dat == buf) { //Return to Pool
+            itr->free = true;
+            return;
+        }
+    }
+    fprintf(stderr,"ERROR: invalid buffer returned %s %d\n",__FILE__,__LINE__);
 }
 

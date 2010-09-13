@@ -22,15 +22,14 @@
 #include "GenControl.h"
 #include "EventClasses.h"
 #include "JobClasses.h"
+#include <cassert>
 
 GenControl::GenControl(Node *parent, std::string id)
     :Node(parent, id), midichan(0), miditype(0)
 {
-    pthread_mutex_init(&localMute, NULL);
 }
 
 GenControl::~GenControl() {
-    pthread_mutex_destroy(&localMute);
 }
 
 class MidiLearnNode:public Node
@@ -110,16 +109,5 @@ bool GenControl::MIDILearn()
     //getRoot()->removeRedirections(learnNode);
     //delete learnNode;
     return true;
-}
-
-
-void GenControl::lock() const
-{
-    pthread_mutex_lock(&localMute);
-}
-
-void GenControl::unlock() const
-{
-    pthread_mutex_unlock(&localMute);
 }
 

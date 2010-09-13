@@ -23,38 +23,29 @@
 #ifndef SUB_NOTE_H
 #define SUB_NOTE_H
 
+#include "SynthNote.h"
 #include "../globals.h"
 #include "../Params/SUBnoteParameters.h"
 #include "../Params/Controller.h"
 #include "Envelope.h"
 #include "../DSP/Filter.h"
 
-class SUBnote
+class SUBnote :public SynthNote
 {
     public:
-        SUBnote(SUBnoteParameters *parameters,
-                Controller *ctl_,
-                REALTYPE freq,
-                REALTYPE velocity,
-                int portamento_,
-                int midinote,
-                bool besilent);
+        SUBnote(SUBnoteParameters *parameters, Controller *ctl_, REALTYPE freq,
+                REALTYPE velocity, int portamento_, int midinote, bool besilent);
         ~SUBnote();
 
-        void SUBlegatonote(REALTYPE freq,
-                           REALTYPE velocity,
-                           int portamento_,
-                           int midinote,
-                           bool externcall);
+        void legatonote(REALTYPE freq, REALTYPE velocity, int portamento_,
+                        int midinote, bool externcall);
 
         int noteout(REALTYPE *outl, REALTYPE *outr); //note output,return 0 if the note is finished
         void relasekey();
-        int finished();
-
-        int ready; //if I can get the sampledata
-
+        int finished() const;
     private:
 
+        void setup(REALTYPE freq, REALTYPE velocity, int portamento_, int midinote, bool legato=false);
         void computecurrentparameters();
         void initparameters(REALTYPE freq);
         void KillNote();
@@ -110,26 +101,7 @@ class SUBnote
         Controller *ctl;
         int      oldpitchwheel, oldbandwidth;
         REALTYPE globalfiltercenterq;
-
-        // Legato vars
-        struct {
-            bool      silent;
-            REALTYPE  lastfreq;
-            LegatoMsg msg;
-            int decounter;
-            struct { // Fade In/Out vars
-                int      length;
-                REALTYPE m, step;
-            } fade;
-            struct { // Note parameters
-                REALTYPE freq, vel;
-                int      portamento, midinote;
-            } param;
-        } Legato;
 };
-
-
-
 
 #endif
 

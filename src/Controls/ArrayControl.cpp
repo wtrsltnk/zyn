@@ -1,48 +1,24 @@
 #include "ArrayControl.h"
-#include <string.h>
-#include <stdio.h>
 #include "EventClasses.h"
+#include "../Misc/Util.h"
+#include <cassert>
+#include <stdio.h>
 
 using std::string;
 
-ArrayControl::ArrayControl(Node *parent, std::string id, int bufsize)
-    : GenControl(parent, id),
-    m_bufsize(bufsize)
+
+ArrayControl::ArrayControl(Node *parent, string id)
+    :GenControl(parent, id)
 {
-    m_front = new REALTYPE[bufsize];
-    m_back = new REALTYPE[bufsize];
+}
 
-    memset(m_front, 0, sizeof(REALTYPE)*bufsize);
-    memset(m_back, 0, sizeof(REALTYPE)*bufsize);
-
+ArrayControl::ArrayControl(Node *parent, string id, boost::function1<size_t, REALTYPE *> func)
+    :GenControl(parent, id), callback(func)
+{
 }
 
 ArrayControl::~ArrayControl()
 {
-    delete [] m_front;
-    delete [] m_back;
-}
-
-void ArrayControl::readArray(REALTYPE *buffer, int *size)
-{
-    lock();
-
-    if (*size < m_bufsize) {
-        std::cout << "Arraycontrol error: the read buffer is too small\n";
-        unlock();
-        return;
-    }
-
-    memcpy(buffer, m_front, sizeof(REALTYPE)*m_bufsize);
-    *size = m_bufsize;
-    unlock();
-}
-
-void ArrayControl::swapBuffers()
-{
-    REALTYPE *tmp = m_front;
-    m_front = m_back;
-    m_back = tmp;
 }
 
 string ArrayControl::getString() const
@@ -52,26 +28,25 @@ string ArrayControl::getString() const
 
 void ArrayControl::defaults()
 {
-
 }
 
-void ArrayControl::finishWrite()
+void ArrayControl::redirHelper(NodeUser *dest)
 {
-    lock();
-    swapBuffers();
-    unlock();
-
-    forward(new NewValueEvent(this, 0));
-}
-
-REALTYPE* ArrayControl::writeBuffer()
+    assert(dest);
+    puts("ARRAYCONTROL CONNECTED!");
+    REALTYPE *buf = getUiBuf();
+    size_t s = callback(buf);
+    ConnEvent tmp = ConnEvent(this,buf);
+    dest->handleEvent(&tmp);
+};
+void ArrayControl::damage()
 {
-    return m_back;
+    puts("ARRAYCONTROL DAMAGED!");
+    REALTYPE *buf = getUiBuf();
+    size_t s = callback(buf);
+    //returnUiBuf(buf);
+    NewValueEvent tmp = NewValueEvent(this,buf);
+    tmp.own();
+    forward(&tmp);
 }
-
-int ArrayControl::size()
-{
-    return m_bufsize;
-}
-
 // vim: sw=4 sts=4 et tw=100

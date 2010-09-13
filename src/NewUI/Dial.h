@@ -32,7 +32,8 @@ class Dial:public QDial
     Q_OBJECT
     public:
         Dial(QWidget *parent);
-        virtual void resizeEvent(class QResizeEvent*);
+        //QSize minimumSizeHint() const;
+        //QSize sizeHint() const;
 
     private slots:
         void slotConnected(GenControl *control);
@@ -45,6 +46,8 @@ class Dial:public QDial
         void mouseMoveEvent(class QMouseEvent * event);
         void wheelEvent(class QWheelEvent * event);
         void paintEvent(class QPaintEvent * event);
+
+        void cleanUpString(QString& string);
 
         int m_originalMouseY;
         int m_originalValueOnPress;

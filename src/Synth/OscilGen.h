@@ -53,7 +53,10 @@ class OscilGen:public Presets
 
         void getbasefunction(REALTYPE *smps);
 
-        //called by UI
+        //UI callbacks
+        size_t getSpectrum(REALTYPE *spc);
+        size_t getBasefunc(REALTYPE *fnc);
+
         void getspectrum(int n, REALTYPE *spc, int what); //what=0 pt. oscil,1 pt. basefunc
         void getcurrentbasefunction(REALTYPE *smps);
         /**convert oscil to base function*/
@@ -63,7 +66,7 @@ class OscilGen:public Presets
         void defaults();
         void getfromXML(XMLwrapper *xml);
 
-        void convert2sine(int magtype);
+        void convert2sine();
 
         //Parameters
 

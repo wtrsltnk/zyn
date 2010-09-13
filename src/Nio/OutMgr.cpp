@@ -7,6 +7,7 @@
 #include "InMgr.h"
 #include "WavEngine.h"
 #include "../Misc/Master.h"
+#include "../Controls/Job.h"
 #include "../Misc/Util.h"//for set_realtime()
 
 using namespace std;
@@ -32,8 +33,8 @@ OutMgr::OutMgr()
 OutMgr::~OutMgr()
 {
     delete wave;
-    delete [] priBuf.l();
-    delete [] priBuf.r();
+    delete [] priBuf.l;
+    delete [] priBuf.r;
     delete [] outr;
     delete [] outl;
 }
@@ -51,6 +52,7 @@ OutMgr::~OutMgr()
  */
 const Stereo<REALTYPE *> OutMgr::tick(unsigned int frameSize)
 {
+    Job::setEngineThread();
     pthread_mutex_lock(&(master.mutex));
     InMgr::getInstance().flush();
     pthread_mutex_unlock(&(master.mutex));
@@ -63,8 +65,8 @@ const Stereo<REALTYPE *> OutMgr::tick(unsigned int frameSize)
         addSmps(outl,outr);
     }
     Stereo<REALTYPE *> ans = priBuffCurrent;
-    ans.l() -= frameSize;
-    ans.r() -= frameSize;
+    ans.l -= frameSize;
+    ans.r -= frameSize;
     //cout << storedSmps() << '=' << frameSize << endl;
     return priBuf;
 }
@@ -116,34 +118,23 @@ void OutMgr::addSmps(REALTYPE *l, REALTYPE *r)
 {
     //allow wave file to syphon off stream
     wave->push(Stereo<REALTYPE *>(l,r),SOUND_BUFFER_SIZE);
+    
+    memcpy(priBuffCurrent.l, l, SOUND_BUFFER_SIZE*sizeof(REALTYPE));
+    memcpy(priBuffCurrent.r, r, SOUND_BUFFER_SIZE*sizeof(REALTYPE));
 
-    Stereo<Sample> smps(Sample(SOUND_BUFFER_SIZE, l), Sample(SOUND_BUFFER_SIZE, r));
 
-#if 0
-    if(currentOut->getSampleRate() != SAMPLE_RATE) { //we need to resample
-        //cout << "BAD RESAMPLING" << endl;
-        smps.l().resample(SAMPLE_RATE,currentOut->getSampleRate());
-        smps.r().resample(SAMPLE_RATE,currentOut->getSampleRate());
-    }
-#endif
-
-    memcpy(priBuffCurrent.l(), smps.l().c_buf(), SOUND_BUFFER_SIZE*sizeof(REALTYPE));
-    memcpy(priBuffCurrent.r(), smps.r().c_buf(), SOUND_BUFFER_SIZE*sizeof(REALTYPE));
-    priBuffCurrent.l() += SOUND_BUFFER_SIZE;
-    priBuffCurrent.r() += SOUND_BUFFER_SIZE;
     stales += SOUND_BUFFER_SIZE;
 }
 
 void OutMgr::removeStaleSmps()
 {
-    int toShift = storedSmps() - stales;
     if(!stales)
         return;
 
-    memset(priBuf.l(), '0', 4096*sizeof(REALTYPE));
-    memset(priBuf.r(), '0', 4096*sizeof(REALTYPE));
+    //memset is possibly unneeded
+    memset(priBuf.l, '0', 4096*sizeof(REALTYPE));
+    memset(priBuf.r, '0', 4096*sizeof(REALTYPE));
     priBuffCurrent = priBuf;
     stales = 0;
-
 }
 

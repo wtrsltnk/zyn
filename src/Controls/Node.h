@@ -56,7 +56,6 @@ class Node:public NodeUser
     friend class DebugInterface;
     friend class Tree;
     friend class NodeJob;
-    friend class RequestGetIntJob;
     friend class RequestSetIntJob;
 
     protected:
@@ -104,8 +103,14 @@ class Node:public NodeUser
         static Node *get(std::string id) { return m_root->getChild(id); }
         static void lock();
         static void unlock();
+        static void requestConnect(const std::string &absName, NodeUser *dest);
 
         virtual void saveXml(class XMLwrapper *xml);
+
+    protected:
+        //Allow for chidren to have custom behavior on connect
+        //(ie, send their data to that node)
+        virtual void redirHelper(NodeUser * /*dest*/) {};
 
     private:
         struct Redirection {

@@ -50,6 +50,13 @@ Ranger::~Ranger()
     delete func;
 }
 
+void Ranger::redirHelper(NodeUser *dest)
+{
+    puts("DESCRANGER CONNECTED!");
+    ConnEvent tmp = ConnEvent(this,getInt());
+    dest->handleEvent(&tmp);
+};
+
 void Ranger::setInt(int val)
 {
     setValue((REALTYPE)(*func)((int)val));

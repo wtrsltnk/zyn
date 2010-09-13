@@ -22,14 +22,13 @@
 
 #include <cmath>
 #include "Reverb.h"
+#include "../Misc/Util.h"
 
 /**\todo: EarlyReflections,Prdelay,Perbalance */
 
 Reverb::Reverb(const int &insertion_, REALTYPE *efxoutl_, REALTYPE *efxoutr_)
     :Effect(insertion_, efxoutl_, efxoutr_, NULL, 0)
 {
-    inputbuf  = new REALTYPE[SOUND_BUFFER_SIZE];
-
     bandwidth = NULL;
 
     //defaults
@@ -87,7 +86,6 @@ Reverb::~Reverb()
     for(i = 0; i < REV_COMBS * 2; i++)
         delete [] comb[i];
 
-    delete [] inputbuf;
     if(bandwidth)
         delete bandwidth;
 }
@@ -121,19 +119,16 @@ void Reverb::cleanup()
 /*
  * Process one channel; 0=left,1=right
  */
-void Reverb::processmono(int ch, REALTYPE *output)
+void Reverb::processmono(int ch, REALTYPE *output, REALTYPE *inputbuf)
 {
-    int      i, j;
-    REALTYPE fbout, tmp;
     /**\todo: implement the high part from lohidamp*/
+    for(int j = REV_COMBS * ch; j < REV_COMBS * (ch + 1); j++) {
+        int &ck = combk[j];
+        const int comblength = comblen[j];
+        REALTYPE &lpcombj = lpcomb[j];
 
-    for(j = REV_COMBS * ch; j < REV_COMBS * (ch + 1); j++) {
-        int      ck = combk[j];
-        int      comblength = comblen[j];
-        REALTYPE lpcombj    = lpcomb[j];
-
-        for(i = 0; i < SOUND_BUFFER_SIZE; i++) {
-            fbout = comb[j][ck] * combfb[j];
+        for(int i = 0; i < SOUND_BUFFER_SIZE; i++) {
+            REALTYPE fbout = comb[j][ck] * combfb[j];
             fbout = fbout * (1.0 - lohifb) + lpcombj * lohifb;
             lpcombj     = fbout;
 
@@ -143,22 +138,18 @@ void Reverb::processmono(int ch, REALTYPE *output)
             if((++ck) >= comblength)
                 ck = 0;
         }
-
-        combk[j]  = ck;
-        lpcomb[j] = lpcombj;
     }
 
-    for(j = REV_APS * ch; j < REV_APS * (1 + ch); j++) {
-        int ak = apk[j];
-        int aplength = aplen[j];
-        for(i = 0; i < SOUND_BUFFER_SIZE; i++) {
-            tmp = ap[j][ak];
+    for(int j = REV_APS * ch; j < REV_APS * (1 + ch); j++) {
+        int &ak = apk[j];
+        const int aplength = aplen[j];
+        for(int i = 0; i < SOUND_BUFFER_SIZE; i++) {
+            REALTYPE tmp = ap[j][ak];
             ap[j][ak] = 0.7 * tmp + output[i];
             output[i] = tmp - 0.7 * ap[j][ak];
             if((++ak) >= aplength)
                 ak = 0;
         }
-        apk[j] = ak;
     }
 }
 
@@ -167,16 +158,15 @@ void Reverb::processmono(int ch, REALTYPE *output)
  */
 void Reverb::out(const Stereo<float *> &smp)
 {
-    int i;
     if((Pvolume == 0) && (insertion != 0))
         return;
 
-    for(i = 0; i < SOUND_BUFFER_SIZE; i++)
-        inputbuf[i] = (smp.l()[i] + smp.r()[i]) / 2.0;
-    ;
+    REALTYPE *inputbuf = getTmpBuffer();
+    for(int i = 0; i < SOUND_BUFFER_SIZE; i++)
+        inputbuf[i] = (smp.l[i] + smp.r[i]) / 2.0;
 
     if(idelay != NULL) {
-        for(i = 0; i < SOUND_BUFFER_SIZE; i++) {
+        for(int i = 0; i < SOUND_BUFFER_SIZE; i++) {
             //Initial delay r
             REALTYPE tmp = inputbuf[i] + idelay[idelayk] * idelayfb;
             inputbuf[i]     = idelay[idelayk];
@@ -184,7 +174,6 @@ void Reverb::out(const Stereo<float *> &smp)
             idelayk++;
             if(idelayk >= idelaylen)
                 idelayk = 0;
-            ;
         }
     }
 
@@ -196,8 +185,9 @@ void Reverb::out(const Stereo<float *> &smp)
     if(hpf != NULL)
         hpf->filterout(inputbuf);
 
-    processmono(0, efxoutl); //left
-    processmono(1, efxoutr); //right
+    processmono(0, efxoutl, inputbuf); //left
+    processmono(1, efxoutr, inputbuf); //right
+    returnTmpBuffer(inputbuf);
 
     REALTYPE lvol = rs / REV_COMBS * pan;
     REALTYPE rvol = rs / REV_COMBS * (1.0 - pan);
@@ -246,7 +236,6 @@ void Reverb::settime(unsigned char Ptime)
         combfb[i] =
             -exp((REALTYPE)comblen[i] / (REALTYPE)SAMPLE_RATE * log(0.001) / t);
         //the feedback is negative because it removes the DC
-    ;
 }
 
 void Reverb::setlohidamp(unsigned char Plohidamp)

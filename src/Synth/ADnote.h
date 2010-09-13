@@ -23,7 +23,7 @@
 #ifndef AD_NOTE_H
 #define AD_NOTE_H
 
-#include "../globals.h"
+#include "SynthNote.h"
 #include "Envelope.h"
 #include "LFO.h"
 #include "../DSP/Filter.h"
@@ -38,7 +38,7 @@
 #define OSCIL_SMP_EXTRA_SAMPLES 5
 
 /**The "additive" synthesizer*/
-class ADnote    //ADDitive note
+class ADnote :public SynthNote
 {
     public:
         /**Constructor.
@@ -56,24 +56,12 @@ class ADnote    //ADDitive note
         ~ADnote();
 
         /**Alters the playing note for legato effect*/
-        void ADlegatonote(REALTYPE freq, REALTYPE velocity, int portamento_,
-                          int midinote_, bool externcall);
+        void legatonote(REALTYPE freq, REALTYPE velocity, int portamento_,
+                        int midinote_, bool externcall);
 
-        /**Compute ADnote Samples.
-         * @return 0 if note is finished*/
         int noteout(REALTYPE *outl, REALTYPE *outr);
-
-        /**Release the key for the note and start release portion of envelopes.*/
         void relasekey();
-        /**Return if note is finished.
-         * @return finished=1 unfinished=0*/
         int finished() const;
-
-
-        /**Nonzero when ready for output(the parameters has been computed)
-         * zero when parameters need to be computed.*/
-        char ready;
-
     private:
 
         /**Changes the frequency of an oscillator.
@@ -112,7 +100,7 @@ class ADnote    //ADDitive note
         /**Computes the Frequency Modulated Oscillator.
          * @param FMmode modulation type 0=Phase 1=Frequency*/
         inline void ComputeVoiceOscillatorFrequencyModulation(int nvoice,
-                                                              int FMmode);       //FMmode=0 for phase modulation, 1 for Frequency modulation
+                                                              int FMmode);
         //  inline void ComputeVoiceOscillatorFrequencyModulation(int nvoice);
         /**TODO*/
         inline void ComputeVoiceOscillatorPitchModulation(int nvoice);
@@ -137,7 +125,11 @@ class ADnote    //ADDitive note
         /*                    GLOBAL PARAMETERS                          */
         /*****************************************************************/
 
-        struct ADnoteGlobal {
+        struct Global {
+            void kill();
+            void initparameters(const ADnoteGlobalParam &param,
+                                REALTYPE basefreq, REALTYPE velocity,
+                                bool stereo);
             /******************************************
             *     FREQUENCY GLOBAL PARAMETERS        *
             ******************************************/
@@ -180,7 +172,9 @@ class ADnote    //ADDitive note
         /***********************************************************/
         /*                    VOICE PARAMETERS                     */
         /***********************************************************/
-        struct ADnoteVoice {
+        struct Voice{
+            void releasekey();
+            void kill();
             /* If the voice is enabled */
             ONOFFTYPE Enabled;
 
@@ -327,22 +321,6 @@ class ADnote    //ADDitive note
 
         //how the fine detunes are made bigger or smaller
         REALTYPE bandwidthDetuneMultiplier;
-
-        // Legato vars
-        struct {
-            bool      silent;
-            REALTYPE  lastfreq;
-            LegatoMsg msg;
-            int decounter;
-            struct { // Fade In/Out vars
-                int      length;
-                REALTYPE m, step;
-            } fade;
-            struct { // Note parameters
-                REALTYPE freq, vel;
-                int      portamento, midinote;
-            } param;
-        } Legato;
 };
 
 #endif

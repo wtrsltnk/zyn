@@ -20,9 +20,9 @@
 
 */
 
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cmath>
+#include <cstdlib>
+#include <cstdio>
 #include "../globals.h"
 #include "SUBnote.h"
 #include "../Misc/Util.h"
@@ -34,27 +34,17 @@ SUBnote::SUBnote(SUBnoteParameters *parameters,
                  int portamento_,
                  int midinote,
                  bool besilent)
+:SynthNote(freq, velocity, portamento_, midinote, besilent)
 {
-    ready  = 0;
-
-    tmpsmp = new REALTYPE[SOUND_BUFFER_SIZE];
-    tmprnd = new REALTYPE[SOUND_BUFFER_SIZE];
-
-    // Initialise some legato-specific vars
-    Legato.msg = LM_Norm;
-    Legato.fade.length      = (int)(SAMPLE_RATE * 0.005); // 0.005 seems ok.
-    if(Legato.fade.length < 1)
-        Legato.fade.length = 1;                    // (if something's fishy)
-    Legato.fade.step        = (1.0 / Legato.fade.length);
-    Legato.decounter        = -10;
-    Legato.param.freq       = freq;
-    Legato.param.vel        = velocity;
-    Legato.param.portamento = portamento_;
-    Legato.param.midinote   = midinote;
-    Legato.silent = besilent;
-
+    ready  = false;
     pars = parameters;
     ctl  = ctl_;
+    NoteEnabled= ON;
+    setup(freq, velocity, portamento_, midinote);
+}
+
+void SUBnote::setup(REALTYPE freq, REALTYPE velocity, int portamento_, int midinote, bool legato)
+{
     portamento  = portamento_;
     NoteEnabled = ON;
     volume      = pow(0.1, 3.0 * (1.0 - pars->PVolume / 96.0)); //-60 dB .. 0 dB
@@ -63,10 +53,12 @@ SUBnote::SUBnote(SUBnoteParameters *parameters,
         panning = pars->PPanning / 127.0;
     else
         panning = RND;
-    numstages = pars->Pnumstages;
-    stereo    = pars->Pstereo;
-    start     = pars->Pstart;
-    firsttick = 1;
+    if(!legato) {
+        numstages = pars->Pnumstages;
+        stereo    = pars->Pstereo;
+        start     = pars->Pstart;
+        firsttick = 1;
+    }
     int pos[MAX_SUB_HARMONICS];
 
     if(pars->Pfixedfreq == 0)
@@ -97,197 +89,42 @@ SUBnote::SUBnote(SUBnoteParameters *parameters,
                                       pars->PGlobalFilterVelocityScaleFunction)
                                  - 1);
 
-    GlobalFilterL = NULL;
-    GlobalFilterR = NULL;
-    GlobalFilterEnvelope = NULL;
+    if(!legato) {
+        GlobalFilterL = NULL;
+        GlobalFilterR = NULL;
+        GlobalFilterEnvelope = NULL;
+    }
 
     //select only harmonics that desire to compute
-    numharmonics = 0;
+    int harmonics = 0;
     for(int n = 0; n < MAX_SUB_HARMONICS; n++) {
         if(pars->Phmag[n] == 0)
             continue;
         if(n * basefreq > SAMPLE_RATE / 2.0)
             break;                            //remove the freqs above the Nyquist freq
-        pos[numharmonics++] = n;
+        pos[harmonics++] = n;
     }
-    firstnumharmonics = numharmonics; //(gf)Useful in legato mode.
-
-    if(numharmonics == 0) {
-        NoteEnabled = OFF;
-        return;
-    }
-
-
-    lfilter = new bpfilter[numstages * numharmonics];
-    if(stereo != 0)
-        rfilter = new bpfilter[numstages * numharmonics];
-
-    //how much the amplitude is normalised (because the harmonics)
-    REALTYPE reduceamp = 0.0;
-
-    for(int n = 0; n < numharmonics; n++) {
-        REALTYPE freq = basefreq * (pos[n] + 1);
-
-        //the bandwidth is not absolute(Hz); it is relative to frequency
-        REALTYPE bw =
-            pow(10, (pars->Pbandwidth - 127.0) / 127.0 * 4) * numstages;
-
-        //Bandwidth Scale
-        bw *= pow(1000 / freq, (pars->Pbwscale - 64.0) / 64.0 * 3.0);
-
-        //Relative BandWidth
-        bw *= pow(100, (pars->Phrelbw[pos[n]] - 64.0) / 64.0);
-
-        if(bw > 25.0)
-            bw = 25.0;
-
-        //try to keep same amplitude on all freqs and bw. (empirically)
-        REALTYPE gain    = sqrt(1500.0 / (bw * freq));
-
-        REALTYPE hmagnew = 1.0 - pars->Phmag[pos[n]] / 127.0;
-        REALTYPE hgain;
-
-        switch(pars->Phmagtype) {
-        case 1:
-            hgain = exp(hmagnew * log(0.01));
-            break;
-        case 2:
-            hgain = exp(hmagnew * log(0.001));
-            break;
-        case 3:
-            hgain = exp(hmagnew * log(0.0001));
-            break;
-        case 4:
-            hgain = exp(hmagnew * log(0.00001));
-            break;
-        default:
-            hgain = 1.0 - hmagnew;
-        }
-        gain      *= hgain;
-        reduceamp += hgain;
-
-        for(int nph = 0; nph < numstages; nph++) {
-            REALTYPE amp = 1.0;
-            if(nph == 0)
-                amp = gain;
-            initfilter(lfilter[nph + n * numstages], freq, bw, amp, hgain);
-            if(stereo != 0)
-                initfilter(rfilter[nph + n * numstages], freq, bw, amp, hgain);
-        }
-    }
-
-    if(reduceamp < 0.001)
-        reduceamp = 1.0;
-    volume /= reduceamp;
-
-    oldpitchwheel = 0;
-    oldbandwidth  = 64;
-    if(pars->Pfixedfreq == 0)
-        initparameters(basefreq);
-    else
-        initparameters(basefreq / 440.0 * freq);
-
-    oldamplitude = newamplitude;
-    ready = 1;
-}
-
-
-// SUBlegatonote: This function is (mostly) a copy of SUBnote(...) and
-// initparameters(...) stuck together with some lines removed so that
-// it only alter the already playing note (to perform legato). It is
-// possible I left stuff that is not required for this.
-void SUBnote::SUBlegatonote(REALTYPE freq,
-                            REALTYPE velocity,
-                            int portamento_,
-                            int midinote,
-                            bool externcall)
-{
-    //SUBnoteParameters *parameters=pars;
-    //Controller *ctl_=ctl;
-
-    // Manage legato stuff
-    if(externcall)
-        Legato.msg = LM_Norm;
-    if(Legato.msg != LM_CatchUp) {
-        Legato.lastfreq   = Legato.param.freq;
-        Legato.param.freq = freq;
-        Legato.param.vel  = velocity;
-        Legato.param.portamento = portamento_;
-        Legato.param.midinote   = midinote;
-        if(Legato.msg == LM_Norm) {
-            if(Legato.silent) {
-                Legato.fade.m = 0.0;
-                Legato.msg    = LM_FadeIn;
-            }
-            else {
-                Legato.fade.m = 1.0;
-                Legato.msg    = LM_FadeOut;
-                return;
-            }
-        }
-        if(Legato.msg == LM_ToNorm)
-            Legato.msg = LM_Norm;
-    }
-
-    portamento = portamento_;
-
-    volume     = pow(0.1, 3.0 * (1.0 - pars->PVolume / 96.0)); //-60 dB .. 0 dB
-    volume    *= VelF(velocity, pars->PAmpVelocityScaleFunction);
-    if(pars->PPanning != 0)
-        panning = pars->PPanning / 127.0;
-    else
-        panning = RND;
-
-    ///start=pars->Pstart;
-
-    int pos[MAX_SUB_HARMONICS];
-
-    if(pars->Pfixedfreq == 0)
-        basefreq = freq;
+    if(!legato)
+        firstnumharmonics = numharmonics = harmonics;
     else {
-        basefreq = 440.0;
-        int fixedfreqET = pars->PfixedfreqET;
-        if(fixedfreqET != 0) { //if the frequency varies according the keyboard note
-            REALTYPE tmp =
-                (midinote
-                 - 69.0) / 12.0 * (pow(2.0, (fixedfreqET - 1) / 63.0) - 1.0);
-            if(fixedfreqET <= 64)
-                basefreq *= pow(2.0, tmp);
-            else
-                basefreq *= pow(3.0, tmp);
-        }
+        if(harmonics > firstnumharmonics)
+            numharmonics = firstnumharmonics;
+        else
+            numharmonics = harmonics;
     }
-    REALTYPE detune = getdetune(pars->PDetuneType,
-                                pars->PCoarseDetune,
-                                pars->PDetune);
-    basefreq *= pow(2.0, detune / 1200.0); //detune
 
-    //global filter
-    GlobalFilterCenterPitch = pars->GlobalFilter->getfreq() //center freq
-                              + (pars->PGlobalFilterVelocityScale / 127.0 * 6.0) //velocity sensing
-                              * (VelF(velocity,
-                                      pars->PGlobalFilterVelocityScaleFunction)
-                                 - 1);
-
-
-    int legatonumharmonics = 0;
-    for(int n = 0; n < MAX_SUB_HARMONICS; n++) {
-        if(pars->Phmag[n] == 0)
-            continue;
-        if(n * basefreq > SAMPLE_RATE / 2.0)
-            break;                            //remove the freqs above the Nyquist freq
-        pos[legatonumharmonics++] = n;
-    }
-    if(legatonumharmonics > firstnumharmonics)
-        numharmonics = firstnumharmonics;
-    else
-        numharmonics = legatonumharmonics;
 
     if(numharmonics == 0) {
         NoteEnabled = OFF;
         return;
     }
 
+
+    if(!legato) {
+        lfilter = new bpfilter[numstages * numharmonics];
+        if(stereo != 0)
+            rfilter = new bpfilter[numstages * numharmonics];
+    }
 
     //how much the amplitude is normalised (because the harmonics)
     REALTYPE reduceamp = 0.0;
@@ -349,36 +186,42 @@ void SUBnote::SUBlegatonote(REALTYPE freq,
 
     oldpitchwheel = 0;
     oldbandwidth  = 64;
+    if(!legato) {
+        if(pars->Pfixedfreq == 0)
+            initparameters(basefreq);
+        else
+            initparameters(basefreq / 440.0 * freq);
+    }
+    else {
+        if(pars->Pfixedfreq == 0)
+            freq = basefreq;
+        else
+            freq *= basefreq / 440.0;
 
-    if(pars->Pfixedfreq == 0)
-        freq = basefreq;
-    else
-        freq *= basefreq / 440.0;
-
-
-    ///////////////
-    // Altered initparameters(...) content:
-
-    if(pars->PGlobalFilterEnabled != 0) {
-        globalfiltercenterq      = pars->GlobalFilter->getq();
-        GlobalFilterFreqTracking = pars->GlobalFilter->getfreqtracking(basefreq);
+        if(pars->PGlobalFilterEnabled != 0) {
+            globalfiltercenterq      = pars->GlobalFilter->getq();
+            GlobalFilterFreqTracking = pars->GlobalFilter->getfreqtracking(basefreq);
+        }
     }
 
-    // end of the altered initparameters function content.
-    ///////////////
-
     oldamplitude = newamplitude;
-
-    // End of the SUBlegatonote function.
+    ready = true;
 }
 
+void SUBnote::legatonote(REALTYPE freq, REALTYPE velocity, int portamento_,
+                         int midinote, bool externcall)
+{
+    // Manage legato stuff
+    if(legato.update(freq, velocity, portamento_, midinote, externcall))
+        return;
+
+    setup(freq, velocity, portamento_, midinote, true);
+}
 
 SUBnote::~SUBnote()
 {
     if(NoteEnabled != OFF)
         KillNote();
-    delete [] tmpsmp;
-    delete [] tmprnd;
 }
 
 /*
@@ -412,7 +255,7 @@ void SUBnote::computefiltercoefs(bpfilter &filter,
 {
     if(freq > SAMPLE_RATE / 2.0 - 200.0)
         freq = SAMPLE_RATE / 2.0 - 200.0;
-    ;
+
 
     REALTYPE omega = 2.0 * PI * freq / SAMPLE_RATE;
     REALTYPE sn    = sin(omega);
@@ -574,7 +417,7 @@ void SUBnote::computecurrentparameters()
                         gain);
                 }
             }
-        ;
+
         oldbandwidth  = ctl->bandwidth.data;
         oldpitchwheel = ctl->pitchwheel.data;
     }
@@ -603,22 +446,22 @@ void SUBnote::computecurrentparameters()
  */
 int SUBnote::noteout(REALTYPE *outl, REALTYPE *outr)
 {
-    int i;
-
     memcpy(outl, denormalkillbuf, SOUND_BUFFER_SIZE * sizeof(REALTYPE));
     memcpy(outr, denormalkillbuf, SOUND_BUFFER_SIZE * sizeof(REALTYPE));
 
     if(NoteEnabled == OFF)
         return 0;
 
+    REALTYPE *tmprnd = getTmpBuffer();
+    REALTYPE *tmpsmp = getTmpBuffer();
     //left channel
-    for(i = 0; i < SOUND_BUFFER_SIZE; i++)
+    for(int i = 0; i < SOUND_BUFFER_SIZE; i++)
         tmprnd[i] = RND * 2.0 - 1.0;
     for(int n = 0; n < numharmonics; n++) {
         memcpy(tmpsmp, tmprnd, SOUND_BUFFER_SIZE * sizeof(REALTYPE));
         for(int nph = 0; nph < numstages; nph++)
             filter(lfilter[nph + n * numstages], tmpsmp);
-        for(i = 0; i < SOUND_BUFFER_SIZE; i++)
+        for(int i = 0; i < SOUND_BUFFER_SIZE; i++)
             outl[i] += tmpsmp[i];
     }
 
@@ -627,13 +470,13 @@ int SUBnote::noteout(REALTYPE *outl, REALTYPE *outr)
 
     //right channel
     if(stereo != 0) {
-        for(i = 0; i < SOUND_BUFFER_SIZE; i++)
+        for(int i = 0; i < SOUND_BUFFER_SIZE; i++)
             tmprnd[i] = RND * 2.0 - 1.0;
         for(int n = 0; n < numharmonics; n++) {
             memcpy(tmpsmp, tmprnd, SOUND_BUFFER_SIZE * sizeof(REALTYPE));
             for(int nph = 0; nph < numstages; nph++)
                 filter(rfilter[nph + n * numstages], tmpsmp);
-            for(i = 0; i < SOUND_BUFFER_SIZE; i++)
+            for(int i = 0; i < SOUND_BUFFER_SIZE; i++)
                 outr[i] += tmpsmp[i];
         }
         if(GlobalFilterR != NULL)
@@ -641,12 +484,14 @@ int SUBnote::noteout(REALTYPE *outl, REALTYPE *outr)
     }
     else
         memcpy(outr, outl, SOUND_BUFFER_SIZE * sizeof(REALTYPE));
+    returnTmpBuffer(tmprnd);
+    returnTmpBuffer(tmpsmp);
 
     if(firsttick != 0) {
         int n = 10;
         if(n > SOUND_BUFFER_SIZE)
             n = SOUND_BUFFER_SIZE;
-        for(i = 0; i < n; i++) {
+        for(int i = 0; i < n; i++) {
             REALTYPE ampfadein = 0.5 - 0.5 * cos(
                 (REALTYPE) i / (REALTYPE) n * PI);
             outl[i] *= ampfadein;
@@ -657,7 +502,7 @@ int SUBnote::noteout(REALTYPE *outl, REALTYPE *outr)
 
     if(ABOVE_AMPLITUDE_THRESHOLD(oldamplitude, newamplitude)) {
         // Amplitude interpolation
-        for(i = 0; i < SOUND_BUFFER_SIZE; i++) {
+        for(int i = 0; i < SOUND_BUFFER_SIZE; i++) {
             REALTYPE tmpvol = INTERPOLATE_AMPLITUDE(oldamplitude,
                                                     newamplitude,
                                                     i,
@@ -667,7 +512,7 @@ int SUBnote::noteout(REALTYPE *outl, REALTYPE *outr)
         }
     }
     else {
-        for(i = 0; i < SOUND_BUFFER_SIZE; i++) {
+        for(int i = 0; i < SOUND_BUFFER_SIZE; i++) {
             outl[i] *= newamplitude * panning;
             outr[i] *= newamplitude * (1.0 - panning);
         }
@@ -677,83 +522,11 @@ int SUBnote::noteout(REALTYPE *outl, REALTYPE *outr)
     computecurrentparameters();
 
     // Apply legato-specific sound signal modifications
-    if(Legato.silent)    // Silencer
-        if(Legato.msg != LM_FadeIn) {
-            memset(outl, 0, SOUND_BUFFER_SIZE * sizeof(REALTYPE));
-            memset(outr, 0, SOUND_BUFFER_SIZE * sizeof(REALTYPE));
-        }
-    switch(Legato.msg) {
-    case LM_CatchUp:  // Continue the catch-up...
-        if(Legato.decounter == -10)
-            Legato.decounter = Legato.fade.length;
-        for(i = 0; i < SOUND_BUFFER_SIZE; i++) { //Yea, could be done without the loop...
-            Legato.decounter--;
-            if(Legato.decounter < 1) {
-                // Catching-up done, we can finally set
-                // the note to the actual parameters.
-                Legato.decounter = -10;
-                Legato.msg = LM_ToNorm;
-                SUBlegatonote(Legato.param.freq,
-                              Legato.param.vel,
-                              Legato.param.portamento,
-                              Legato.param.midinote,
-                              false);
-                break;
-            }
-        }
-        break;
-    case LM_FadeIn:  // Fade-in
-        if(Legato.decounter == -10)
-            Legato.decounter = Legato.fade.length;
-        Legato.silent = false;
-        for(i = 0; i < SOUND_BUFFER_SIZE; i++) {
-            Legato.decounter--;
-            if(Legato.decounter < 1) {
-                Legato.decounter = -10;
-                Legato.msg = LM_Norm;
-                break;
-            }
-            Legato.fade.m += Legato.fade.step;
-            outl[i] *= Legato.fade.m;
-            outr[i] *= Legato.fade.m;
-        }
-        break;
-    case LM_FadeOut:  // Fade-out, then set the catch-up
-        if(Legato.decounter == -10)
-            Legato.decounter = Legato.fade.length;
-        for(i = 0; i < SOUND_BUFFER_SIZE; i++) {
-            Legato.decounter--;
-            if(Legato.decounter < 1) {
-                for(int j = i; j < SOUND_BUFFER_SIZE; j++) {
-                    outl[j] = 0.0;
-                    outr[j] = 0.0;
-                }
-                Legato.decounter = -10;
-                Legato.silent    = true;
-                // Fading-out done, now set the catch-up :
-                Legato.decounter = Legato.fade.length;
-                Legato.msg = LM_CatchUp;
-                REALTYPE catchupfreq = Legato.param.freq
-                                       * (Legato.param.freq / Legato.lastfreq);            //This freq should make this now silent note to catch-up (or should I say resync ?) with the heard note for the same length it stayed at the previous freq during the fadeout.
-                SUBlegatonote(catchupfreq,
-                              Legato.param.vel,
-                              Legato.param.portamento,
-                              Legato.param.midinote,
-                              false);
-                break;
-            }
-            Legato.fade.m -= Legato.fade.step;
-            outl[i] *= Legato.fade.m;
-            outr[i] *= Legato.fade.m;
-        }
-        break;
-    default:
-        break;
-    }
+    legato.apply(*this,outl,outr);
 
     // Check if the note needs to be computed more
     if(AmpEnvelope->finished() != 0) {
-        for(i = 0; i < SOUND_BUFFER_SIZE; i++) { //fade-out
+        for(int i = 0; i < SOUND_BUFFER_SIZE; i++) { //fade-out
             REALTYPE tmp = 1.0 - (REALTYPE)i / (REALTYPE)SOUND_BUFFER_SIZE;
             outl[i] *= tmp;
             outr[i] *= tmp;
@@ -769,18 +542,18 @@ int SUBnote::noteout(REALTYPE *outl, REALTYPE *outr)
 void SUBnote::relasekey()
 {
     AmpEnvelope->relasekey();
-    if(FreqEnvelope != NULL)
+    if(FreqEnvelope)
         FreqEnvelope->relasekey();
-    if(BandWidthEnvelope != NULL)
+    if(BandWidthEnvelope)
         BandWidthEnvelope->relasekey();
-    if(GlobalFilterEnvelope != NULL)
+    if(GlobalFilterEnvelope)
         GlobalFilterEnvelope->relasekey();
 }
 
 /*
  * Check if the note is finished
  */
-int SUBnote::finished()
+int SUBnote::finished() const
 {
     if(NoteEnabled == OFF)
         return 1;

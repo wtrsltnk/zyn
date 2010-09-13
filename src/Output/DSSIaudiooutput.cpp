@@ -38,6 +38,13 @@
 #include "../Nio/OutMgr.h"
 #include "../Nio/InMgr.h"
 
+template <class T>
+T min(T a, T b)
+{
+    return (a < b)?a:b;
+}
+
+
 // Initialization of static data
 
 // Each part has it's own channel, starting at 0. For each instantiated plugin, this variable will
@@ -472,8 +479,8 @@ void DSSIaudiooutput::runSynth(unsigned long sample_count, snd_seq_event_t *even
                 unsigned int toCopy = min(samplesNeeded, samplesReady);
 
                 for(unsigned int i = 0; i < toCopy; ++i) {
-                    *(outl_loc++) = buffer.l()[(bufferOffset + i) % SOUND_BUFFER_SIZE];
-                    *(outr_loc++) = buffer.r()[(bufferOffset + i) % SOUND_BUFFER_SIZE];
+                    *(outl_loc++) = buffer.l[(bufferOffset + i) % SOUND_BUFFER_SIZE];
+                    *(outr_loc++) = buffer.r[(bufferOffset + i) % SOUND_BUFFER_SIZE];
                 }
 
                 bufferOffset = (bufferOffset + toCopy) % SOUND_BUFFER_SIZE;

@@ -21,6 +21,7 @@
 #ifndef PAD_NOTE_H
 #define PAD_NOTE_H
 
+#include "SynthNote.h"
 #include "../globals.h"
 #include "../Params/PADnoteParameters.h"
 #include "../Params/Controller.h"
@@ -30,7 +31,7 @@
 #include "../Params/Controller.h"
 
 /**The "pad" synthesizer*/
-class PADnote
+class PADnote :public SynthNote
 {
     public:
         PADnote(PADnoteParameters *parameters,
@@ -42,19 +43,15 @@ class PADnote
                 bool besilent);
         ~PADnote();
 
-        void PADlegatonote(REALTYPE freq,
-                           REALTYPE velocity,
-                           int portamento_,
-                           int midinote,
-                           bool externcall);
+        void legatonote(REALTYPE freq, REALTYPE velocity, int portamento_,
+                        int midinote, bool externcall);
 
         int noteout(REALTYPE *outl, REALTYPE *outr);
-        int finished();
+        int finished() const;
         void relasekey();
-
-        int ready;
-
     private:
+        void setup(REALTYPE freq, REALTYPE velocity,int portamento_,
+                   int midinote, bool legato=false);
         void fadein(REALTYPE *smps);
         void computecurrentparameters();
         bool finished_;
@@ -118,24 +115,7 @@ class PADnote
 
 
         REALTYPE    globaloldamplitude, globalnewamplitude, velocity, realfreq;
-        REALTYPE   *tmpwave;
         Controller *ctl;
-
-        // Legato vars
-        struct {
-            bool      silent;
-            REALTYPE  lastfreq;
-            LegatoMsg msg;
-            int decounter;
-            struct { // Fade In/Out vars
-                int      length;
-                REALTYPE m, step;
-            } fade;
-            struct { // Note parameters
-                REALTYPE freq, vel;
-                int      portamento, midinote;
-            } param;
-        } Legato;
 };
 
 

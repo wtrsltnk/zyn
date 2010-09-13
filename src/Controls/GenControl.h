@@ -49,11 +49,6 @@ class GenControl:public Node
     protected:
         GenControl(Node *parent, std::string id);
         virtual ~GenControl();
-        mutable pthread_mutex_t localMute;
-
-        void lock() const;
-        void unlock() const;
-
 
     private:
 

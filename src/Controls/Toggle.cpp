@@ -36,6 +36,13 @@ string Toggle::getString() const
     return getValue() ? "On/Enabled" : "Off/Disabled";
 }
 
+void Toggle::redirHelper(NodeUser *dest)
+{
+    puts("TOGGLE CONNECTED!");
+    ConnEvent tmp = ConnEvent(this,getInt());
+    dest->handleEvent(&tmp);
+};
+
 void Toggle::setInt(int val)
 {
     setValue(int(127 * val));

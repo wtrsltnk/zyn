@@ -20,6 +20,7 @@
 
 */
 #include "Selector.h"
+#include <cassert>
 
 using namespace std;
 
@@ -38,36 +39,31 @@ string Selector::getString() const
 
 string Selector::getOption(int idx) const
 {
-    string tmp;
-    pthread_mutex_lock(&localMute);
-    tmp = options[idx];
-    pthread_mutex_unlock(&localMute);
-    return tmp;
+    return options[idx];
 }
 
 int Selector::numOptions() const
 {
-    int tmp;
-    pthread_mutex_lock(&localMute);
-    tmp = options.size();
-    pthread_mutex_unlock(&localMute);
-    return tmp;
+    return options.size();
 }
 
 void Selector::addOption(string option)
 {
-    pthread_mutex_lock(&localMute);
     options.push_back(option);
-    pthread_mutex_unlock(&localMute);
 }
 
 void Selector::clearOptions()
 {
-    pthread_mutex_lock(&localMute);
     options.clear();
-    pthread_mutex_unlock(&localMute);
-
 }
+
+void Selector::redirHelper(NodeUser *dest)
+{
+    assert(dest);
+    puts("SELECTOR CONNECTED!");
+    ConnEvent tmp(this, (*this)(), (void *)&options);
+    dest->handleEvent(&tmp);
+};
 
 void Selector::addpar(XMLwrapper *xml, const std::string& name)
 {

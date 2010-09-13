@@ -30,8 +30,13 @@
 #include <pthread.h>
 #include "../Misc/XMLwrapper.h"
 
+//these need explicit xml-names
 #define GETPAR(X,Y) (X).getpar(xml, (Y));
 #define ADDPAR(X,Y) (X).addpar(xml, (Y));
+
+//these just use the names of the controls
+#define GET(X) (X).getpar(xml, (X).getId())
+#define ADD(X) (X).addpar(xml, (X).getId())
 
 /**
  * A control of interal type T

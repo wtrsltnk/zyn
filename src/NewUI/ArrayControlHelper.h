@@ -32,13 +32,12 @@ class ArrayControlHelper : public ControlHelper
 
     public:
         ArrayControlHelper(QObject *parent);
-        virtual void connectedEvent();
+        virtual void connectedEvent(class ConnEvent *ev);
         virtual void disconnectedEvent();
         virtual void newValueEvent(NewValueEvent *event);
 
     signals:
-        void arrayUpdated(ArrayControl *control);
-
+        void arrayUpdated(const float *control);
 };
 
 #endif // ARRAYCONTROLHELPER_H

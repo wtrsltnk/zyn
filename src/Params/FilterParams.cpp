@@ -23,8 +23,12 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <functional>
 #include "FilterParams.h"
 #include "../Misc/LinInjFunc.h"
+#include "../DSP/AnalogFilter.h"
+using std::bind1st;
+using std::mem_fun;
 
 REALINJFUNCFUNC(FreqInj,
                 freq2int, freq2real,
@@ -58,6 +62,7 @@ FilterParams::FilterParams(Node *parent,
       vowelclearness    (&formantFilter, "vowel_clearness", 64),
       octavesfreq       (&formantFilter, "octaves_freq", 64),
       centerFrequency   (&formantFilter, "center_freq", cfreq2real(64), new CFreqInj),
+      response          (this, "FilterVis",bind1st(mem_fun(&FilterParams::dummy), this)),
       sequencesize      (&formantFilter, "sequence_size", 3),
       sequencestretch   (&formantFilter, "sequence_stretch", 40),
       sequencereversed  (&formantFilter, "sequence_reversed", 0)
@@ -76,6 +81,12 @@ FilterParams::FilterParams(Node *parent,
     type.addOption("PEAK 2 poles");
     type.addOption("Low Shelf 2 poles");
     type.addOption("High Shelf 2 poles");
+    category.addRedirection(this);
+    type.addRedirection(this);
+    frequency.addRedirection(this);
+    q.addRedirection(this);
+    stages.addRedirection(this);
+    gain.addRedirection(this);
 
     setpresettype("Pfilter");
     Dq      = Pq_;
@@ -86,6 +97,19 @@ FilterParams::FilterParams(Node *parent,
 
 FilterParams::~FilterParams()
 {}
+
+int FilterParams::dummy(REALTYPE *d)
+{
+    //Assume that we are dealing with an analog filter for now
+    AnalogFilter a(type(), frequency(), q(), stages());
+    a.setgain(gain());//force coeff generation
+    //0->50 It is a z-domain thing
+    for(int i=0;i<OSCIL_SIZE;++i) {
+        d[i] = a.H(0.001*i/OSCIL_SIZE);
+        //printf("%f -> %f\n",100.0*i/OSCIL_SIZE,a.H(100.0*i/OSCIL_SIZE));
+    }
+    return OSCIL_SIZE;
+}
 
 
 void FilterParams::defaults()
@@ -442,3 +466,13 @@ void FilterParams::getfromXML(XMLwrapper *xml)
     }
 }
 
+void FilterParams::handleEvent(Event *event)
+{
+    handleSyncEvent(event);
+}
+void FilterParams::handleSyncEvent(Event *event)
+{
+    puts("FILTERPARAMS GOT EVENT");
+    if(event->type() == Event::NewValueEvent)
+        response.damage();
+}

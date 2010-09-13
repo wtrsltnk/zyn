@@ -43,6 +43,7 @@ class Toggle:public Control<bool>
             setValue(b);
         }
 
+        void redirHelper(NodeUser *dest);
         virtual void addpar(class XMLwrapper *xml, const std::string& name);
         virtual void getpar(class XMLwrapper *xml, const std::string& name);
 };

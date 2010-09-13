@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include "EventClasses.h"
-#include <assert.h>
+#include <cassert>
 
 #include <pthread.h>
 #include "../globals.h"
@@ -210,6 +210,7 @@ void Node::addRedirection(NodeUser *destination, RedirectFilter *filter)
 {
     Redirection re = {destination, filter};
     m_rules.push_back(re);
+    redirHelper(destination);
 }
 
 void Node::removeRedirections(NodeUser *destination)
@@ -260,6 +261,33 @@ void Node::unlock()
 unsigned int Node::getUid() const
 {
     return m_uid;
+}
+
+class ConnectJob:public Job
+{
+    const string name;
+    NodeUser *dest;
+    public:
+        ConnectJob(const string &absName, NodeUser *dest)
+            :name(absName),dest(dest)
+        {
+            cout << "Request for connection to: " << name << endl;
+        }
+        void exec() {
+            GenControl *g;
+            g=dynamic_cast<GenControl *>(Node::get(name));
+            if(g) {
+                cout << "Should See Connection Event For " << name << endl;
+                g->addRedirection(dest);
+            }
+            else
+                cout << "Could not find a control named " << name << endl;
+        }
+};
+
+void Node::requestConnect(const std::string &absName, NodeUser *dest)
+{
+    Job::push(new ConnectJob(absName,dest));
 }
 
 void Node::saveXml(XMLwrapper *xml)

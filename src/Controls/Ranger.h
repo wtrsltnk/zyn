@@ -43,6 +43,7 @@ class Ranger:public Control<REALTYPE>
         std::string getString() const
         {return "Example: 50%";}
 
+        void redirHelper(NodeUser *dest);
         void setInt(int val);
         int getInt() const;
 

@@ -34,8 +34,8 @@ Slider::Slider(QWidget *parent)
 {
     ControlHelper *helper = new ControlHelper(this);
 
-    //connect(this, SIGNAL(sliderMoved(int)),
-            //helper, SLOT(setValue(int)));
+    connect(this, SIGNAL(sliderMoved(int)),
+            helper, SLOT(setValue(int)));
     connect(helper, SIGNAL(valueChanged(int)),
             this, SLOT(slotIncomingValue(int)));
 

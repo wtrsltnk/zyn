@@ -9,18 +9,18 @@ class Event
 
     public:
         enum ev_type {
-            ChangeEvent,
-            UpdateEvent,
             CreateNodeEvent,
             RemovalEvent,
+            ConnEvent,
             NewNodeEvent,
             NewValueEvent,
-            RequestValueEvent,
             MidiEvent,
             OptionsChangedEvent
         };
         virtual ev_type type() const {return internalType;}
         virtual ~Event();
+
+        void own(){isOwned=true;}//assert ownership
 
     protected:
         Event(enum ev_type ntype);

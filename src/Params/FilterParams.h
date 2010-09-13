@@ -30,6 +30,7 @@
 #include "../Controls/DescRanger.h"
 #include "../Controls/Toggle.h"
 #include "../Controls/Selector.h"
+#include "../Controls/ArrayControl.h"
 #include "PresetsArray.h"
 
 class FilterParams : public PresetsArray
@@ -55,21 +56,25 @@ class FilterParams : public PresetsArray
         REALTYPE getfreqtracking(REALTYPE notefreq);
         REALTYPE getgain();
 
-        Selector category; //Filter category (Analog/Formant/StVar)
-        Selector type; // Filter type  (for analog lpf,hpf,bpf..)
-        Ranger frequency; // Frequency (64-central frequency)
-        DescRanger q; // Q parameters (resonance or bandwidth)
-        DescRanger stages; //filter stages+1
+        Selector category;    //Filter category (Analog/Formant/StVar)
+        Selector type;        // Filter type  (for analog lpf,hpf,bpf..)
+        Ranger frequency;     // Frequency (64-central frequency)
+        DescRanger q;         // Q parameters (resonance or bandwidth)
+        DescRanger stages;    //filter stages+1
         DescRanger freqtrack; //how the filter frequency is changing according the note frequency
-        DescRanger gain; //filter's output gain
+        DescRanger gain;      //filter's output gain
 
         //Formant filter parameters
         Node formantFilter;
-        DescRanger numformants; //how many formants are used
+        DescRanger numformants;     //how many formants are used
         DescRanger formantslowness; //how slow varies the formants
         DescRanger vowelclearness; //how vowels are kept clean (how much try to avoid "mixed" vowels)
-        DescRanger octavesfreq; //the center frequency of the res. func., and the number of octaves
+        DescRanger octavesfreq;    //the center frequency of the res. func., and the number of octaves
         Ranger centerFrequency;
+
+
+        ArrayControl response;    //Filter frequency response
+        int dummy(REALTYPE *d);
 
         struct {
             struct {
@@ -97,6 +102,10 @@ class FilterParams : public PresetsArray
         REALTYPE getformantq(unsigned char q);
 
         bool changed;
+
+        void handleEvent(Event *event);
+        void handleSyncEvent(Event *event);
+
 
     private:
         void defaults(int n);

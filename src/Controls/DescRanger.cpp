@@ -36,6 +36,13 @@ DescRanger::~DescRanger()
 
 }
 
+void DescRanger::redirHelper(NodeUser *dest)
+{
+    puts("DESCRANGER CONNECTED!");
+    ConnEvent tmp = ConnEvent(this, getValue());
+    dest->handleEvent(&tmp);
+};
+
 void DescRanger::addpar(XMLwrapper *xml, const std::string& name)
 {
     xml->addpar(name, getValue());

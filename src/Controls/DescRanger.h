@@ -40,6 +40,7 @@ class DescRanger:public Control<int>
         std::string getString() const
         {return "Example: 50%";}
 
+        void redirHelper(NodeUser *dest);
         virtual void addpar(class XMLwrapper *xml, const std::string& name);
         virtual void getpar(class XMLwrapper *xml, const std::string& name);
 

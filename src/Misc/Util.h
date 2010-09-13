@@ -25,8 +25,8 @@
 
 #include <string>
 #include <sstream>
-#include "../globals.h"
 #include "Config.h"
+#include "../globals.h"
 
 //Velocity Sensing function
 extern REALTYPE VelF(REALTYPE velocity, unsigned char scaling);
@@ -54,9 +54,23 @@ void os_sleep(long length);
 
 std::string legalizeFilename(std::string filename);
 
+REALTYPE *getUiBuf();
+void returnUiBuf(REALTYPE *);
+
 extern REALTYPE *denormalkillbuf; /**<the buffer to add noise in order to avoid denormalisation*/
 
-extern Config config;
+extern class Config config;
+
+void invSignal(REALTYPE *sig, size_t len);
+
+void crossover(REALTYPE &a, REALTYPE &b, REALTYPE crossover);
+
+//Memory pool for temporary buffers
+//No allocation in *normal* case
+//All should be sized to SOUND_BUFFER_SIZE
+REALTYPE *getTmpBuffer();
+void returnTmpBuffer(REALTYPE *buf);
+
 
 template<class T>
 std::string stringFrom(T x)
@@ -80,12 +94,6 @@ template <class T>
 T limit(T val, T min, T max)
 {
     return (val < min ? min : (val > max ? max : val));
-}
-
-template <class T>
-T min(T a, T b)
-{
-    return (a < b)?a:b;
 }
 
 #endif

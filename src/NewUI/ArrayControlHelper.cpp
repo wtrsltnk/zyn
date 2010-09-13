@@ -21,6 +21,9 @@
 */
 
 #include "ArrayControlHelper.h"
+#include <algorithm>
+#include <cstring>
+using namespace std;
 
 ArrayControlHelper::ArrayControlHelper(QObject *parent)
     : ControlHelper(parent)
@@ -28,13 +31,11 @@ ArrayControlHelper::ArrayControlHelper(QObject *parent)
 
 }
 
-void ArrayControlHelper::connectedEvent()
+void ArrayControlHelper::connectedEvent(ConnEvent *ev)
 {
-    ControlHelper::connectedEvent();
-
-    if (ArrayControl* c = static_cast<ArrayControl*>(m_control)) {
-        emit arrayUpdated(c);
-    }
+    ControlHelper::connectedEvent(ev);
+    if(ev->buf)
+        emit arrayUpdated(ev->dat.f);
 }
 
 void ArrayControlHelper::disconnectedEvent()
@@ -43,10 +44,14 @@ void ArrayControlHelper::disconnectedEvent()
 
 void ArrayControlHelper::newValueEvent(NewValueEvent *event)
 {
-    ControlHelper::newValueEvent(event);
-
-    if (ArrayControl* c = static_cast<ArrayControl*>(m_control)) {
-        emit arrayUpdated(c);
+    //Could add a refence counting system instead of all of this silly allocation
+    if(event->buf) {
+        puts("ARRAYCONTROLHELPER GOT NEW BUFFER");
+        size_t size = max(2048,max(SOUND_BUFFER_SIZE,OSCIL_SIZE));
+        REALTYPE *tmp = new REALTYPE[size];
+        memcpy(tmp,event->buf,size*sizeof(float));
+        emit arrayUpdated(tmp);
+        //gets deallocated on recieving end
     }
 }
 

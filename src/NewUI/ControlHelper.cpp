@@ -21,6 +21,7 @@
 */
 
 #include "ControlHelper.h"
+#include "../Controls/Control.h"
 #include <QCoreApplication>
 #include <QUndoCommand>
 #include <QUndoStack>
@@ -78,15 +79,33 @@ void ControlHelper::handleEvent(Event *event)
     else
     if(event->type() == Event::OptionsChangedEvent)
         emitOptions();
+    else
+    if(event->type() == Event::ConnEvent)
+        connectedEvent(static_cast<ConnEvent *>(event));
 }
 
-void ControlHelper::connectedEvent()
+typedef std::vector<std::string> StrVec;
+void ControlHelper::connectedEvent(ConnEvent *ev)
 {
+    puts("Connection Recieved");
+    m_control = ev->control;
+
     if (QWidget *widget = qobject_cast<QWidget*>(parent())) {
         widget->setToolTip(QString::fromStdString(m_control->getId()));
     }
 
-    emit connected(m_control);
+    emit valueChanged(ev->dat.i);
+
+    if(ev->data) {
+        const StrVec &vec = *static_cast<const StrVec *>(ev->data);
+
+        QStringList options;
+        for(unsigned i=0; i<vec.size(); ++i)
+            options << QString::fromStdString(vec[i]);
+        emit optionsChanged(options);
+    }
+
+    emit connected(ev->control);
 }
 
 void ControlHelper::disconnectedEvent()
@@ -108,6 +127,10 @@ void ControlHelper::setControl(QString absoluteId)
     if(absoluteId.isEmpty())
         return;
 
+    //We let the job system connect us
+    Node::requestConnect(absoluteId.toStdString(),this);
+
+#if 0
     Node::lock();
     Node *node = Node::get(absoluteId.toStdString());
     m_control = dynamic_cast<GenControl *>(node);
@@ -123,6 +146,7 @@ void ControlHelper::setControl(QString absoluteId)
     }
 
     Node::unlock();
+#endif
 }
 
 void ControlHelper::disconnect()
@@ -148,7 +172,8 @@ class ControlChange : public QUndoCommand, public NodeUser
             m_id(control->getUid()),
             m_control(control)
         {
-            m_control->addRedirection(this, new TypeFilter(Event::RemovalEvent));
+#warning This might very well break the undo system
+            //m_control->addRedirection(this, new TypeFilter(Event::RemovalEvent));
         }
 
         void handleEvent(Event *event)

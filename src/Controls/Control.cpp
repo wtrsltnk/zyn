@@ -43,13 +43,10 @@ T Control<T>::operator()() const
 template<class T>
 void Control<T>::setValue(const T &val)
 {
-    bool changed = false;
     if(value != val) {
         value   = val;
-        changed = true;
-    }
-    if(changed)
         forward(new NewValueEvent(this, getInt()));
+    }
 }
 
 template<class T>
@@ -89,25 +86,6 @@ int Control<T>::getInt() const
     return int(v);
 }
 
-class RequestGetIntJob:public Job
-{
-    public:
-        explicit RequestGetIntJob(GenControl *control)
-            : control(control)
-        {
-            uid = control->m_uid;
-        }
-        void exec() {
-            if (!Job::isRecentlyDeleted(uid)) {
-                control->forward(new NewValueEvent(control, control->getInt()));
-            }
-        }
-
-    protected:
-        GenControl * control;
-        unsigned int uid;
-};
-
 class RequestSetIntJob:public Job
 {
     public:
@@ -132,7 +110,9 @@ class RequestSetIntJob:public Job
 template<class T>
 void Control<T>::queueGetInt()
 {
-    Job::push(new RequestGetIntJob(this));
+    //This code should be dead
+
+    //Job::push(new RequestGetIntJob(this));
 }
 
 template<class T>
