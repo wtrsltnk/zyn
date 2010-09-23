@@ -429,7 +429,7 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    initprogram(argc, argv);
+    initprogram(argc,argv);
 
 #if 0 //TODO update this code
 #ifdef USE_LASH
