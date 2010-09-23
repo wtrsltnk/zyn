@@ -39,6 +39,7 @@ class MasterUI:public QMainWindow, Ui::MainWindow
         void on_action_Quit_triggered();
         void on_editInstrument_clicked();
         void on_loadInstrumentButton_clicked();
+        void on_action_Preferences_triggered();
     private:
 
         int    *Pexitprogram;

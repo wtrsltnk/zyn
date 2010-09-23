@@ -30,6 +30,7 @@
 #include "DebugInterface.h"
 #include "BankLoader.h"
 #include "PropertyWatch.h"
+#include "Preferences.h"
 #include "../Misc/XMLwrapper.h"
 
 MasterUI::MasterUI(Master *master_, int *exitprogram_)
@@ -112,6 +113,12 @@ void MasterUI::on_loadInstrumentButton_clicked()
     QString id = partBar->getCurrentChild();
     BankLoader *loaderPopup = new BankLoader(id);
     loaderPopup->show();
+}
+
+void MasterUI::on_action_Preferences_triggered()
+{
+    Preferences *p = new Preferences(this);
+    p->show();
 }
 
 #include "MasterUI.moc"

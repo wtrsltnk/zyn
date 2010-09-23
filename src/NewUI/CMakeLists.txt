@@ -18,6 +18,7 @@ set(zynaddsubfx_gui_SRCS
     Oscil.cpp
     OscilWidget.cpp
     PropertyWatch.cpp
+    Preferences.cpp
     SiblingBar.cpp
     Slider.cpp
     SpectrumWidget.cpp
@@ -31,6 +32,7 @@ SET( zynaddsubfx_gui_UIS
     CollapsableFrame.ui
     MasterUI.ui
     Oscil.ui
+    Preferences.ui
 )
 
 set( zynaddsubfx_gui_RC_FILES
