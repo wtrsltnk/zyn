@@ -26,12 +26,17 @@
 
 #include <QGroupBox>
 
+class QPaintEvent;
+
 class GroupBox : public QGroupBox
 {
     Q_OBJECT
 
     public:
         GroupBox(QWidget *parent = NULL);
+
+    private:
+        void paintEvent(class QPaintEvent * event);
 
     private slots:
         void slotReset();

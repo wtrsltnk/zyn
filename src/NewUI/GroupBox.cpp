@@ -23,37 +23,54 @@
 
 #include "GroupBox.h"
 #include "ControlHelper.h"
+
+#include <QFontMetrics>
 #include <QMessageBox>
+#include <QStyleOptionFrame>
 #include <QtDebug>
 #include <QToolButton>
 #include <QAction>
+#include <QPainter>
+#include <QPaintEvent>
+#include <QApplication>
+
+static const int ButtonTopMargin = 10;
+static const int ButtonSideMargin = 5;
+static const int ButtonSpacing = 5;
+static const int ButtonDimensions = 20;
 
 GroupBox::GroupBox(QWidget *parent)
     : QGroupBox(parent)
 {
+    int nextButtonX = ButtonSideMargin;
+
     //Menu button
     QToolButton *b = new QToolButton(this);
-    b->move(5, 5);
-    b->resize(20, 20);
+    b->move(nextButtonX, ButtonTopMargin);
+    b->resize(ButtonDimensions, ButtonDimensions);
     b->setFocusPolicy(Qt::NoFocus);
     b->setArrowType(Qt::NoArrow);
     b->setAutoRaise(true);
     b->setPopupMode(QToolButton::InstantPopup);
 
+    nextButtonX += ButtonDimensions + ButtonSpacing;
+
     //Copy button
     QToolButton *copy = new QToolButton(this);
-    copy->move(25, 5);
-    copy->resize(20, 20);
+    copy->move(nextButtonX, ButtonTopMargin);
+    copy->resize(ButtonDimensions, ButtonDimensions);
     copy->setFocusPolicy(Qt::NoFocus);
     copy->setArrowType(Qt::NoArrow);
     copy->setAutoRaise(true);
     copy->setPopupMode(QToolButton::InstantPopup);
     copy->setText("C");
 
+    nextButtonX += ButtonDimensions + ButtonSpacing;
+
     //Paste button
     QToolButton *paste = new QToolButton(this);
-    paste->move(45, 5);
-    paste->resize(20, 20);
+    paste->move(nextButtonX, ButtonTopMargin);
+    paste->resize(ButtonDimensions, ButtonDimensions);
     paste->setFocusPolicy(Qt::NoFocus);
     paste->setArrowType(Qt::NoArrow);
     paste->setAutoRaise(true);
@@ -78,6 +95,19 @@ GroupBox::GroupBox(QWidget *parent)
             this, SLOT(slotPaste()));
     connect(paste, SIGNAL(clicked()),
             action, SLOT(trigger()));
+}
+
+void GroupBox::paintEvent(QPaintEvent * event)
+{
+    QPainter p(this);
+    QStyleOptionFrame frameOpt;
+    frameOpt.initFrom(this);
+
+    qApp->style()->drawPrimitive(QStyle::PE_FrameGroupBox, &frameOpt,
+            &p, this);
+
+    QFontMetrics fm(font());
+    p.drawText(QPoint(0,fm.height()), title());
 }
 
 void GroupBox::slotReset()
