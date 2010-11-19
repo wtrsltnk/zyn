@@ -48,6 +48,7 @@ class Dial:public QDial
         void paintEvent(class QPaintEvent * event);
 
         void cleanUpString(QString& string);
+        void drawCaption(QRect r, QPainter *painter);
 
         int m_originalMouseY;
         int m_originalValueOnPress;

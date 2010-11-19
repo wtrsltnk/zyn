@@ -30,11 +30,15 @@
 #include <QConicalGradient>
 #include <math.h>
 
-//drawstyles: 0 - piechart
-//            1 - rotated dial
-//            2 - rectangular
-//            3 - image
-static int drawStyle = 1;
+
+static enum DialStyle {
+    PieChart = 0,
+    RotatedDial,
+    Rectangular,
+    Image,
+    OriginalWithLabel
+} drawStyle = OriginalWithLabel;
+
 static const int labelHeight = 20;
 
 
@@ -116,10 +120,9 @@ void Dial::slotDisconnected()
     update();
 }
 
-void Dial::paintEvent(class QPaintEvent * /*event */)
+void Dial::paintEvent(class QPaintEvent * event )
 {
     QPainter p(this);
-
     p.setRenderHint(QPainter::Antialiasing);
 
     QRect r = rect();
@@ -135,7 +138,7 @@ void Dial::paintEvent(class QPaintEvent * /*event */)
 
     float v = (float(value()) / (maximum() - minimum()));
 
-    if(drawStyle == 0) {
+    if(drawStyle == PieChart) {
         QConicalGradient grad(r.center(), 270 - 13);
         p.setBrush(QColor(Qt::white));
 
@@ -149,7 +152,7 @@ void Dial::paintEvent(class QPaintEvent * /*event */)
         //p.drawPoint(10 *
     }
     else
-    if(drawStyle == 1) {
+    if(drawStyle == RotatedDial) {
 
         //leave 30 degrees space at the bottom
         const int spaceAtBottom = 30;
@@ -190,32 +193,11 @@ void Dial::paintEvent(class QPaintEvent * /*event */)
 
         p.setPen(oldPen);
 
-        QVariant caption = property("caption");
-
-        if (!caption.isValid()) {
-            caption = property("controlId");
-        }
-
-        if (caption.isValid()) {
-
-
-            int textFlags = Qt::AlignCenter | Qt::TextWordWrap;
-            QRect textRect(0, 0, r.width(), labelHeight*2);
-
-            QString captionString = caption.toString();
-            cleanUpString(captionString);
-
-            textRect = p.boundingRect(textRect, textFlags, captionString);
-            textRect.setWidth(textRect.width() * 1.1);
-            textRect.moveCenter(QPoint(0, r.width() * 0.5));
-
-            p.drawRoundedRect(textRect, 5, 5);
-            p.drawText(textRect, textFlags, captionString);
-        }
+        drawCaption(r, &p);
 
     }
     else
-    if(drawStyle == 2) {
+    if(drawStyle == Rectangular) {
         r = rect();
         p.drawRect(r);
         //p.setBrush(palette().alternateBase());
@@ -224,7 +206,7 @@ void Dial::paintEvent(class QPaintEvent * /*event */)
                    r.width(), v * r.height());
     }
     else
-    if(drawStyle == 3) {
+    if(drawStyle == Image) {
 
         //leave 30 degrees space at the bottom
         const int spaceAtBottom = 30;
@@ -239,6 +221,37 @@ void Dial::paintEvent(class QPaintEvent * /*event */)
         p.restore();
 
         p.drawText(r, Qt::AlignCenter, QString::number(value()));
+    } else if (drawStyle == OriginalWithLabel) {
+
+        QDial::paintEvent(event);
+        p.translate(r.center());
+        drawCaption(r, &p);
+
+    }
+}
+
+void Dial::drawCaption(QRect r, QPainter *painter)
+{
+    QVariant caption = property("caption");
+
+    if (!caption.isValid()) {
+        caption = property("controlId");
+    }
+
+    if (caption.isValid()) {
+        int textFlags = Qt::AlignCenter | Qt::TextWordWrap;
+        QRect textRect(0, 0, r.width(), labelHeight*2);
+
+        QString captionString = caption.toString();
+        cleanUpString(captionString);
+
+        textRect = painter->boundingRect(textRect, textFlags, captionString);
+        textRect.setWidth(textRect.width() * 1.1);
+        textRect.moveCenter(QPoint(0, r.width() * 0.5));
+
+        painter->setBrush(palette().light());
+        painter->drawRoundedRect(textRect, 5, 5);
+        painter->drawText(textRect, textFlags, captionString);
     }
 }
 
