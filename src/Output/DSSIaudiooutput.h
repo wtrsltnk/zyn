@@ -96,6 +96,7 @@ private:
     long sampleRate;
     Master* master;
     Part *part;
+    pthread_mutex_t dssiInstanceMutex;
 
     static int nextChannel;
     int channel;

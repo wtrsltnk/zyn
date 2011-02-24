@@ -366,7 +366,7 @@ void DSSIaudiooutput::selectProgram(unsigned long bank, unsigned long program)
 
     std::cerr << "selectProgram(" << (bank & 0x7F) << ':' << ((bank >> 7) & 0x7F) << "," << program  << ")" << '\n';
 
-    pthread_mutex_lock(&master->mutex);
+    pthread_mutex_lock(&dssiInstanceMutex);
 
     if(bank < master->bank.banks.size() && program < BANK_SIZE)
     {
@@ -392,7 +392,7 @@ void DSSIaudiooutput::selectProgram(unsigned long bank, unsigned long program)
         }
     }
 
-    pthread_mutex_unlock(&master->mutex);
+    pthread_mutex_unlock(&dssiInstanceMutex);
 }
 
 /**
@@ -493,10 +493,10 @@ void DSSIaudiooutput::runSynth(unsigned long sample_count, snd_seq_event_t *even
                     assert(samplesReady == 0);
                     bufferOffset = 0;
 
-                    pthread_mutex_lock(&master->mutex);
+                    pthread_mutex_lock(&dssiInstanceMutex);
                     part->ComputePartSmps();
 
-                    pthread_mutex_unlock(&master->mutex);
+                    pthread_mutex_unlock(&dssiInstanceMutex);
 
                     samplesReady = SOUND_BUFFER_SIZE;
                 }
@@ -682,6 +682,8 @@ DSSIaudiooutput::DSSIaudiooutput(unsigned long sampleRate)
     //point the buffer to the one found in Part
     buffer = Stereo<REALTYPE *>(part->partoutl, part->partoutr);
 
+    pthread_mutex_init(&dssiInstanceMutex, NULL);
+
     //assuming the thread calling this function is the main engine thread for now
     Job::setEngineThread();
 
@@ -702,10 +704,10 @@ void DSSIaudiooutput::initBanks(void)
 {
     if(!banksInited)
     {
-        pthread_mutex_lock(&master->mutex);
+        pthread_mutex_lock(&dssiInstanceMutex);
         master->bank.rescanforbanks();
         banksInited = true;
-        pthread_mutex_unlock(&master->mutex);
+        pthread_mutex_unlock(&dssiInstanceMutex);
     }
 }
 
@@ -741,7 +743,7 @@ long DSSIaudiooutput::bankNoToMap = 1;
  */
 bool DSSIaudiooutput::mapNextBank()
 {
-    pthread_mutex_lock(&master->mutex);
+    pthread_mutex_lock(&dssiInstanceMutex);
     Bank& bank = master->bank;
     bool retval;
     if(bankNoToMap >= bank.banks.size() || bank.banks[bankNoToMap].dir.empty())
@@ -764,6 +766,6 @@ bool DSSIaudiooutput::mapNextBank()
         bankNoToMap ++;
         retval = true;
     }
-    pthread_mutex_unlock(&master->mutex);
+    pthread_mutex_unlock(&dssiInstanceMutex);
     return retval;
 }

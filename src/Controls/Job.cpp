@@ -60,11 +60,11 @@ void Job::push(Job *event)
 
 void Job::pushAndWait(Job *job)
 {
+    if(pthread_equal(pthread_self(), engineThread)) {
+        //this is called from the engine thread. just execute the job directly from here
         job->exec();
         delete job;
         return;
-    if(pthread_equal(pthread_self(), engineThread)) {
-        //this is called from the engine thread. just execute the job directly from here
     }
 
     pthread_mutex_lock(&mutex);
