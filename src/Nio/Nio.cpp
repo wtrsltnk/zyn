@@ -4,6 +4,7 @@
 #include "EngineMgr.h"
 #include "MidiIn.h"
 #include "AudioOut.h"
+#include "../Misc/osc.h"
 #include <iostream>
 using namespace std;
 
@@ -13,13 +14,30 @@ Nio &Nio::getInstance()
     return instance;
 }
 
+static int source_handler(const char *path, const char *types, lo_arg **argv, int argc,
+        void *data, void *user_data)
+{
+    bool res = static_cast<Nio*>(user_data)->setSource(&argv[0]->s);
+    lo_send(osc::ui, "/nio/source", res ? "T" : "F");
+}
+
+static int sink_handler(const char *path, const char *types, lo_arg **argv, int argc,
+        void *data, void *user_data)
+{
+    bool res = static_cast<Nio*>(user_data)->setSink(&argv[0]->s);
+    lo_send(osc::ui, "/nio/sink", res ? "T" : "F");
+}
+
 Nio::Nio()
 :autoConnect(false),
     in(InMgr::getInstance()),//Enable input wrapper
     out(OutMgr::getInstance()),//Initialize the Output Systems
     eng(EngineMgr::getInstance()),//Initialize The Engines
     postfix("")//no default postfix
-{}
+{
+    lo_server_add_method(osc::back_server, "/nio/source", "s", source_handler, this);
+    lo_server_add_method(osc::back_server, "/nio/sink",   "s", sink_handler,   this);
+}
 
 Nio::~Nio()
 {

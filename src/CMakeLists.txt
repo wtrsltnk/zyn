@@ -5,6 +5,7 @@ message(STATUS "Checking Library Path" $ENV{CMAKE_LIBRARY_PATH} ${CMAKE_LIBRARY_
 #Dependency check
 find_package(zlib REQUIRED)
 find_package(fftw REQUIRED)
+#find_package(liblo REQUIRED)
 find_package(MXML REQUIRED)
 find_package(PkgConfig REQUIRED)
 #find_package(pthread REQUIRED)
@@ -190,6 +191,7 @@ macro(unit_test NAME CXX_FILE FILES)
             ${fftw_LIBRARIES}
             ${MXML_LIBRARIES}
             ${OS_LIBRARIES}
+            lo
             )
         add_test("${NAME}" "${EXECUTABLE_OUTPUT_PATH}/${NAME}")
     endif()
@@ -237,6 +239,7 @@ target_link_libraries(zynaddsubfx
         ${NIO_LIBRARIES}
         ${AUDIO_LIBRARIES}
         ${OS_LIBRARIES}
+        lo
 	)
 
 install(TARGETS zynaddsubfx

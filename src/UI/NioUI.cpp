@@ -1,5 +1,6 @@
 #include "NioUI.h"
 #include "../Nio/Nio.h"
+#include "../Misc/osc.h"
 #include <cstdio>
 #include <iostream>
 #include <cstring>
@@ -12,6 +13,14 @@
 #include <FL/Fl_Text_Display.H>
 
 using namespace std;
+
+static int error_handle(const char *path, const char *types, lo_arg **argv, int argc,
+        void *data, void *user_data)
+{
+    Fl_Choice *ch = static_cast<Fl_Choice *>(user_data);
+    ch->textcolor(fl_rgb_color(255,0,0));
+    ch->redraw();
+}
 
 NioUI::NioUI()
     :Fl_Window(200,100,400,400,"New IO Controls")
@@ -73,6 +82,10 @@ NioUI::NioUI()
     }
     wintabs->end();
 
+    //add error callbacks
+    lo_server_thread_add_method(osc::ui_server, "/nio/source", "F", error_handle, midi);
+    lo_server_thread_add_method(osc::ui_server, "/nio/sink",   "F", error_handle, audio);
+
     resizable(this);
     size_range(400,300);
 }
@@ -87,13 +100,16 @@ void NioUI::refresh()
 
 void NioUI::midiCallback(Fl_Widget *c)
 {
-    bool good = Nio::getInstance().setSource(static_cast<Fl_Choice *>(c)->text());
-    static_cast<Fl_Choice *>(c)->textcolor(fl_rgb_color(255*!good,0,0));
+    Fl_Choice *ch = static_cast<Fl_Choice *>(c);
+    ch->textcolor(fl_rgb_color(0,0,0));
+    lo_send(osc::backend, "/nio/source", "s", ch->text());
+
 }
 
 void NioUI::audioCallback(Fl_Widget *c)
 {
-    bool good = Nio::getInstance().setSink(static_cast<Fl_Choice *>(c)->text());
-    static_cast<Fl_Choice *>(c)->textcolor(fl_rgb_color(255*!good,0,0));
+    Fl_Choice *ch = static_cast<Fl_Choice *>(c);
+    ch->textcolor(fl_rgb_color(0,0,0));
+    lo_send(osc::backend, "/nio/sink", "s", ch->text());
 }
 

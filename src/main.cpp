@@ -36,6 +36,7 @@
 #include <windows.h>
 #endif
 
+#include "Misc/osc.h"
 #include "Misc/Master.h"
 #include "Misc/Util.h"
 #include "Misc/Dump.h"
@@ -78,6 +79,7 @@ int     Pexitprogram = 0; //if the UI set this to 1, the program will exit
  */
 void *thread3(void *v)
 {
+    osc::init_ui();
 #ifndef DISABLE_GUI
 
 #ifdef FLTK_GUI

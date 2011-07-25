@@ -9,8 +9,9 @@ set(zynaddsubfx_misc_SRCS
 	Part.cpp
 	Util.cpp
 	XMLwrapper.cpp
-        Recorder.cpp
-        WavFile.cpp
+	osc.cpp
+	Recorder.cpp
+	WavFile.cpp
 )
 
 if(LashEnable)

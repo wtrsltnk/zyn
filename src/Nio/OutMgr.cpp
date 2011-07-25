@@ -6,6 +6,7 @@
 #include "EngineMgr.h"
 #include "InMgr.h"
 #include "WavEngine.h"
+#include "../Misc/osc.h"
 #include "../Misc/Master.h"
 #include "../Misc/Util.h"//for set_realtime()
 #include "../Samples/Sample.h"//for resampling
@@ -25,6 +26,7 @@ OutMgr::OutMgr()
     currentOut = NULL;
     stales = 0;
     master = Master::getInstance();
+    osc::init_backend();
 
     //init samples
     outr = new REALTYPE[SOUND_BUFFER_SIZE];
@@ -55,6 +57,7 @@ const Stereo<REALTYPE *> OutMgr::tick(unsigned int frameSize)
 {
     pthread_mutex_lock(&(master.mutex));
     InMgr::getInstance().flush();
+    osc::process_backend();
     pthread_mutex_unlock(&(master.mutex));
     //SysEv->execute();
     removeStaleSmps();
