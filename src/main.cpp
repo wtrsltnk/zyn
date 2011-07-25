@@ -79,7 +79,7 @@ int     Pexitprogram = 0; //if the UI set this to 1, the program will exit
  */
 void *thread3(void *v)
 {
-    osc::init_ui();
+    osc::run_ui();
 #ifndef DISABLE_GUI
 
 #ifdef FLTK_GUI
@@ -185,6 +185,7 @@ void sigterm_exit(int /*sig*/)
  */
 void initprogram(int argc, char **argv)
 {
+    osc::init_ui();
 #if LASH
     lash = new LASHClient(&argc, &argv);
 #endif

@@ -46,8 +46,9 @@ class Part
         /**Constructor
          * @param microtonal_ Pointer to the microtonal object
          * @param fft_ Pointer to the FFTwrapper
-         * @param mutex_ Pointer to the master pthread_mutex_t*/
-        Part(Microtonal *microtonal_, FFTwrapper *fft_, pthread_mutex_t *mutex_);
+         * @param mutex_ Pointer to the master pthread_mutex_t
+         * @param idx Part index from master*/
+        Part(Microtonal *microtonal_, FFTwrapper *fft_, pthread_mutex_t *mutex_, size_t idx=0);
         /**Destructor*/
         ~Part();
 

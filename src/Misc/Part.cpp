@@ -24,6 +24,7 @@
 #include "Microtonal.h"
 #include "Util.h"
 #include "XMLwrapper.h"
+#include "osc.h"
 #include "../Effects/EffectMgr.h"
 #include "../Params/ADnoteParameters.h"
 #include "../Params/SUBnoteParameters.h"
@@ -35,7 +36,7 @@
 #include <stdio.h>
 #include <string.h>
 
-Part::Part(Microtonal *microtonal_, FFTwrapper *fft_, pthread_mutex_t *mutex_)
+Part::Part(Microtonal *microtonal_, FFTwrapper *fft_, pthread_mutex_t *mutex_, size_t idx)
 {
     microtonal = microtonal_;
     fft = fft_;
@@ -908,6 +909,7 @@ void Part::ComputePartSmps()
  */
 void Part::setPvolume(char Pvolume_)
 {
+    lo_send(osc::ui, "/part/volume", "c", Pvolume_);
     Pvolume = Pvolume_;
     volume  = dB2rap((Pvolume - 96.0) / 96.0 * 40.0) * ctl.expression.relvolume;
 }

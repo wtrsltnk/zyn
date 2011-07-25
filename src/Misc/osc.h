@@ -10,6 +10,7 @@ namespace osc
             int argc, void *data, void *user_data);
     void init_backend(void);
     void init_ui(void);
+    void run_ui(void);
 
     void process_backend(void);
 

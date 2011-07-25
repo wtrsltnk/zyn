@@ -46,6 +46,10 @@ void osc::init_ui(void)
     ui_server = lo_server_thread_new("7771", error);
     lo_server_thread_add_method(ui_server, NULL, NULL, generic_handler, (void*)"FRONTEND");
     ui        = lo_address_new(NULL, "7771");
+}
+
+void osc::run_ui(void)
+{
     lo_server_thread_start(ui_server);
 }
 

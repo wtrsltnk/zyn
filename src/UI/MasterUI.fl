@@ -51,6 +51,9 @@ decl {\#include "PresetsUI.h"} {public
 decl {\#include "NioUI.h"} {public global
 } 
 
+decl {\#include "../Misc/osc.h"} {public global
+} 
+
 decl {\#include "../Misc/Master.h"} {public
 } 
 
@@ -303,8 +306,8 @@ class Panellistitem {: {public Fl_Group}
   Function {make_window()} {private
   } {
     Fl_Window panellistitem {
-      private xywh {315 213 70 260} type Double labeltype NORMAL_LABEL align 80 hide
-      class Fl_Group
+      private xywh {315 213 70 260} type Double
+      class Fl_Group visible
     } {
       Fl_Group panellistitemgroup {
         private xywh {0 20 70 240} box PLASTIC_THIN_UP_BOX
@@ -382,16 +385,21 @@ o->redraw();}
 master=NULL;
 bankui=NULL;} {}
   }
-  Function {init(Master *master_, int npart_,BankUI *bankui_)} {} {
+  Function {init(Master *master_, int npart_,BankUI *bankui_)} {open
+  } {
     code {npart=npart_;
 master=master_;
 bankui=bankui_;
 
 make_window();
 panellistitem->show();
-end();} {}
+end();
+if(npart==0)
+lo_server_thread_add_method(osc::ui_server, "/part/volume", "c",
+                            set_handle, partvolume);} {}
   }
-  Function {refresh()} {} {
+  Function {refresh()} {open
+  } {
     code {partenabled->value(master->part[npart]->Penabled);
 if (master->part[npart]->Penabled!=0) panellistitemgroup->activate();
      else panellistitemgroup->deactivate();
@@ -430,7 +438,7 @@ if (fl_choice("Exit and leave the unsaved data?","No","Yes",NULL)) {
     *exitprogram=1;
 };
 \#endif}
-      xywh {450 306 390 465} type Double align 80 hide xclass zynaddsubfx
+      xywh {450 306 390 465} type Double hide xclass zynaddsubfx
     } {
       Fl_Menu_Bar mastermenu {
         xywh {-5 0 690 25}
@@ -1005,7 +1013,7 @@ panelwindow->show();}
     }
     Fl_Window aboutwindow {
       label {Copyright...}
-      xywh {411 344 365 280} type Double labeltype NORMAL_LABEL align 80 hide
+      xywh {411 344 365 280} type Double hide
     } {
       Fl_Box {} {
         label {Copyright (c) 2002-2009 Nasca O. PAUL and others. Please read AUTHORS.txt}
@@ -1032,7 +1040,7 @@ GNU General Public License for details.}
     }
     Fl_Window syseffsendwindow {
       label {System Effects Send}
-      xywh {171 234 120 250} type Double labeltype NORMAL_LABEL align 80 hide resizable
+      xywh {171 234 120 250} type Double hide resizable
     } {
       Fl_Scroll {} {open
         xywh {0 45 120 170} box FLAT_BOX resizable
@@ -1051,7 +1059,7 @@ GNU General Public License for details.}
     }
     Fl_Window panelwindow {
       label {ZynAddSubFX Panel}
-      xywh {89 59 630 635} type Double labeltype NORMAL_LABEL align 80 hide
+      xywh {89 59 630 635} type Double hide
     } {
       Fl_Scroll {} {
         xywh {0 5 570 310} type HORIZONTAL box THIN_UP_BOX
@@ -1091,7 +1099,7 @@ if (fl_choice("Exit and leave the unsaved data?","No","Yes",NULL)) {
 	*exitprogram=1;
 };
 \#endif}
-      xywh {400 405 600 335} type Double labeltype NORMAL_LABEL align 80 hide
+      xywh {400 405 600 335} type Double hide
     } {
       Fl_Menu_Bar {} {
         xywh {0 0 690 25}
@@ -1425,7 +1433,7 @@ if (master->Pinsparts[ninseff]!=-1) {
 master->insefx[ninseff]->changeeffect((int) o->value());
 pthread_mutex_unlock(&master->mutex);
 simpleinseffectui->refresh(master->insefx[ninseff]);
-simpleinseffectui->show();} selected
+simpleinseffectui->show();}
               xywh {515 80 70 15} down_box BORDER_BOX labelsize 10 align 5
               code0 {o->value(master->insefx[ninseff]->geteffect());}
               code1 {if (master->Pinsparts[ninseff]== -1) o->deactivate();}
@@ -1573,7 +1581,7 @@ virkeys->take_focus();}
     Fl_Window selectuiwindow {
       label {User Interface mode}
       callback {*exitprogram=1;}
-      xywh {342 246 430 250} type Double labeltype NORMAL_LABEL align 80 hide non_modal
+      xywh {342 246 430 250} type Double hide non_modal
     } {
       Fl_Box {} {
         label {Welcome to ZynAddSubFX}
@@ -1822,4 +1830,11 @@ bankui->hide();} {}
   decl {char masterwindowlabel[100];} {}
   decl {Panellistitem *panellistitem[NUM_MIDI_PARTS];} {}
   decl {NioUI nioui;} {}
+} 
+
+Function {set_handle(const char *path, const char *types, lo_arg **argv, int argc, void *data, void *user_data)} {return_type int
+} {
+  code {printf("%p update\\n", user_data);
+Fl_Valuator *val = static_cast<Fl_Valuator*>(user_data);
+val->value(argv[0]->c);} {}
 } 
