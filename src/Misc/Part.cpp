@@ -22,6 +22,7 @@
 
 #include "Part.h"
 #include "Microtonal.h"
+#include "Master.h"
 #include "Util.h"
 #include "XMLwrapper.h"
 #include "osc.h"
@@ -36,7 +37,40 @@
 #include <stdio.h>
 #include <string.h>
 
+int reflect_handle(const char *path, const char *, lo_arg **, int, void *, void *user_data)
+{
+    printf("reflecting to %s\n", path);
+    lo_send(osc::ui, path, "c", *(char*)user_data); 
+    return 0;
+}
+
+int en_handle(const char *path, const char *, lo_arg **argv, int, void *, void *user_data)
+{
+    //todo a proper method?
+    char tmp[200];
+    strncpy(tmp, path, 198);
+    strcat(tmp, "*");
+    Master::getInstance().partonoff((int)user_data, argv[0]->c);
+    printf("reflecting to %s\n", tmp);
+    lo_send(osc::ui, tmp, "c", argv[0]->c); 
+    return 0;
+}
+
+int set_handle(const char *, const char *, lo_arg **argv, int, void *, void *user_data)
+{
+    *static_cast<char*>(user_data) = argv[0]->c;
+    return 0;
+}
+
+int vol_handle(const char *, const char *, lo_arg **argv, int, void *, void *user_data)
+{
+    Part *part = static_cast<Part*>(user_data);
+    part->setPvolume(argv[0]->c);
+    return 0;
+}
+
 Part::Part(Microtonal *microtonal_, FFTwrapper *fft_, pthread_mutex_t *mutex_, size_t idx)
+    :index(idx)
 {
     microtonal = microtonal_;
     fft = fft_;
@@ -90,6 +124,10 @@ Part::Part(Microtonal *microtonal_, FFTwrapper *fft_, pthread_mutex_t *mutex_, s
     lastlegatomodevalid = false; // To store previous legatomodevalid value.
 
     defaults();
+    lo_server_add_method(osc::back_server, osc::mkPath("/part%d/volume", index), "c", vol_handle, this);
+    lo_server_add_method(osc::back_server, osc::mkPath("/part%d/volume", index), "N", reflect_handle, &Pvolume);
+    lo_server_add_method(osc::back_server, osc::mkPath("/part%d/enable", index), "c", en_handle, (void*)index);
+    lo_server_add_method(osc::back_server, osc::mkPath("/part%d/enable", index), "N", reflect_handle, &Penabled);
 }
 
 void Part::defaults()
@@ -909,7 +947,7 @@ void Part::ComputePartSmps()
  */
 void Part::setPvolume(char Pvolume_)
 {
-    lo_send(osc::ui, "/part/volume", "c", Pvolume_);
+    lo_send(osc::ui, osc::mkPath("/part%d/volume*", index), "c", Pvolume_);
     Pvolume = Pvolume_;
     volume  = dB2rap((Pvolume - 96.0) / 96.0 * 40.0) * ctl.expression.relvolume;
 }

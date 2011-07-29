@@ -26,7 +26,6 @@ OutMgr::OutMgr()
     currentOut = NULL;
     stales = 0;
     master = Master::getInstance();
-    osc::init_backend();
 
     //init samples
     outr = new REALTYPE[SOUND_BUFFER_SIZE];

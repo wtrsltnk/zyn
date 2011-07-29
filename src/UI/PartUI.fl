@@ -42,6 +42,20 @@ decl {\#include "../Misc/Master.h"} {public
 decl {\#include "../Misc/Part.h"} {public
 } 
 
+decl {\#include "../Misc/osc.h"} {public
+} 
+
+Function {set_handle(const char *, const char *, lo_arg **argv, int, void *, void *user_data)} {private return_type int
+} {
+  code {
+  Fl_Widget   *w   = *static_cast<Fl_Widget**>(user_data);
+  Fl_Valuator *val = dynamic_cast<Fl_Valuator*>(w);
+if(val)val->value(argv[0]->c);
+Fl_Button *but = dynamic_cast<Fl_Button*>(w);
+if(but)but->value(argv[0]->c);
+return 0;} {}
+} 
+
 class PartSysEffSend {: {public Fl_Group}
 } {
   Function {make_window()} {private
@@ -249,8 +263,7 @@ partui->showparameters(n,-1);//use to delete the ui, if it is not to item 0
 } else o->value(1);}
     }
   }
-  Function {init(Part *part_,int n_,Master *master_,class PartUI *partui_)} {selected
-  } {
+  Function {init(Part *part_,int n_,Master *master_,class PartUI *partui_)} {} {
     code {part=part_;
 n=n_;
 partui=partui_;
@@ -270,15 +283,15 @@ end();} {}
   decl {class PartUI *partui;} {}
 } 
 
-class PartUI {: {public Fl_Group}
+class PartUI {open : {public Fl_Group}
 } {
-  Function {make_window()} {private
+  Function {make_window()} {open private
   } {
-    Fl_Window partgroup {
-      private xywh {424 178 385 180} type Double hide
-      class Fl_Group
+    Fl_Window partgroup {open
+      private xywh {424 178 385 180} type Double
+      class Fl_Group visible
     } {
-      Fl_Group partgroupui {
+      Fl_Group partgroupui {open
         xywh {0 0 385 180}
         code0 {if (part->Penabled==0) o->deactivate();}
       } {
@@ -345,11 +358,11 @@ if (part->Pminkey>part->Pmaxkey) o->textcolor(FL_RED);
           tooltip {Maximum key (that the part receives NoteOn messages)} xywh {340 125 40 15} type Simple labelfont 1 labelsize 10 minimum 0 maximum 127 step 1 textsize 10
           code0 {o->value(part->Pmaxkey);}
         }
-        Fl_Dial {} {
+        Fl_Dial partvolume {
           label Volume
-          callback {part->setPvolume((int) o->value());}
+          callback {osc::UI_NUP("/part%d/volume", npart, o->value());}
           tooltip {Part Volume} xywh {10 35 30 30} box ROUND_UP_BOX labelsize 11 maximum 127 step 1
-          code0 {o->value(part->Pvolume);}
+          code0 {osc::UI_NRE("/part%d/volume*", npart);}
           class WidgetPDial
         }
         Fl_Dial {} {
@@ -440,15 +453,15 @@ part->setkeylimit(val);} open
           code2 {if (part->Ppolymode==0 && part->Plegatomode!=0) o->value(2);}
         } {}
       }
-      Fl_Check_Button {} {
+      Fl_Check_Button partenabled {
         label Enabled
-        callback {pthread_mutex_lock(&master->mutex);
-master->partonoff(npart,(int) o->value());
-pthread_mutex_unlock(&master->mutex);
-if (part->Penabled==0) partgroupui->deactivate();
+        callback {
+        osc::UI_NUP("/part%d/enable*", npart, o->value());
+        char state = o->value();
+if (state==0) partgroupui->deactivate();
     else partgroupui->activate();}
         xywh {90 5 75 20} down_box DOWN_BOX labelfont 1 labelsize 11
-        code0 {o->value(part->Penabled);}
+        code0 {osc::UI_NRE("/part%d/enable*", npart);}
       }
     }
     Fl_Window ctlwindow {
@@ -1021,18 +1034,21 @@ subnoteui=NULL;
 padnoteui=NULL;
 lastkititem=-1;} {}
   }
-  Function {init(Part *part_,Master *master_,int npart_,BankUI *bankui_)} {} {
+  Function {init(Part *part_,Master *master_,int npart_,BankUI *bankui_)} {open
+  } {
     code {bankui=bankui_;
 part=part_;
 npart=npart_;
 master=master_;
 ninseff=0;
 
+osc::UI_NFN("/part%d/volume-part", npart_, "c", set_handle, (void*)&partvolume);
+osc::UI_NFN("/part%d/enable-part", npart_, "c", set_handle, (void*)&partenabled);
+
 make_window();
 partgroup->position(this->parent()->x()+2,this->parent()->y()+2);
 partgroup->show();
 end();
-
 
 //if (config.ui.showinstrumentinfo!=0) instrumenteditwindow->show();
 
@@ -1087,8 +1103,13 @@ if ((engine==0)&&(adnoteui!=NULL)) adnoteui->ADnoteGlobalParameters->show();
 if ((engine==1)&&(subnoteui!=NULL)) subnoteui->SUBparameters->show();
 if ((engine==2)&&(adnoteui!=NULL)) padnoteui->padnotewindow->show();} {}
   }
-  Function {~PartUI()} {} {
-    code {if (adnoteui!=NULL) delete (adnoteui);
+  Function {~PartUI()} {open
+  } {
+    code {
+    osc::UI_RM(osc::mkPath("/part%d/volume-part", npart), "c");
+    osc::UI_RM(osc::mkPath("/part%d/enable-part", npart), "c");
+
+if (adnoteui!=NULL) delete (adnoteui);
 if (subnoteui!=NULL) delete (subnoteui);
 if (padnoteui!=NULL) delete (padnoteui);
 
@@ -1105,7 +1126,8 @@ instrumentkitlist->hide();
 delete(instrumentkitlist);
 
 instrumenteditwindow->hide();
-delete(instrumenteditwindow);} {}
+delete(instrumenteditwindow);} {selected
+    }
   }
   decl {Part *part;} {}
   decl {Master *master;} {}

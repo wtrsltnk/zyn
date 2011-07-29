@@ -250,7 +250,7 @@ void Master::partonoff(int npart, int what)
         for(int nefx = 0; nefx < NUM_INS_EFX; nefx++) {
             if(Pinsparts[nefx] == npart)
                 insefx[nefx]->cleanup();
-            ;
+
         }
     }
     else {  //enabled

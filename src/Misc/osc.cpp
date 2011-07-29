@@ -16,8 +16,9 @@ void osc::error(int num, const char *msg, const char *path)
 /* catch any incoming messages and display them. returning 1 means that the
  * message has not been fully handled and the server should try other methods */
 int osc::generic_handler(const char *path, const char *types, lo_arg **argv,
-        int argc, void *data, void *user_data)
+        int argc, void *, void *user_data)
 {
+    //return 1;
     printf("%s[%s := ", user_data, path);
     for (int i=0; i<argc; i++) {
         printf("arg %d '%c' ", i, types[i]);
@@ -53,3 +54,51 @@ void osc::run_ui(void)
     lo_server_thread_start(ui_server);
 }
 
+
+const char *osc::mkPath(const char *fmt, size_t idx)
+{
+    const size_t buffLen = 200;
+    static char buf[buffLen + 1];
+    snprintf(buf, buffLen, fmt, idx);
+    return buf;
+}
+
+void osc::UI_RM(const char *path, const char *type)
+{
+    lo_server_thread_del_method(osc::ui_server, path, type);
+}
+
+void osc::UI_FN(const char *path, const char *type, 
+                lo_method_handler handle, void *arg)
+{
+    //printf("UI registered %s\n", path);
+    lo_server_thread_add_method(osc::ui_server, path, type, handle, arg);
+}
+    
+void osc::UI_NFN(const char *path, size_t idx, const char *type, 
+                 lo_method_handler handle, void *arg)
+{
+    osc::UI_FN(mkPath(path,idx), type, handle, arg);
+}
+
+void osc::UI_RE(const char *path)
+{
+    printf("sending request out to %s\n", path);
+    lo_send(backend, path, "N");
+}
+
+void osc::UI_NRE(const char *path, size_t idx)
+{
+    osc::UI_RE(osc::mkPath(path, idx));
+}
+
+void osc::UI_UP(const char *path, char val)
+{
+    //printf("UI sent update\n");
+    lo_send(osc::backend, path, "c", val);
+}
+
+void osc::UI_NUP(const char *path, size_t idx, char val)
+{
+    osc::UI_UP(osc::mkPath(path, idx), val);
+}

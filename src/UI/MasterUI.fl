@@ -48,10 +48,10 @@ decl {\#include "SeqUI.h"} {public
 decl {\#include "PresetsUI.h"} {public
 } 
 
-decl {\#include "NioUI.h"} {public global
+decl {\#include "NioUI.h"} {public
 } 
 
-decl {\#include "../Misc/osc.h"} {public global
+decl {\#include "../Misc/osc.h"} {public
 } 
 
 decl {\#include "../Misc/Master.h"} {public
@@ -66,7 +66,18 @@ decl {\#include "../Misc/Util.h"} {public
 decl {\#include "../globals.h"} {public
 } 
 
-class VUMeter {selected : {public Fl_Box}
+Function {set_handle(const char *, const char *, lo_arg **argv, int, void *, void *user_data)} {selected private return_type int
+} {
+  code {
+  Fl_Widget   *w   = *static_cast<Fl_Widget**>(user_data);
+  Fl_Valuator *val = dynamic_cast<Fl_Valuator*>(w);
+if(val)val->value(argv[0]->c);
+Fl_Button *but = dynamic_cast<Fl_Button*>(w);
+if(but)but->value(argv[0]->c);
+return 0;} {}
+} 
+
+class VUMeter {: {public Fl_Box}
 } {
   Function {VUMeter(int x,int y, int w, int h, const char *label=0):Fl_Box(x,y,w,h,label)} {} {
     code {master=NULL;
@@ -301,15 +312,15 @@ return(WidgetPDial::handle(event));} {}
   decl {int neff2;} {}
 } 
 
-class Panellistitem {: {public Fl_Group}
+class Panellistitem {open : {public Fl_Group}
 } {
-  Function {make_window()} {private
+  Function {make_window()} {open private
   } {
-    Fl_Window panellistitem {
+    Fl_Window panellistitem {open
       private xywh {315 213 70 260} type Double
       class Fl_Group visible
     } {
-      Fl_Group panellistitemgroup {
+      Fl_Group panellistitemgroup {open
         private xywh {0 20 70 240} box PLASTIC_THIN_UP_BOX
         code0 {if (master->part[npart]->Penabled==0) o->deactivate();}
       } {
@@ -333,9 +344,8 @@ bankui->show();}
           xywh {5 27 60 30} box THIN_DOWN_BOX down_box FLAT_BOX labelfont 1 labelsize 10 align 208
         }
         Fl_Slider partvolume {
-          callback {master->part[npart]->setPvolume((int) o->value());}
+          callback {osc::UI_NUP("/part%d/volume", npart, o->value());}
           xywh {10 65 30 110} type {Vert Knob} box FLAT_BOX minimum 127 maximum 0 step 1 value 127
-          code0 {o->value(master->part[npart]->Pvolume);}
         }
         Fl_Dial partpanning {
           callback {master->part[npart]->setPpanning((int) o->value());}
@@ -360,10 +370,9 @@ bankui->show();}
       }
       Fl_Check_Button partenabled {
         label 01
-        callback {pthread_mutex_lock(&master->mutex);
- master->partonoff(npart,(int) o->value());
-pthread_mutex_unlock(&master->mutex);
-
+        callback {
+        osc::UI_NUP("/part%d/enable*", npart, o->value());
+        
 if ((int) o->value()==0) panellistitemgroup->deactivate();
   else {
     panellistitemgroup->activate();
@@ -376,14 +385,16 @@ if ((int) o->value()==0) panellistitemgroup->deactivate();
 o->redraw();}
         private xywh {5 0 45 20} down_box DOWN_BOX labeltype EMBOSSED_LABEL labelfont 1 labelsize 13 align 24
         code0 {char tmp[10];snprintf(tmp,10,"%d",npart+1);o->copy_label(tmp);}
-        code1 {o->value(master->part[npart]->Penabled);}
+        code1 {osc::UI_NRE("/part%d/enabled*", npart);}
       }
     }
   }
-  Function {Panellistitem(int x,int y, int w, int h, const char *label=0):Fl_Group(x,y,w,h,label)} {} {
+  Function {Panellistitem(int x,int y, int w, int h, const char *label=0):Fl_Group(x,y,w,h,label)} {open
+  } {
     code {npart=0;
 master=NULL;
-bankui=NULL;} {}
+bankui=NULL;
+} {}
   }
   Function {init(Master *master_, int npart_,BankUI *bankui_)} {open
   } {
@@ -394,9 +405,10 @@ bankui=bankui_;
 make_window();
 panellistitem->show();
 end();
-if(npart==0)
-lo_server_thread_add_method(osc::ui_server, "/part/volume", "c",
-                            set_handle, partvolume);} {}
+
+osc::UI_NFN("/part%d/enable-master", npart_, "c", set_handle, (void*)&partenabled);
+osc::UI_NFN("/part%d/volume-master", npart_, "c", set_handle, (void*)&partvolume);
+} {}
   }
   Function {refresh()} {open
   } {
@@ -404,9 +416,10 @@ lo_server_thread_add_method(osc::ui_server, "/part/volume", "c",
 if (master->part[npart]->Penabled!=0) panellistitemgroup->activate();
      else panellistitemgroup->deactivate();
 
-partvolume->value(master->part[npart]->Pvolume);
 partpanning->value(master->part[npart]->Ppanning);
 partrcv->value(master->part[npart]->Prcvchn);
+
+osc::UI_NRE("/part%d/volume*", npart);
 
 partname->label((char *)master->part[npart]->Pname);
 
@@ -417,7 +430,8 @@ else
 
 panellistitemgroup->redraw();} {}
   }
-  Function {~Panellistitem()} {} {
+  Function {~Panellistitem()} {open
+  } {
     code {panellistitem->hide();
 //delete(panellistitem);} {}
   }
@@ -438,7 +452,7 @@ if (fl_choice("Exit and leave the unsaved data?","No","Yes",NULL)) {
     *exitprogram=1;
 };
 \#endif}
-      xywh {450 306 390 465} type Double hide xclass zynaddsubfx
+      xywh {450 306 390 465} type Double xclass zynaddsubfx visible
     } {
       Fl_Menu_Bar mastermenu {
         xywh {-5 0 690 25}
@@ -1218,9 +1232,9 @@ virkeys->midich=(int) o->value();} open
           code1 {o->value(master->part[npart]->Prcvchn);}
         } {}
         Fl_Dial partvolume {
-          callback {master->part[npart]->setPvolume((int) o->value());}
+          callback {osc::UI_NUP("/part%d/volume", npart, o->value());}
           xywh {145 95 30 30} maximum 127 step 1
-          code0 {o->value(master->part[npart]->Pvolume);}
+          code0 {//o->value(master->part[npart]->Pvolume);}
           class WidgetPDial
         }
         Fl_Box {} {
@@ -1291,9 +1305,8 @@ simplemaxkcounter->do_callback();}
       }
       Fl_Check_Button partenabled {
         label Enabled
-        callback {pthread_mutex_lock(&master->mutex);
- master->partonoff(npart,(int) o->value());
-pthread_mutex_unlock(&master->mutex);
+        callback {
+        osc::UI_NUP("/part%d/enable*", npart, o->value());
 
 if ((int) o->value()==0) simplelistitemgroup->deactivate();
   else {
@@ -1690,9 +1703,7 @@ delete selectuiwindow;} {}
 };} {}
   }
   Function {simplerefresh()} {} {
-    code {partenabled->value(master->part[npart]->Penabled);
-if (master->part[npart]->Penabled!=0) simplelistitemgroup->activate();
-     else simplelistitemgroup->deactivate();
+    code {osc::UI_NRE("/part%d/enable*", npart);
 
 partvolume->value(master->part[npart]->Pvolume);
 partpanning->value(master->part[npart]->Ppanning);
@@ -1830,11 +1841,4 @@ bankui->hide();} {}
   decl {char masterwindowlabel[100];} {}
   decl {Panellistitem *panellistitem[NUM_MIDI_PARTS];} {}
   decl {NioUI nioui;} {}
-} 
-
-Function {set_handle(const char *path, const char *types, lo_arg **argv, int argc, void *data, void *user_data)} {return_type int
-} {
-  code {printf("%p update\\n", user_data);
-Fl_Valuator *val = static_cast<Fl_Valuator*>(user_data);
-val->value(argv[0]->c);} {}
 } 

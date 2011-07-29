@@ -186,6 +186,7 @@ void sigterm_exit(int /*sig*/)
 void initprogram(int argc, char **argv)
 {
     osc::init_ui();
+    osc::init_backend();
 #if LASH
     lash = new LASHClient(&argc, &argv);
 #endif

@@ -193,6 +193,7 @@ class Part
         REALTYPE    oldfreq; //this is used for portamento
         Microtonal *microtonal;
         FFTwrapper *fft;
+        size_t index;
 };
 
 #endif
