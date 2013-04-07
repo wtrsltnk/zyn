@@ -26,7 +26,6 @@
 #include "../Misc/Util.h"
 #include "../Misc/XMLwrapper.h"
 #include "../Params/Presets.h"
-#include "../DSP/FFTwrapper.h"
 
 #define N_RES_POINTS 256
 
@@ -36,7 +35,7 @@ class Resonance:public Presets
         Resonance();
         ~Resonance();
         void setpoint(int n, unsigned char p);
-        void applyres(int n, fft_t *fftdata, float freq);
+        void applyres(int n, FFTFREQS fftdata, REALTYPE freq);
         void smooth();
         void interpolatepeaks(int type);
         void randomize(int type);
@@ -46,12 +45,12 @@ class Resonance:public Presets
         void getfromXML(XMLwrapper *xml);
 
 
-        float getfreqpos(float freq);
-        float getfreqx(float x);
-        float getfreqresponse(float freq);
-        float getcenterfreq();
-        float getoctavesfreq();
-        void sendcontroller(MidiControllers ctl, float par);
+        REALTYPE getfreqpos(REALTYPE freq);
+        REALTYPE getfreqx(REALTYPE x);
+        REALTYPE getfreqresponse(REALTYPE freq);
+        REALTYPE getcenterfreq();
+        REALTYPE getoctavesfreq();
+        void sendcontroller(MidiControllers ctl, REALTYPE par);
 
         //parameters
         unsigned char Penabled;     //if the ressonance is enabled
@@ -61,10 +60,11 @@ class Resonance:public Presets
         unsigned char Pprotectthefundamental;   //the fundamental (1-st harmonic) is not damped, even it resonance function is low
 
         //controllers
-        float ctlcenter; //center frequency(relative)
-        float ctlbw; //bandwidth(relative)
+        REALTYPE ctlcenter; //center frequency(relative)
+        REALTYPE ctlbw; //bandwidth(relative)
 
     private:
 };
 
 #endif
+

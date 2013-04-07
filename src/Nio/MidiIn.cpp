@@ -24,13 +24,12 @@
 #include "../globals.h"
 #include "InMgr.h"
 
-void MidiIn::midiProcess(unsigned char head,
-                         unsigned char num,
-                         unsigned char value)
+void MidiIn::midiProcess(unsigned char head, unsigned char num, unsigned char value)
 {
-    MidiEvent     ev;
+    MidiDriverEvent ev;
     unsigned char chan = head & 0x0f;
-    switch(head & 0xf0) {
+    switch(head & 0xf0)
+    {
         case 0x80: //Note Off
             ev.type    = M_NOTE;
             ev.channel = chan;
@@ -45,25 +44,11 @@ void MidiIn::midiProcess(unsigned char head,
             ev.value   = value;
             InMgr::getInstance().putEvent(ev);
             break;
-        case 0xA0: /* pressure, aftertouch */
-            ev.type    = M_PRESSURE;
-            ev.channel = chan;
-            ev.num     = num;
-            ev.value   = value;
-            InMgr::getInstance().putEvent(ev);
-            break;
         case 0xb0: //Controller
             ev.type    = M_CONTROLLER;
             ev.channel = chan;
             ev.num     = num;
             ev.value   = value;
-            InMgr::getInstance().putEvent(ev);
-            break;
-        case 0xc0: //Program Change
-            ev.type    = M_PGMCHANGE;
-            ev.channel = chan;
-            ev.num     = num;
-            ev.value   = 0;
             InMgr::getInstance().putEvent(ev);
             break;
         case 0xe0: //Pitch Wheel

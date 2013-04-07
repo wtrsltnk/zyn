@@ -24,18 +24,20 @@
 #include "SUBnoteParameters.h"
 #include <stdio.h>
 
-SUBnoteParameters::SUBnoteParameters():Presets()
+SUBnoteParameters::SUBnoteParameters():
+    Presets(NULL, "SUBnoteParameters: FIXME")
 {
     setpresettype("Psubsyth");
-    AmpEnvelope = new EnvelopeParams(64, 1);
+    AmpEnvelope = new EnvelopeParams(this, "AMPLITUDE_ENVELOPE", 64, 1);
     AmpEnvelope->ADSRinit_dB(0, 40, 127, 25);
-    FreqEnvelope = new EnvelopeParams(64, 0);
+    FreqEnvelope      = new EnvelopeParams(this, "FREQUENCY_ENVELOPE", 64, 0);
     FreqEnvelope->ASRinit(30, 50, 64, 60);
-    BandWidthEnvelope = new EnvelopeParams(64, 0);
+    BandWidthEnvelope = new EnvelopeParams(this, "BANDWIDTH_ENVELOPE", 64, 0);
     BandWidthEnvelope->ASRinit_bw(100, 70, 64, 60);
 
-    GlobalFilter = new FilterParams(2, 80, 40);
-    GlobalFilterEnvelope = new EnvelopeParams(0, 1);
+    //TODO: controlify this
+    GlobalFilter = new FilterParams(NULL, 2, 80, 40);
+    GlobalFilterEnvelope = new EnvelopeParams(this, "GlobalFilterEnvelope", 0, 1);
     GlobalFilterEnvelope->ADSRinit_filter(64, 40, 64, 70, 60, 64);
 
     defaults();
@@ -48,22 +50,22 @@ void SUBnoteParameters::defaults()
     PPanning = 64;
     PAmpVelocityScaleFunction = 90;
 
-    Pfixedfreq   = 0;
-    PfixedfreqET = 0;
-    Pnumstages   = 2;
-    Pbandwidth   = 40;
-    Phmagtype    = 0;
-    Pbwscale     = 64;
-    Pstereo      = 1;
-    Pstart = 1;
+    Pfixedfreq    = 0;
+    PfixedfreqET  = 0;
+    Pnumstages    = 2;
+    Pbandwidth    = 40;
+    Phmagtype     = 0;
+    Pbwscale      = 64;
+    Pstereo       = 1;
+    Pstart        = 1;
 
-    PDetune = 8192;
+    PDetune       = 8192;
     PCoarseDetune = 0;
     PDetuneType   = 1;
     PFreqEnvelopeEnabled      = 0;
     PBandWidthEnvelopeEnabled = 0;
 
-    for(int n = 0; n < MAX_SUB_HARMONICS; ++n) {
+    for(int n = 0; n < MAX_SUB_HARMONICS; n++) {
         Phmag[n]   = 0;
         Phrelbw[n] = 64;
     }
@@ -101,7 +103,7 @@ void SUBnoteParameters::add2XML(XMLwrapper *xml)
     xml->addpar("start", Pstart);
 
     xml->beginbranch("HARMONICS");
-    for(int i = 0; i < MAX_SUB_HARMONICS; ++i) {
+    for(int i = 0; i < MAX_SUB_HARMONICS; i++) {
         if((Phmag[i] == 0) && (xml->minimal))
             continue;
         xml->beginbranch("HARMONIC", i);
@@ -174,7 +176,7 @@ void SUBnoteParameters::getfromXML(XMLwrapper *xml)
 
     if(xml->enterbranch("HARMONICS")) {
         Phmag[0] = 0;
-        for(int i = 0; i < MAX_SUB_HARMONICS; ++i) {
+        for(int i = 0; i < MAX_SUB_HARMONICS; i++) {
             if(xml->enterbranch("HARMONIC", i) == 0)
                 continue;
             Phmag[i]   = xml->getpar127("mag", Phmag[i]);
@@ -198,15 +200,15 @@ void SUBnoteParameters::getfromXML(XMLwrapper *xml)
     }
 
     if(xml->enterbranch("FREQUENCY_PARAMETERS")) {
-        Pfixedfreq   = xml->getparbool("fixed_freq", Pfixedfreq);
-        PfixedfreqET = xml->getpar127("fixed_freq_et", PfixedfreqET);
+        Pfixedfreq    = xml->getparbool("fixed_freq", Pfixedfreq);
+        PfixedfreqET  = xml->getpar127("fixed_freq_et", PfixedfreqET);
 
-        PDetune = xml->getpar("detune", PDetune, 0, 16383);
+        PDetune       = xml->getpar("detune", PDetune, 0, 16383);
         PCoarseDetune = xml->getpar("coarse_detune", PCoarseDetune, 0, 16383);
         PDetuneType   = xml->getpar127("detune_type", PDetuneType);
 
-        Pbandwidth = xml->getpar127("bandwidth", Pbandwidth);
-        Pbwscale   = xml->getpar127("bandwidth_scale", Pbwscale);
+        Pbandwidth    = xml->getpar127("bandwidth", Pbandwidth);
+        Pbwscale      = xml->getpar127("bandwidth_scale", Pbwscale);
 
         PFreqEnvelopeEnabled = xml->getparbool("freq_envelope_enabled",
                                                PFreqEnvelopeEnabled);
@@ -248,3 +250,4 @@ void SUBnoteParameters::getfromXML(XMLwrapper *xml)
         xml->exitbranch();
     }
 }
+

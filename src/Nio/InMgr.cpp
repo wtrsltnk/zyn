@@ -6,32 +6,21 @@
 
 using namespace std;
 
-ostream &operator<<(ostream &out, const MidiEvent &ev)
+ostream &operator<<(ostream &out, const MidiDriverEvent& ev)
 {
-    switch(ev.type) {
-        case M_NOTE:
-            out << "MidiNote: note(" << ev.num << ")\n"
-            << "          channel(" << ev.channel << ")\n"
-            << "          velocity(" << ev.value << ")";
-            break;
-
-        case M_CONTROLLER:
-            out << "MidiCtl: controller(" << ev.num << ")\n"
-            << "         channel(" << ev.channel << ")\n"
-            << "         value(" << ev.value << ")";
-            break;
-
-        case M_PGMCHANGE:
-            out << "PgmChange: program(" << ev.num << ")\n"
-            << "           channel(" << ev.channel << ")";
-            break;
-    }
-
+    if(ev.type == M_NOTE)
+        out << "MidiNote: note("     << ev.num      << ")\n"
+            << "          channel("  << ev.channel  << ")\n"
+            << "          velocity(" << ev.value    << ")";
+    else
+        out << "MidiCtl: controller(" << ev.num     << ")\n"
+            << "         channel("    << ev.channel << ")\n"
+            << "         value("      << ev.value   << ")";
     return out;
 }
 
-MidiEvent::MidiEvent()
-    :channel(0), type(0), num(0), value(0)
+MidiDriverEvent::MidiDriverEvent()
+    :channel(0),type(0),num(0),value(0)
 {}
 
 InMgr &InMgr::getInstance()
@@ -53,7 +42,7 @@ InMgr::~InMgr()
     sem_destroy(&work);
 }
 
-void InMgr::putEvent(MidiEvent ev)
+void InMgr::putEvent(MidiDriverEvent ev)
 {
     if(queue.push(ev)) //check for error
         cerr << "ERROR: Midi Ringbuffer is FULL" << endl;
@@ -63,32 +52,22 @@ void InMgr::putEvent(MidiEvent ev)
 
 void InMgr::flush()
 {
-    MidiEvent ev;
+    MidiDriverEvent ev;
     while(!sem_trywait(&work)) {
         queue.pop(ev);
-        //cout << ev << endl;
+        cout << ev << endl;
 
-        switch(ev.type) {
-            case M_NOTE:
-                dump.dumpnote(ev.channel, ev.num, ev.value);
+        if(M_NOTE == ev.type) {
+            dump.dumpnote(ev.channel, ev.num, ev.value);
 
-                if(ev.value)
-                    master.noteOn(ev.channel, ev.num, ev.value);
-                else
-                    master.noteOff(ev.channel, ev.num);
-                break;
-
-            case M_CONTROLLER:
-                dump.dumpcontroller(ev.channel, ev.num, ev.value);
-                master.setController(ev.channel, ev.num, ev.value);
-                break;
-
-            case M_PGMCHANGE:
-                master.setProgram(ev.channel, ev.num);
-                break;
-            case M_PRESSURE:
-                master.polyphonicAftertouch(ev.channel, ev.num, ev.value);
-                break;
+            if(ev.value)
+                master.noteOn(ev.channel, ev.num, ev.value);
+            else
+                master.noteOff(ev.channel, ev.num);
+        }
+        else {
+            dump.dumpcontroller(ev.channel, ev.num, ev.value);
+            master.setController(ev.channel, ev.num, ev.value);
         }
     }
 }
@@ -127,3 +106,4 @@ MidiIn *InMgr::getIn(string name)
     EngineMgr &eng = EngineMgr::getInstance();
     return dynamic_cast<MidiIn *>(eng.getEng(name));
 }
+

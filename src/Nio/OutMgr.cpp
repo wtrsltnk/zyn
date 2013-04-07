@@ -1,14 +1,13 @@
 #include "OutMgr.h"
 #include <algorithm>
 #include <iostream>
-#include <cassert>
 #include "AudioOut.h"
 #include "Engine.h"
 #include "EngineMgr.h"
 #include "InMgr.h"
 #include "WavEngine.h"
 #include "../Misc/Master.h"
-#include "../Misc/Util.h" //for set_realtime()
+#include "../Misc/Util.h"//for set_realtime()
 
 using namespace std;
 
@@ -20,26 +19,21 @@ OutMgr &OutMgr::getInstance()
 
 OutMgr::OutMgr()
     :wave(new WavEngine()),
-      priBuf(new float[4096],
-             new float[4096]), priBuffCurrent(priBuf),
-      master(Master::getInstance())
+    priBuf(new REALTYPE[4096],new REALTYPE[4096]),priBuffCurrent(priBuf),master(Master::getInstance())
 {
     currentOut = NULL;
-    stales     = 0;
-    master     = Master::getInstance();
+    stales = 0;
 
     //init samples
-    outr = new float[synth->buffersize];
-    outl = new float[synth->buffersize];
-    memset(outl, 0, synth->bufferbytes);
-    memset(outr, 0, synth->bufferbytes);
-}
+    outr = new REALTYPE[SOUND_BUFFER_SIZE];
+    outl = new REALTYPE[SOUND_BUFFER_SIZE];
+};
 
 OutMgr::~OutMgr()
 {
     delete wave;
-    delete [] priBuf.l;
-    delete [] priBuf.r;
+    delete [] priBuf.l();
+    delete [] priBuf.r();
     delete [] outr;
     delete [] outl;
 }
@@ -55,7 +49,7 @@ OutMgr::~OutMgr()
  * 8) Lets return those samples to the primary and secondary outputs
  * 9) Lets wait for another tick
  */
-const Stereo<float *> OutMgr::tick(unsigned int frameSize)
+const Stereo<REALTYPE *> OutMgr::tick(unsigned int frameSize)
 {
     pthread_mutex_lock(&(master.mutex));
     InMgr::getInstance().flush();
@@ -66,9 +60,12 @@ const Stereo<float *> OutMgr::tick(unsigned int frameSize)
         pthread_mutex_lock(&(master.mutex));
         master.AudioOut(outl, outr);
         pthread_mutex_unlock(&(master.mutex));
-        addSmps(outl, outr);
+        addSmps(outl,outr);
     }
-    stales = frameSize;
+    Stereo<REALTYPE *> ans = priBuffCurrent;
+    ans.l() -= frameSize;
+    ans.r() -= frameSize;
+    //cout << storedSmps() << '=' << frameSize << endl;
     return priBuf;
 }
 
@@ -115,68 +112,36 @@ string OutMgr::getSink() const
     return "ERROR";
 }
 
-//perform a cheap linear interpolation for resampling
-//This will result in some distortion at frame boundries
-//returns number of samples produced
-static size_t resample(float *dest,
-                       const float *src,
-                       float s_in,
-                       float s_out,
-                       size_t elms)
-{
-    size_t out_elms = elms * s_out / s_in;
-    float  r_pos    = 0.0f;
-    for(int i = 0; i < (int)out_elms; ++i, r_pos += s_in / s_out)
-        dest[i] = interpolate(src, elms, r_pos);
-
-    return out_elms;
-}
-
-void OutMgr::addSmps(float *l, float *r)
+void OutMgr::addSmps(REALTYPE *l, REALTYPE *r)
 {
     //allow wave file to syphon off stream
-    wave->push(Stereo<float *>(l, r), synth->buffersize);
+    wave->push(Stereo<REALTYPE *>(l,r),SOUND_BUFFER_SIZE);
 
-    const int s_out = currentOut->getSampleRate(),
-              s_sys = synth->samplerate;
+    Stereo<Sample> smps(Sample(SOUND_BUFFER_SIZE, l), Sample(SOUND_BUFFER_SIZE, r));
 
-    if(s_out != s_sys) { //we need to resample
-        const size_t steps = resample(priBuffCurrent.l,
-                                      l,
-                                      s_sys,
-                                      s_out,
-                                      synth->buffersize);
-        resample(priBuffCurrent.r, r, s_sys, s_out, synth->buffersize);
-
-        priBuffCurrent.l += steps;
-        priBuffCurrent.r += steps;
+    if(currentOut->getSampleRate() != SAMPLE_RATE) { //we need to resample
+        //cout << "BAD RESAMPLING" << endl;
+        smps.l().resample(SAMPLE_RATE,currentOut->getSampleRate());
+        smps.r().resample(SAMPLE_RATE,currentOut->getSampleRate());
     }
-    else { //just copy the samples
-        memcpy(priBuffCurrent.l, l, synth->bufferbytes);
-        memcpy(priBuffCurrent.r, r, synth->bufferbytes);
-        priBuffCurrent.l += synth->buffersize;
-        priBuffCurrent.r += synth->buffersize;
-    }
+
+    memcpy(priBuffCurrent.l(), smps.l().c_buf(), SOUND_BUFFER_SIZE*sizeof(REALTYPE));
+    memcpy(priBuffCurrent.r(), smps.r().c_buf(), SOUND_BUFFER_SIZE*sizeof(REALTYPE));
+    priBuffCurrent.l() += SOUND_BUFFER_SIZE;
+    priBuffCurrent.r() += SOUND_BUFFER_SIZE;
+    stales += SOUND_BUFFER_SIZE;
 }
 
 void OutMgr::removeStaleSmps()
 {
+    int toShift = storedSmps() - stales;
     if(!stales)
         return;
 
-    const int leftover = storedSmps() - stales;
-
-    assert(leftover > -1);
-
-    //leftover samples [seen at very low latencies]
-    if(leftover) {
-        memmove(priBuf.l, priBuffCurrent.l - leftover, leftover * sizeof(float));
-        memmove(priBuf.r, priBuffCurrent.r - leftover, leftover * sizeof(float));
-        priBuffCurrent.l = priBuf.l + leftover;
-        priBuffCurrent.r = priBuf.r + leftover;
-    }
-    else
-        priBuffCurrent = priBuf;
-
+    memset(priBuf.l(), '0', 4096*sizeof(REALTYPE));
+    memset(priBuf.r(), '0', 4096*sizeof(REALTYPE));
+    priBuffCurrent = priBuf;
     stales = 0;
+
 }
+

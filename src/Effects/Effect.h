@@ -36,14 +36,20 @@ class Effect
     public:
         /**
          * Effect Constructor
-         * @param insertion_ 1 when it is an insertion Effect
+         * @param insertion_ 1 when it is an insertion Effect and 0 when it
+         * is not an insertion Effect
          * @param efxoutl_ Effect output buffer Left channel
          * @param efxoutr_ Effect output buffer Right channel
          * @param filterpars_ pointer to FilterParams array
          * @param Ppreset_ chosen preset
          * @return Initialized Effect object*/
-        Effect(bool insertion_, float *efxoutl_, float *efxoutr_,
-               FilterParams *filterpars_, unsigned char Ppreset_);
+        Effect(bool insertion_, REALTYPE *const efxoutl_,
+               REALTYPE *const efxoutr_, FilterParams *filterpars_,
+               const unsigned char &Ppreset_);
+        /**Deconstructor
+         *
+         * Deconstructs the Effect and releases any resouces that it has
+         * allocated for itself*/
         virtual ~Effect() {}
         /**
          * Choose a preset
@@ -67,39 +73,34 @@ class Effect
          * @param smpsl Input buffer for the Left channel
          * @param smpsr Input buffer for the Right channel
          */
-        void out(float *const smpsl, float *const smpsr);
+        void out(REALTYPE *const smpsl, REALTYPE *const smpsr);
         virtual void out(const Stereo<float *> &smp) = 0;
         /**Reset the state of the effect*/
-        virtual void cleanup(void) {}
-        virtual float getfreqresponse(float freq) { return freq; }
+        virtual void cleanup() {}
+        /**This is only used for EQ (for user interface)*/
+        virtual REALTYPE getfreqresponse(REALTYPE freq) {
+            return freq;
+        }
 
-        unsigned char Ppreset;   /**<Currently used preset*/
-        float *const  efxoutl; /**<Effect out Left Channel*/
-        float *const  efxoutr; /**<Effect out Right Channel*/
-        float outvolume; /**<This is the volume of effect and is public because
+        unsigned char   Ppreset; /**<Currently used preset*/
+        REALTYPE *const efxoutl; /**<Effect out Left Channel*/
+        REALTYPE *const efxoutr; /**<Effect out Right Channel*/
+        /**\todo make efxoutl and efxoutr private and replace them with a Stereo<float*>*/
+
+        REALTYPE outvolume;/**<This is the volume of effect and is public because
                           * it is needed in system effects.
-                          * The out volume of such effects are always 1.0f, so
+                          * The out volume of such effects are always 1.0, so
                           * this setting tells me how is the volume to the
                           * Master Output only.*/
 
-        float volume;
+        REALTYPE volume;
 
         FilterParams *filterpars; /**<Parameters for filters used by Effect*/
-
-        //Perform L/R crossover
-        static void crossover(float &a, float &b, float crossover);
-
     protected:
-        void setpanning(char Ppanning_);
-        void setlrcross(char Plrcross_);
 
-        const bool insertion;
-        //panning parameters
-        char  Ppanning;
-        float pangainL;
-        float pangainR;
-        char  Plrcross; // L/R mix
-        float lrcross;
+        const bool insertion;/**<If Effect is an insertion effect, insertion=1
+                               *otherwise, it should be insertion=0*/
 };
 
 #endif
+

@@ -23,39 +23,42 @@
 
 #ifndef MASTER_H
 #define MASTER_H
+
 #include "../globals.h"
 #include "Microtonal.h"
 
 #include "Bank.h"
 #include "Recorder.h"
+#include "Part.h"
 #include "Dump.h"
+#include "../Seq/Sequencer.h"
 #include "XMLwrapper.h"
+#include "../Controls/Node.h"
+#include "../Controls/Control.h"
+#include "../Controls/Trigger.h"
+#include "LinInjFunc.h"
+#include "../Controls/FakeChildFactory.h"
 
-#include "../Params/Controller.h"
-
-typedef enum {
-    MUTEX_TRYLOCK, MUTEX_LOCK, MUTEX_UNLOCK
-} lockset;
+typedef enum { MUTEX_TRYLOCK, MUTEX_LOCK, MUTEX_UNLOCK } lockset;
 
 extern Dump dump;
 
-struct vuData {
-    vuData(void);
-    float outpeakl, outpeakr, maxoutpeakl, maxoutpeakr,
-          rmspeakl, rmspeakr;
+typedef struct vuData_t {
+    REALTYPE outpeakl, outpeakr, maxoutpeakl, maxoutpeakr,
+             rmspeakl, rmspeakr;
     int clipped;
-};
+} vuData;
 
 
 /** It sends Midi Messages to Parts, receives samples from parts,
  *  process them with system/insertion effects and mix them */
-class Master
+class Master:public Node
 {
     public:
         /** Constructor TODO make private*/
         Master();
         /** Destructor*/
-        ~Master();
+        virtual ~Master();
 
         static Master &getInstance();
         static void deleteInstance();
@@ -68,7 +71,6 @@ class Master
         void add2XML(XMLwrapper *xml);
 
         void defaults();
-
 
         /**loads all settings from a XML file
          * @return 0 for ok or -1 if there is an error*/
@@ -92,33 +94,31 @@ class Master
         //Midi IN
         void noteOn(char chan, char note, char velocity);
         void noteOff(char chan, char note);
-        void polyphonicAftertouch(char chan, char note, char velocity);
         void setController(char chan, int type, int par);
-        void setProgram(char chan, unsigned int pgm);
         //void NRPN...
 
 
-        void ShutUp();
-        int shutup;
+        Trigger panic;
 
-        void vuUpdate(const float *outl, const float *outr);
+        void vuUpdate(const REALTYPE *outl, const REALTYPE *outr);
 
         /**Audio Output*/
-        void AudioOut(float *outl, float *outr);
+        void AudioOut(REALTYPE *outl, REALTYPE *outr);
         /**Audio Output (for callback mode). This allows the program to be controled by an external program*/
-        void GetAudioOutSamples(size_t nsamples,
-                                unsigned samplerate,
-                                float *outl,
-                                float *outr);
+        void GetAudioOutSamples(int nsamples,
+                                int samplerate,
+                                REALTYPE *outl,
+                                REALTYPE *outr);
 
+        void handleEvent(Event *event);
+        void handleSyncEvent(Event *event);
 
         void partonoff(int npart, int what);
 
         /**parts \todo see if this can be made to be dynamic*/
-        class Part * part[NUM_MIDI_PARTS];
+        Part *part[NUM_MIDI_PARTS];
 
         //parameters
-
         unsigned char Pvolume;
         unsigned char Pkeyshift;
         unsigned char Psysefxvol[NUM_SYS_EFX][NUM_MIDI_PARTS];
@@ -130,9 +130,15 @@ class Master
         void setPsysefxvol(int Ppart, int Pefx, char Pvol);
         void setPsysefxsend(int Pefxfrom, int Pefxto, char Pvol);
 
+        //parameter reading
+        char getPvolume() const;
+        char getPkeyshift() const;
+        char getPsysefxvol(int Ppart, int Pefx) const;
+        char getPsysefxsend(int Pefxfrom, int Pefxto) const;
+
         //effects
-        class EffectMgr * sysefx[NUM_SYS_EFX]; //system
-        class EffectMgr * insefx[NUM_INS_EFX]; //insertion
+        EffectMgr *sysefx[NUM_SYS_EFX]; //system
+        EffectMgr *insefx[NUM_INS_EFX]; //insertion
 //      void swapcopyeffects(int what,int type,int neff1,int neff2);
 
         //HDD recorder
@@ -149,28 +155,45 @@ class Master
 
         //peaks for part VU-meters
         /**\todo synchronize this with a mutex*/
-        float vuoutpeakpart[NUM_MIDI_PARTS];
+        REALTYPE      vuoutpeakpart[NUM_MIDI_PARTS];
         unsigned char fakepeakpart[NUM_MIDI_PARTS]; //this is used to compute the "peak" when the part is disabled
 
         Controller ctl;
-        bool       swaplr; //if L and R are swapped
+        int swaplr; //1 if L and R are swapped
+
+        //Sequencer
+        Sequencer seq;
 
         //other objects
         Microtonal microtonal;
-        Bank       bank;
+        Bank bank;
 
-        class FFTwrapper * fft;
+        FFTwrapper     *fft;
         pthread_mutex_t mutex;
         pthread_mutex_t vumutex;
 
+        Ranger masterVolume;
+        FakeChildFactory parts;
 
     private:
-        bool   nullRun;
+
+        //use panic control instead
+        void ShutUp();
+
+    private:
+        bool nullRun;
         vuData vu;
-        float  volume;
-        float  sysefxvol[NUM_SYS_EFX][NUM_MIDI_PARTS];
-        float  sysefxsend[NUM_SYS_EFX][NUM_SYS_EFX];
-        int    keyshift;
+        REALTYPE volume;
+        REALTYPE sysefxvol[NUM_SYS_EFX][NUM_MIDI_PARTS];
+        REALTYPE sysefxsend[NUM_SYS_EFX][NUM_SYS_EFX];
+
+        //Temporary mixing samples for part samples which is sent to system effect
+        REALTYPE *tmpmixl;
+        REALTYPE *tmpmixr;
+
+        int keyshift;
 };
 
+
 #endif
+

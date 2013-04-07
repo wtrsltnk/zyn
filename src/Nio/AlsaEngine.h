@@ -2,7 +2,6 @@
     AlsaEngine.h
 
     Copyright 2009, Alan Calvert
-              2010, Mark McCurry
 
     This file is part of ZynAddSubFX, which is free software: you can
     redistribute it and/or modify it under the terms of the GNU General
@@ -30,21 +29,22 @@
 #include "MidiIn.h"
 #include "OutMgr.h"
 #include "../Misc/Stereo.h"
+#include "../Samples/Sample.h"
 
-class AlsaEngine:public AudioOut, MidiIn
+class AlsaEngine : public AudioOut, MidiIn
 {
     public:
         AlsaEngine();
         ~AlsaEngine();
-
+        
         bool Start();
         void Stop();
-
+        
         void setAudioEn(bool nval);
         bool getAudioEn() const;
         void setMidiEn(bool nval);
         bool getMidiEn() const;
-
+        
     protected:
         void *AudioThread();
         static void *_AudioThread(void *arg);
@@ -57,23 +57,23 @@ class AlsaEngine:public AudioOut, MidiIn
         bool openAudio();
         void stopAudio();
 
-        short *interleave(const Stereo<float *> &smps);
+        const short *interleave(const Stereo<Sample> smps) const;
 
         struct {
-            std::string device;
-            snd_seq_t  *handle;
-            int alsaId;
-            pthread_t pThread;
+            std::string  device;
+            snd_seq_t   *handle;
+            int          alsaId;
+            pthread_t    pThread;
         } midi;
 
         struct {
             snd_pcm_t *handle;
             snd_pcm_hw_params_t *params;
-            unsigned int      sampleRate;
+            unsigned int sampleRate;
             snd_pcm_uframes_t frames;
-            unsigned int      periods;
-            short    *buffer;
-            pthread_t pThread;
+            unsigned int periods;
+            const short *buffer;
+            pthread_t    pThread;
         } audio;
 
         void *processAudio();

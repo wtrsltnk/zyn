@@ -24,8 +24,37 @@
 
 #ifndef GLOBALS_H
 #define GLOBALS_H
-#include <stdint.h>
 
+//What float type I use for internal sampledata
+#define REALTYPE float
+
+struct FFTFREQS {
+    REALTYPE *s, *c; //sine and cosine components
+};
+
+extern void newFFTFREQS(FFTFREQS *f, int size);
+extern void deleteFFTFREQS(FFTFREQS *f);
+
+/**Sampling rate*/
+extern int SAMPLE_RATE;
+
+/**
+ * The size of a sound buffer (or the granularity)
+ * All internal transfer of sound data use buffer of this size
+ * All parameters are constant during this period of time, exception
+ * some parameters(like amplitudes) which are linear interpolated.
+ * If you increase this you'll ecounter big latencies, but if you
+ * decrease this the CPU requirements gets high.
+ */
+extern int SOUND_BUFFER_SIZE;
+
+
+/**
+ * The size of ADnote Oscillator
+ * Decrease this => poor quality
+ * Increase this => CPU requirements gets high (only at start of the note)
+ */
+extern int OSCIL_SIZE;
 
 /**
  * The number of harmonics of additive synth
@@ -91,7 +120,7 @@
 /*
  * How is applied the velocity sensing
  */
-#define VELOCITY_MAX_SCALE 8.0f
+#define VELOCITY_MAX_SCALE 8.0
 
 /*
  * The maximum length of instrument's name
@@ -119,23 +148,22 @@
 #define FF_MAX_FORMANTS 12
 #define FF_MAX_SEQUENCE 8
 
-#define LOG_2 0.693147181f
-#define PI 3.1415926536f
-#define LOG_10 2.302585093f
+#define LOG_2 0.693147181
+#define PI 3.1415926536
+#define LOG_10 2.302585093
 
 /*
  * The threshold for the amplitude interpolation used if the amplitude
  * is changed (by LFO's or Envelope's). If the change of the amplitude
  * is below this, the amplitude is not interpolated
  */
-#define AMPLITUDE_INTERPOLATION_THRESHOLD 0.0001f
+#define AMPLITUDE_INTERPOLATION_THRESHOLD 0.0001
 
 /*
  * How the amplitude threshold is computed
  */
-#define ABOVE_AMPLITUDE_THRESHOLD(a, b) ((2.0f * fabs((b) - (a)) \
-                                          / (fabs((b) + (a) \
-                                                  + 0.0000000001f))) > \
+#define ABOVE_AMPLITUDE_THRESHOLD(a, b) ((2.0 * fabs((b) - (a)) \
+                                          / (fabs((b) + (a) + 0.0000000001))) > \
                                          AMPLITUDE_INTERPOLATION_THRESHOLD)
 
 /*
@@ -143,34 +171,40 @@
  */
 #define INTERPOLATE_AMPLITUDE(a, b, x, size) ((a) \
                                               + ((b) \
-                                                 - (a)) * (float)(x) \
-                                              / (float) (size))
+                                                 - (a)) * (REALTYPE)(x) \
+                                              / (REALTYPE) (size))
 
 
 /*
  * dB
  */
-#define dB2rap(dB) ((expf((dB) * LOG_10 / 20.0f)))
-#define rap2dB(rap) ((20 * logf(rap) / LOG_10))
+#define dB2rap(dB) ((exp((dB) * LOG_10 / 20.0)))
+#define rap2dB(rap) ((20.0 * log(rap) / LOG_10))
+
+
+extern int(*rand_func)();
+/*
+ * The random generator (0.0..1.0)
+ */
+#define RND (rand() / (RAND_MAX + 1.0))
 
 #define ZERO(data, size) {char *data_ = (char *) data; for(int i = 0; \
                                                            i < size; \
                                                            i++) \
-                              data_[i] = 0; }
-#define ZERO_float(data, size) {float *data_ = (float *) data; \
-                                for(int i = 0; \
-                                    i < size; \
-                                    i++) \
-                                    data_[i] = 0.0f; }
+                              data_[i] = 0;}
+#define ZERO_REALTYPE(data, size) {REALTYPE *data_ = (REALTYPE *) data; \
+                                   for(int i = 0; \
+                                       i < size; \
+                                       i++) \
+                                       data_[i] = 0.0;}
 
 enum ONOFFTYPE {
     OFF = 0, ON = 1
 };
 
 enum MidiControllers {
-    C_bankselectmsb = 0, C_pitchwheel = 1000, C_NULL = 1001,
-    C_expression    = 11, C_panning = 10, C_bankselectlsb = 32,
-    C_filtercutoff  = 74, C_filterq = 71, C_bandwidth = 75, C_modwheel = 1,
+    C_NULL = 0, C_pitchwheel = 1000, C_expression = 11, C_panning = 10,
+    C_filtercutoff = 74, C_filterq = 71, C_bandwidth = 75, C_modwheel = 1,
     C_fmamp  = 76,
     C_volume = 7, C_sustain = 64, C_allnotesoff = 123, C_allsoundsoff = 120,
     C_resetallcontrollers = 121,
@@ -187,11 +221,10 @@ enum LegatoMsg {
 #ifdef ASM_F2I_YES
 #define F2I(f, \
             i) __asm__ __volatile__ ("fistpl %0" : "=m" (i) : "t" (f \
-                                                                   - \
-                                                                   0.49999999f) \
+                                                                   - 0.49999999) \
                                      : "st");
 #else
-#define F2I(f, i) (i) = ((f > 0) ? ((int)(f)) : ((int)(f - 1.0f)));
+#define F2I(f, i) (i) = ((f > 0) ? ((int)(f)) : ((int)(f - 1.0)));
 #endif
 
 
@@ -200,50 +233,5 @@ enum LegatoMsg {
 #define O_BINARY 0
 #endif
 
-//temporary include for synth->{samplerate/buffersize} members
-struct SYNTH_T {
-    SYNTH_T(void)
-        :samplerate(44100), buffersize(256), oscilsize(1024)
-    {
-        alias();
-    }
-
-    /**Sampling rate*/
-    unsigned int samplerate;
-
-    /**
-     * The size of a sound buffer (or the granularity)
-     * All internal transfer of sound data use buffer of this size
-     * All parameters are constant during this period of time, exception
-     * some parameters(like amplitudes) which are linear interpolated.
-     * If you increase this you'll ecounter big latencies, but if you
-     * decrease this the CPU requirements gets high.
-     */
-    int buffersize;
-
-    /**
-     * The size of ADnote Oscillator
-     * Decrease this => poor quality
-     * Increase this => CPU requirements gets high (only at start of the note)
-     */
-    int oscilsize;
-
-    //Alias for above terms
-    float samplerate_f;
-    float halfsamplerate_f;
-    float buffersize_f;
-    int   bufferbytes;
-    float oscilsize_f;
-
-    inline void alias(void)
-    {
-        halfsamplerate_f = (samplerate_f = samplerate) / 2.0f;
-        buffersize_f     = buffersize;
-        bufferbytes      = buffersize * sizeof(float);
-        oscilsize_f      = oscilsize;
-    }
-    float numRandom(void) const; //defined in Util.cpp for now
-};
-
-extern SYNTH_T *synth;
 #endif
+

@@ -1,14 +1,20 @@
 set(zynaddsubfx_effect_SRCS
-    Effects/Alienwah.cpp
-	Effects/Chorus.cpp
-	Effects/Distorsion.cpp
-	Effects/DynamicFilter.cpp
-	Effects/Echo.cpp
-	Effects/Effect.cpp
-	Effects/EffectLFO.cpp
-	Effects/EffectMgr.cpp
-	Effects/EQ.cpp
-	Effects/Phaser.cpp
-	Effects/Reverb.cpp
-    PARENT_SCOPE
+	Alienwah.cpp
+	Chorus.cpp
+	Distorsion.cpp
+	DynamicFilter.cpp
+	Echo.cpp
+	Effect.cpp
+	EffectLFO.cpp
+	EffectMgr.cpp
+	EQ.cpp
+	Phaser.cpp
+	Reverb.cpp
+        APhaser.cpp
 )
+
+add_library(zynaddsubfx_effect STATIC
+	${zynaddsubfx_effect_SRCS} 
+	)
+
+target_link_libraries(zynaddsubfx_effect)

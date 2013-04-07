@@ -23,39 +23,53 @@
 #ifndef DISTORSION_H
 #define DISTORSION_H
 
+#include "../globals.h"
+#include "../DSP/AnalogFilter.h"
 #include "Effect.h"
 
+//Waveshaping(called by Distorsion effect and waveshape from OscilGen)
+void waveshapesmps(int n,
+                   REALTYPE *smps,
+                   unsigned char type,
+                   unsigned char drive);
 /**Distortion Effect*/
 class Distorsion:public Effect
 {
     public:
-        Distorsion(bool insertion, float *efxoutl_, float *efxoutr_);
+        Distorsion(const int &insertion, REALTYPE *efxoutl_, REALTYPE *efxoutr_);
         ~Distorsion();
         void out(const Stereo<float *> &smp);
         void setpreset(unsigned char npreset);
         void changepar(int npar, unsigned char value);
         unsigned char getpar(int npar) const;
-        void cleanup(void);
-        void applyfilters(float *efxoutl, float *efxoutr);
+        void cleanup();
+        void applyfilters(REALTYPE *efxoutl, REALTYPE *efxoutr);
 
     private:
-        //Parameters
+        //Parametrii
         unsigned char Pvolume;       //Volume or E/R
+        unsigned char Ppanning;      //Panning
+        unsigned char Plrcross;      // L/R Mixing
         unsigned char Pdrive;        //the input amplification
         unsigned char Plevel;        //the output amplification
         unsigned char Ptype;         //Distorsion type
         unsigned char Pnegate;       //if the input is negated
         unsigned char Plpf;          //lowpass filter
         unsigned char Phpf;          //highpass filter
-        unsigned char Pstereo;       //0=mono, 1=stereo
+        unsigned char Pstereo;       //0=mono,1=stereo
         unsigned char Pprefiltering; //if you want to do the filtering before the distorsion
 
-        void setvolume(unsigned char _Pvolume);
-        void setlpf(unsigned char _Plpf);
-        void sethpf(unsigned char _Phpf);
+        void setvolume(unsigned char Pvolume);
+        void setpanning(unsigned char Ppanning);
+        void setlrcross(unsigned char Plrcross);
+        void setlpf(unsigned char Plpf);
+        void sethpf(unsigned char Phpf);
 
         //Real Parameters
-        class AnalogFilter * lpfl, *lpfr, *hpfl, *hpfr;
+        REALTYPE      panning, lrcross;
+        AnalogFilter *lpfl, *lpfr, *hpfl, *hpfr;
 };
 
+
 #endif
+

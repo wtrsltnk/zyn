@@ -24,15 +24,16 @@
 #define PRESETS_H
 
 #include "../Misc/XMLwrapper.h"
+#include "../Controls/Node.h"
 
 #include "PresetsStore.h"
 
 /**Presets and Clipboard management*/
-class Presets
+class Presets : public Node
 {
     friend class PresetsArray;
     public:
-        Presets();
+        Presets(Node *parent, std::string id);
         virtual ~Presets();
 
         virtual void copy(const char *name); /**<if name==NULL, the clipboard is used*/
@@ -54,3 +55,4 @@ class Presets
 };
 
 #endif
+

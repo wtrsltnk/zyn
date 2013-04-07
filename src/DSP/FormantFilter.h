@@ -24,30 +24,29 @@
 #define FORMANT_FILTER_H
 
 #include "../globals.h"
-#include "Filter.h"
+#include "Filter_.h"
+#include "AnalogFilter.h"
+#include "../Params/FilterParams.h"
 
 
-class FormantFilter:public Filter
+class FormantFilter:public Filter_
 {
     public:
-        FormantFilter(class FilterParams *pars);
+        FormantFilter(FilterParams *pars);
         ~FormantFilter();
-        void filterout(float *smp);
-        void setfreq(float frequency);
-        void setfreq_and_q(float frequency, float q_);
-        void setq(float q_);
-        void setgain(float dBgain);
+        void filterout(REALTYPE *smp);
+        void setfreq(REALTYPE frequency);
+        void setfreq_and_q(REALTYPE frequency, REALTYPE q_);
+        void setq(REALTYPE q_);
+        void setgain(REALTYPE dBgain);
 
-        void cleanup(void);
-
+        void cleanup();
     private:
-        void setpos(float input);
-
-
-        class AnalogFilter * formant[FF_MAX_FORMANTS];
+        AnalogFilter *formant[FF_MAX_FORMANTS];
+        REALTYPE     *inbuffer, *tmpbuf;
 
         struct {
-            float freq, amp, q; //frequency,amplitude,Q
+            REALTYPE freq, amp, q; //frequency,amplitude,Q
         } formantpar[FF_MAX_VOWELS][FF_MAX_FORMANTS],
           currentformants[FF_MAX_FORMANTS];
 
@@ -55,12 +54,16 @@ class FormantFilter:public Filter
             unsigned char nvowel;
         } sequence [FF_MAX_SEQUENCE];
 
-        float oldformantamp[FF_MAX_FORMANTS];
+        REALTYPE oldformantamp[FF_MAX_FORMANTS];
 
-        int   sequencesize, numformants, firsttime;
-        float oldinput, slowinput;
-        float Qfactor, formantslowness, oldQfactor;
-        float vowelclearness, sequencestretch;
+        int      sequencesize, numformants, firsttime;
+        REALTYPE oldinput, slowinput;
+        REALTYPE Qfactor, formantslowness, oldQfactor;
+        REALTYPE vowelclearness, sequencestretch;
+
+        void setpos(REALTYPE input);
 };
 
+
 #endif
+

@@ -5,19 +5,17 @@
 #include <semaphore.h>
 #include "SafeQueue.h"
 
-enum midi_type {
+enum midi_type{
     M_NOTE = 1,
-    M_CONTROLLER = 2,
-    M_PGMCHANGE  = 3,
-    M_PRESSURE   = 4
-};    //type=1 for note, type=2 for controller, type=3 for program change
-//type=4 for polyphonic aftertouch
+    M_CONTROLLER = 2
+};    //type=1 for note, type=2 for controller
 
-struct MidiEvent {
-    MidiEvent();
+struct MidiDriverEvent
+{
+    MidiDriverEvent();
     int channel; //the midi channel for the event
     int type;    //type=1 for note, type=2 for controller
-    int num;     //note, controller or program number
+    int num;     //note or contoller number
     int value;   //velocity or controller value
 };
 
@@ -28,7 +26,7 @@ class InMgr
         static InMgr &getInstance();
         ~InMgr();
 
-        void putEvent(MidiEvent ev);
+        void putEvent(MidiDriverEvent ev);
 
         /**Flush the Midi Queue*/
         void flush();
@@ -41,12 +39,13 @@ class InMgr
     private:
         InMgr();
         class MidiIn *getIn(std::string name);
-        SafeQueue<MidiEvent> queue;
+        SafeQueue<MidiDriverEvent> queue;
         sem_t work;
-        class MidiIn * current;
+        class MidiIn *current;
 
         /**the link to the rest of zyn*/
-        class Master & master;
+        class Master &master;
 };
 
 #endif
+

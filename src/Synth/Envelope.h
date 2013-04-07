@@ -23,6 +23,7 @@
 #ifndef ENVELOPE_H
 #define ENVELOPE_H
 
+#include <math.h>
 #include "../globals.h"
 #include "../Params/EnvelopeParams.h"
 
@@ -32,31 +33,32 @@ class Envelope
     public:
 
         /**Constructor*/
-        Envelope(class EnvelopeParams *envpars, float basefreq);
+        Envelope(EnvelopeParams *envpars, REALTYPE basefreq);
         /**Destructor*/
         ~Envelope();
         void relasekey();
-        float envout();
-        float envout_dB();
+        REALTYPE envout();
+        REALTYPE envout_dB();
         /**Determines the status of the Envelope
          * @return returns 1 if the envelope is finished*/
         bool finished() const;
     private:
-        int   envpoints;
-        int   envsustain;    //"-1" means disabled
-        float envdt[MAX_ENVELOPE_POINTS]; //millisecons
-        float envval[MAX_ENVELOPE_POINTS]; // [0.0f .. 1.0f]
-        float envstretch;
-        int   linearenvelope;
+        int      envpoints;
+        int      envsustain; //"-1" means disabled
+        REALTYPE envdt[MAX_ENVELOPE_POINTS]; //millisecons
+        REALTYPE envval[MAX_ENVELOPE_POINTS]; // [0.0 .. 1.0]
+        REALTYPE envstretch;
+        int      linearenvelope;
 
-        int   currentpoint;    //current envelope point (starts from 1)
-        int   forcedrelase;
-        bool  keyreleased;    //if the key was released
-        bool  envfinish;
-        float t; // the time from the last point
-        float inct; // the time increment
-        float envoutval; //used to do the forced release
+        int      currentpoint; //current envelope point (starts from 1)
+        int      forcedrelase;
+        bool     keyreleased; //if the key was released
+        bool     envfinish;
+        REALTYPE t; // the time from the last point
+        REALTYPE inct; // the time increment
+        REALTYPE envoutval; //used to do the forced release
 };
 
 
 #endif
+

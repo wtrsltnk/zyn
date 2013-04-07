@@ -1,7 +1,9 @@
 #ifndef OUTMGR_H
 #define OUTMGR_H
 
+#include "../globals.h"
 #include "../Misc/Stereo.h"
+#include "../Samples/Sample.h" //deprecated 
 #include <list>
 #include <string>
 #include <semaphore.h>
@@ -15,12 +17,12 @@ class OutMgr
         ~OutMgr();
 
         /**Execute a tick*/
-        const Stereo<float *> tick(unsigned int frameSize);
+        const Stereo<REALTYPE *> tick(unsigned int frameSize);
 
         /**Request a new set of samples
          * @param n number of requested samples (defaults to 1)
          * @return -1 for locking issues 0 for valid request*/
-        void requestSamples(unsigned int n = 1);
+        void requestSamples(unsigned int n=1);
 
         /**Gets requested driver
          * @param name case unsensitive name of driver
@@ -38,27 +40,29 @@ class OutMgr
 
         std::string getSink() const;
 
-        class WavEngine * wave;     /**<The Wave Recorder*/
+        class WavEngine *wave;     /**<The Wave Recorder*/
         friend class EngineMgr;
     private:
         OutMgr();
-        void addSmps(float *l, float *r);
-        unsigned int  storedSmps() const {return priBuffCurrent.l - priBuf.l; }
+        void addSmps(REALTYPE *l, REALTYPE *r);
+        int  storedSmps() const {return priBuffCurrent.l() - priBuf.l();};
         void removeStaleSmps();
 
-        AudioOut *currentOut; /**<The current output driver*/
+        AudioOut *currentOut;/**<The current output driver*/
 
         sem_t requested;
 
         /**Buffer*/
-        Stereo<float *> priBuf;          //buffer for primary drivers
-        Stereo<float *> priBuffCurrent; //current array accessor
+        Stereo<REALTYPE *> priBuf;          //buffer for primary drivers
+        Stereo<REALTYPE *> priBuffCurrent; //current array accessor
+        Stereo<Sample> smps; /**Deprecated TODO Remove*/
 
-        float *outl;
-        float *outr;
-        class Master & master;
+        REALTYPE *outl;
+        REALTYPE *outr;
+        class Master &master;
 
         int stales;
 };
 
 #endif
+

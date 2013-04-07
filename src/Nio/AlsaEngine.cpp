@@ -2,7 +2,6 @@
     AlsaEngine.cpp
 
     Copyright 2009, Alan Calvert
-              2010, Mark McCurry
 
     This file is part of ZynAddSubFX, which is free software: you can
     redistribute it and/or modify it under the terms of the GNU General
@@ -25,30 +24,30 @@ using namespace std;
 
 #include "../Misc/Util.h"
 #include "../Misc/Config.h"
+#include "../Misc/Master.h"
 #include "InMgr.h"
 #include "AlsaEngine.h"
 
 AlsaEngine::AlsaEngine()
     :AudioOut()
 {
-    audio.buffer = new short[synth->buffersize * 2];
     name = "ALSA";
     audio.handle = NULL;
 
-    midi.handle  = NULL;
-    midi.alsaId  = -1;
+    midi.handle = NULL;
+    midi.alsaId = -1;
     midi.pThread = 0;
+
 }
 
 AlsaEngine::~AlsaEngine()
 {
     Stop();
-    delete[] audio.buffer;
 }
 
 void *AlsaEngine::_AudioThread(void *arg)
 {
-    return (static_cast<AlsaEngine *>(arg))->AudioThread();
+    return (static_cast<AlsaEngine*>(arg))->AudioThread();
 }
 
 void *AlsaEngine::AudioThread()
@@ -99,27 +98,30 @@ bool AlsaEngine::getAudioEn() const
 
 void *AlsaEngine::_MidiThread(void *arg)
 {
-    return static_cast<AlsaEngine *>(arg)->MidiThread();
+    return static_cast<AlsaEngine*>(arg)->MidiThread();
 }
 
 
 void *AlsaEngine::MidiThread(void)
 {
     snd_seq_event_t *event;
-    MidiEvent ev;
+    MidiDriverEvent ev;
     set_realtime();
-    while(snd_seq_event_input(midi.handle, &event) > 0) {
+    while(snd_seq_event_input(midi.handle, &event) > 0)
+    {
         //ensure ev is empty
         ev.channel = 0;
-        ev.num     = 0;
-        ev.value   = 0;
-        ev.type    = 0;
+        ev.num = 0;
+        ev.value = 0;
+        ev.type = 0;
 
-        if(!event)
+        if (!event)
             continue;
-        switch(event->type) {
+        switch (event->type)
+        {
             case SND_SEQ_EVENT_NOTEON:
-                if(event->data.note.note) {
+                if (event->data.note.note)
+                {
                     ev.type    = M_NOTE;
                     ev.channel = event->data.note.channel;
                     ev.num     = event->data.note.note;
@@ -133,14 +135,6 @@ void *AlsaEngine::MidiThread(void)
                 ev.channel = event->data.note.channel;
                 ev.num     = event->data.note.note;
                 ev.value   = 0;
-                InMgr::getInstance().putEvent(ev);
-                break;
-
-            case SND_SEQ_EVENT_KEYPRESS:
-                ev.type    = M_PRESSURE;
-                ev.channel = event->data.note.channel;
-                ev.num     = event->data.note.note;
-                ev.value   = event->data.note.velocity;
                 InMgr::getInstance().putEvent(ev);
                 break;
 
@@ -160,13 +154,6 @@ void *AlsaEngine::MidiThread(void)
                 InMgr::getInstance().putEvent(ev);
                 break;
 
-            case SND_SEQ_EVENT_PGMCHANGE:
-                ev.type    = M_PGMCHANGE;
-                ev.channel = event->data.control.channel;
-                ev.num     = event->data.control.value;
-                InMgr::getInstance().putEvent(ev);
-                break;
-
             case SND_SEQ_EVENT_RESET: // reset to power-on state
                 ev.type    = M_CONTROLLER;
                 ev.channel = event->data.control.channel;
@@ -176,12 +163,12 @@ void *AlsaEngine::MidiThread(void)
                 break;
 
             case SND_SEQ_EVENT_PORT_SUBSCRIBED: // ports connected
-                if(true)
+                if (true)
                     cout << "Info, alsa midi port connected" << endl;
                 break;
 
             case SND_SEQ_EVENT_PORT_UNSUBSCRIBED: // ports disconnected
-                if(true)
+                if (true)
                     cout << "Info, alsa midi port disconnected" << endl;
                 break;
 
@@ -190,9 +177,9 @@ void *AlsaEngine::MidiThread(void)
                 break;
 
             default:
-                if(true)
+                if (true)
                     cout << "Info, other non-handled midi event, type: "
-                         << (int)event->type << endl;
+                        << (int)event->type << endl;
                 break;
         }
         snd_seq_free_event(event);
@@ -236,24 +223,25 @@ void AlsaEngine::stopMidi()
         return;
 
     snd_seq_t *handle = midi.handle;
-    if((NULL != midi.handle) && midi.pThread)
+    if (NULL != midi.handle && midi.pThread)
         pthread_cancel(midi.pThread);
     midi.handle = NULL;
     if(handle)
         snd_seq_close(handle);
 }
 
-short *AlsaEngine::interleave(const Stereo<float *> &smps)
+const short *AlsaEngine::interleave(const Stereo<Sample> smps)const
 {
     /**\todo TODO fix repeated allocation*/
-    short *shortInterleaved = audio.buffer;
-    memset(shortInterleaved, 0, bufferSize * 2 * sizeof(short));
-    int    idx = 0; //possible off by one error here
+    short *shortInterleaved = new short[smps.l().size()*2];
+    memset(shortInterleaved,0,smps.l().size()*2*sizeof(short));
+    int idx = 0;//possible off by one error here
     double scaled;
-    for(int frame = 0; frame < bufferSize; ++frame) { // with a nod to libsamplerate ...
-        scaled = smps.l[frame] * (8.0f * 0x10000000);
+    for (int frame = 0; frame < smps.l().size(); ++frame)
+    {   // with a nod to libsamplerate ...
+        scaled = smps.l()[frame] * (8.0 * 0x10000000);
         shortInterleaved[idx++] = (short int)(lrint(scaled) >> 16);
-        scaled = smps.r[frame] * (8.0f * 0x10000000);
+        scaled = smps.r()[frame] * (8.0 * 0x10000000);
         shortInterleaved[idx++] = (short int)(lrint(scaled) >> 16);
     }
     return shortInterleaved;
@@ -266,10 +254,10 @@ bool AlsaEngine::openAudio()
 
     int rc = 0;
     /* Open PCM device for playback. */
-    audio.handle = NULL;
+    audio.handle=NULL;
     rc = snd_pcm_open(&audio.handle, "hw:0",
-                      SND_PCM_STREAM_PLAYBACK, 0);
-    if(rc < 0) {
+            SND_PCM_STREAM_PLAYBACK, 0);
+    if (rc < 0) {
         fprintf(stderr,
                 "unable to open pcm device: %s\n",
                 snd_strerror(rc));
@@ -286,30 +274,30 @@ bool AlsaEngine::openAudio()
 
     /* Interleaved mode */
     snd_pcm_hw_params_set_access(audio.handle, audio.params,
-                                 SND_PCM_ACCESS_RW_INTERLEAVED);
+            SND_PCM_ACCESS_RW_INTERLEAVED);
 
     /* Signed 16-bit little-endian format */
     snd_pcm_hw_params_set_format(audio.handle, audio.params,
-                                 SND_PCM_FORMAT_S16_LE);
+            SND_PCM_FORMAT_S16_LE);
 
     /* Two channels (stereo) */
     snd_pcm_hw_params_set_channels(audio.handle, audio.params, 2);
 
-    audio.sampleRate = synth->samplerate;
+    audio.sampleRate = SAMPLE_RATE;
     snd_pcm_hw_params_set_rate_near(audio.handle, audio.params,
-                                    &audio.sampleRate, NULL);
+            &audio.sampleRate, NULL);
 
     audio.frames = 512;
     snd_pcm_hw_params_set_period_size_near(audio.handle,
-                                           audio.params, &audio.frames, NULL);
+            audio.params, &audio.frames, NULL);
 
     audio.periods = 4;
     snd_pcm_hw_params_set_periods_near(audio.handle,
-                                       audio.params, &audio.periods, NULL);
+            audio.params, &audio.periods, NULL);
 
     /* Write the parameters to the driver */
     rc = snd_pcm_hw_params(audio.handle, audio.params);
-    if(rc < 0) {
+    if (rc < 0) {
         fprintf(stderr,
                 "unable to set hw parameters: %s\n",
                 snd_strerror(rc));
@@ -318,9 +306,7 @@ bool AlsaEngine::openAudio()
 
     /* Set buffer size (in frames). The resulting latency is given by */
     /* latency = periodsize * periods / (rate * bytes_per_frame)     */
-    snd_pcm_hw_params_set_buffer_size(audio.handle,
-                                      audio.params,
-                                      synth->buffersize);
+    snd_pcm_hw_params_set_buffer_size(audio.handle, audio.params, SOUND_BUFFER_SIZE);
 
     //snd_pcm_hw_params_get_period_size(audio.params, &audio.frames, NULL);
     //snd_pcm_hw_params_get_period_time(audio.params, &val, NULL);
@@ -343,23 +329,24 @@ void AlsaEngine::stopAudio()
     pthread_join(audio.pThread, NULL);
     snd_pcm_drain(handle);
     if(snd_pcm_close(handle))
-        cout << "Error: in snd_pcm_close " << __LINE__ << ' ' << __FILE__
-             << endl;
+        cout << "Error: in snd_pcm_close " << __LINE__ << ' ' << __FILE__ << endl;
 }
 
 void *AlsaEngine::processAudio()
 {
-    while(audio.handle) {
+    int rc;
+    while (audio.handle) {
         audio.buffer = interleave(getNext());
         snd_pcm_t *handle = audio.handle;
-        int rc = snd_pcm_writei(handle, audio.buffer, synth->buffersize);
-        if(rc == -EPIPE) {
+        if(handle)
+            rc = snd_pcm_writei(handle, audio.buffer, SOUND_BUFFER_SIZE);
+        delete[] audio.buffer;
+        if (rc == -EPIPE) {
             /* EPIPE means underrun */
             cerr << "underrun occurred" << endl;
             snd_pcm_prepare(handle);
         }
-        else
-        if(rc < 0)
+        else if (rc < 0)
             cerr << "error from writei: " << snd_strerror(rc) << endl;
     }
     return NULL;

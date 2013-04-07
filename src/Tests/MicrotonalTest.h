@@ -2,7 +2,7 @@
   ZynAddSubFX - a software synthesizer
 
   MicrotonalTest.h - CxxTest for Misc/Microtonal
-  Copyright (C) 2009-2012 Mark McCurry
+  Copyright (C) 2009-2009 Mark McCurry
   Author: Mark McCurry
 
   This program is free software; you can redistribute it and/or modify
@@ -25,8 +25,7 @@
 #include <cstring>
 #include <string>
 #include <cstdio>
-#include "../globals.h"
-SYNTH_T *synth;
+#include "testing.h"
 
 using namespace std;
 
@@ -34,13 +33,11 @@ class MicrotonalTest:public CxxTest::TestSuite
 {
     public:
         void setUp() {
-            synth     = new SYNTH_T;
             testMicro = new Microtonal();
         }
 
         void tearDown() {
             delete testMicro;
-            delete synth;
         }
 
         //Verifies that the object is initialized correctly
@@ -50,7 +47,7 @@ class MicrotonalTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(testMicro->getoctavesize(), 12);
             TS_ASSERT_EQUALS(testMicro->Penabled, 0);
             TS_ASSERT_EQUALS(testMicro->PAnote, 69);
-            TS_ASSERT_EQUALS(testMicro->PAfreq, 440.0f);
+            TS_ASSERT_EQUALS(testMicro->PAfreq, 440.0);
             TS_ASSERT_EQUALS(testMicro->Pscaleshift, 64);
             TS_ASSERT_EQUALS(testMicro->Pfirstkey, 0);
             TS_ASSERT_EQUALS(testMicro->Plastkey, 127);
@@ -64,10 +61,18 @@ class MicrotonalTest:public CxxTest::TestSuite
                                  (const char *)testMicro->Pcomment),
                              "Equal Temperament 12 notes per octave");
 
-            for(int i = 0; i < 128; ++i)
+            for(int i = 0; i < 128; i++)
                 TS_ASSERT_EQUALS(testMicro->Pmapping[i], i);
 
-            TS_ASSERT_DELTA(testMicro->getnotefreq(19, 0), 24.4997f, 0.0001f);
+            TS_ASSERT_DELTA(testMicro->getnotefreq(19, 0), 24.4997, 0.0001);
+        }
+
+        //performs basic sanity check with the == and != operators
+        void testeqeq() {
+            Microtonal other;
+            TS_ASSERT(*testMicro == other); //both are constructed the same, so they should be equal
+            other.PAfreq = 220.0;
+            TS_ASSERT(*testMicro != other); //other is now different
         }
 
         //Tests saving/loading to XML
@@ -83,7 +88,7 @@ class MicrotonalTest:public CxxTest::TestSuite
             xml.endbranch();
             xml.endbranch();
 
-            char *tmp = xml.getXMLdata();
+            char      *tmp = xml.getXMLdata();
             Microtonal other;
 
             other.Penabled = 1;
@@ -102,13 +107,14 @@ class MicrotonalTest:public CxxTest::TestSuite
             TS_ASSERT(!strcmp(tmp, tmpo));
             free(tmp);
             free(tmpo);
+
+            TS_ASSERT(*testMicro == other); //cxxTest sees error here
         }
 
-#if 0
         /**\todo Test Saving/loading from file*/
 
         //Test texttomapping TODO finish
-        void _testTextToMapping() {
+        void testTextToMapping() {
             //the mapping is from old documentation for "Intense Diatonic" scale
             const char *mapping[12] =
             {"0", "x", "1", "x", "2", "3", "x", "4", "x", "5", "x", "6"};
@@ -119,18 +125,18 @@ class MicrotonalTest:public CxxTest::TestSuite
             //    find dead notes
         }
         //Test texttotunings TODO finish
-        void _testTextToTunings() {
+        void testTextToTunings() {
             //the tuning is from old documentation for "Intense Diatonic" scale
             const char *tuning[7] =
             {"9/8", "5/4", "4/3", "3/2", "5/3", "15/8", "2/1"};
-            const int numTunings = 7;
+            const int numTunings  = 7;
             //for(int i=0;i<20;++i)
             //    cout << i << ':' << testMicro->getnotefreq(i,0) << endl;
             //    go to middle key and verify the proportions
         }
         /**\TODO test loading from scl and kbm files*/
-#endif
 
     private:
         Microtonal *testMicro;
 };
+

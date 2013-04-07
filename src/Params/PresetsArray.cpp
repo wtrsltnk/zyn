@@ -24,7 +24,8 @@
 #include <string.h>
 
 
-PresetsArray::PresetsArray()
+PresetsArray::PresetsArray(Node *parent, std::string id)
+    : Presets(parent, id)
 {
     type[0]  = 0;
     nelement = -1;
@@ -95,11 +96,12 @@ void PresetsArray::paste(int npreset)
             return;
         }
     }
-    else
-    if(!presetsstore.pastepreset(xml, npreset)) {
-        delete (xml);
-        nelement = -1;
-        return;
+    else {
+        if(!presetsstore.pastepreset(xml, npreset)) {
+            delete (xml);
+            nelement = -1;
+            return;
+        }
     }
 
     if(xml->enterbranch(type) == 0) {
@@ -134,3 +136,4 @@ void PresetsArray::setelement(int n)
 {
     nelement = n;
 }
+

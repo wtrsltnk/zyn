@@ -24,8 +24,8 @@
 
 #include <mxml.h>
 #include <string>
-#ifndef float
-#define float float
+#ifndef REALTYPE
+#define REALTYPE float
 #endif
 
 #ifndef XML_WRAPPER_H
@@ -68,9 +68,9 @@ class XMLwrapper
         /**
          * Adds a realtype parameter.
          * @param name The name of the mXML node.
-         * @param val  The float value of the node.
+         * @param val  The REALTYPE value of the node.
          */
-        void addparreal(const std::string &name, float val);
+        void addparreal(const std::string &name, REALTYPE val);
 
         /**
          * Add boolean parameter.
@@ -195,7 +195,7 @@ class XMLwrapper
          * @param name The parameter name.
          * @param defaultpar The default value if the real value is not found.
          */
-        float getparreal(const char *name, float defaultpar) const;
+        REALTYPE getparreal(const char *name, REALTYPE defaultpar) const;
 
         /**
          * Returns the real value stored in the node.
@@ -204,10 +204,10 @@ class XMLwrapper
          * @param min The minimum value
          * @param max The maximum value
          */
-        float getparreal(const char *name,
-                         float defaultpar,
-                         float min,
-                         float max) const;
+        REALTYPE getparreal(const char *name,
+                            REALTYPE defaultpar,
+                            REALTYPE min,
+                            REALTYPE max) const;
 
         bool minimal; /**<false if all parameters will be stored (used only for clipboard)*/
 
@@ -219,6 +219,17 @@ class XMLwrapper
          * Checks the current tree for PADsynth usage
          */
         bool hasPadSynth() const;
+
+        /**
+         * Whether the xml format is earlier than X,Y,Z
+         */
+        bool versionAtMost(int major, int minor, int revision);
+
+        /**
+         * Whether the xml format is later than X,Y,Z
+         */
+        bool versionAtLeast(int major, int minor, int revision);
+
 
     private:
 
@@ -269,3 +280,4 @@ class XMLwrapper
 };
 
 #endif
+

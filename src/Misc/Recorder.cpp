@@ -23,7 +23,8 @@
 #include <sys/stat.h>
 #include "Recorder.h"
 #include "WavFile.h"
-#include "../Nio/Nio.h"
+#include "../Nio/OutMgr.h"
+#include "../Nio/WavEngine.h"
 
 Recorder::Recorder()
     :status(0), notetrigger(0)
@@ -45,7 +46,7 @@ int Recorder::preparefile(std::string filename_, int overwrite)
             return 1;
     }
 
-    Nio::waveNew(new WavFile(filename_, synth->samplerate, 2));
+    OutMgr::getInstance().wave->newFile(new WavFile(filename_, SAMPLE_RATE, 2));
 
     status = 1; //ready
 
@@ -60,15 +61,15 @@ void Recorder::start()
 
 void Recorder::stop()
 {
-    Nio::waveStop();
-    Nio::waveStart();
+    OutMgr::getInstance().wave->Stop();
+    OutMgr::getInstance().wave->destroyFile();
     status = 0;
 }
 
 void Recorder::pause()
 {
     status = 0;
-    Nio::waveStop();
+    OutMgr::getInstance().wave->Stop();
 }
 
 int Recorder::recording()
@@ -82,10 +83,11 @@ int Recorder::recording()
 void Recorder::triggernow()
 {
     if(status == 2) {
-        if(notetrigger != 1)
-            Nio::waveStart();
+        if(notetrigger!=1) {
+            OutMgr::getInstance().wave->Start();
+        }
         notetrigger = 1;
     }
 }
 
-//TODO move recorder inside nio system
+#warning todo move recorder inside nio system

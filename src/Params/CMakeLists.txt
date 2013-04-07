@@ -1,13 +1,19 @@
 set(zynaddsubfx_params_SRCS
-	Params/ADnoteParameters.cpp
-	Params/Controller.cpp
-	Params/EnvelopeParams.cpp
-	Params/FilterParams.cpp
-	Params/LFOParams.cpp
-	Params/PADnoteParameters.cpp
-	Params/Presets.cpp
-	Params/PresetsArray.cpp
-	Params/PresetsStore.cpp
-	Params/SUBnoteParameters.cpp
-	PARENT_SCOPE
+	ADnoteParameters.cpp
+	Controller.cpp
+	EnvelopeParams.cpp
+	FilterParams.cpp
+	LFOParams.cpp
+	PADnoteParameters.cpp
+	Presets.cpp
+	PresetsArray.cpp
+	PresetsStore.cpp
+	SUBnoteParameters.cpp
+
 )
+
+add_library(zynaddsubfx_params STATIC
+	${zynaddsubfx_params_SRCS} 
+	)
+
+target_link_libraries(zynaddsubfx_params zynaddsubfx_misc)

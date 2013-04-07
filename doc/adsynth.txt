@@ -1,44 +1,22 @@
-AdSynth
--------
+Add Synth
+=========
 
-AdSynth, a primarily additive synthesis engine, is one of the three major
-synthesis engines available in ZynAddSubFX.
-The basic concept of this engine is the summation of a collection of voices,
-each of which consist of oscillators.
+Additive Synthesis is one of the three major synthesis engines available in
+ZynAddSubFX.
+Overall it adds together several voices with an oscillator as their sound
+source.
 
 High Level (Global)
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
-AdSynth's global level consists of the elements shown in the below figure:
+From a high level perspective, Add synth can be understood with this block
+diagram:
 
-.AdSynth Global Elements
-image::gen/ad-note.png[scalewidth="50%",width="700"]
+image:gen/ad-note.png[]
 
-The global level of adsynth is almost entirely composed of previously discussed
-elements.
-However a few new features appear here, this includes velocity sensing, punch,
-detune options and realative bandwidth , and resonance.
+The red/yellow nodes are controllable with the main adsynth window.
 
-.AdSynth Global Window
-image::images/ad-global.png[]
-
-
-Velocity sensing is simply an exponental transformation from the note's velocity
-to some parameter change.
-The below diagram shows how the velocity senseing controls affects this
-translation over the whole range of possible note velocities.
-
-.Velocity Sensing Chart
-image::gen/velf.png[scalewidth="50%",width="600"]
-
-The puch of a note in AdSynth is a constant amplification to the output at the
-start of the note, with its length determined by the punch time and stretch and
-the amplitude being determined by the punch strength and velocity sensing.
-The relBW control in the frequency pane is effectively a multiplier for detuning
-all voices within an adnote.
-
-NOTE: TODO Talk about resonance
-
+image:images/ad-global.png[]
 
 The sum of the voices are passed through filters and amplification to produce
 the final sound.
@@ -46,19 +24,17 @@ This could lead one to think that ad-note is just a bunch of minor
 postprocessing and at this level much of the sound generation is hidden.
 
 Voices
-~~~~~~
+------
 
 The voice gives access to a similar setup to the global parameters and then some
 more, such as the modulator, oscillator, and unison features.
 
-.AdSynth Voice Window
-image::images/ad-voice.png[]
+image:images/ad-voice.png[]
 
 Modulation
-^^^^^^^^^^
+~~~~~~~~~~
 
 Within the options for modulation, one can select:
-
 * Morph
 * Ring Modulation
 * Phase Modulation
@@ -66,15 +42,5 @@ Within the options for modulation, one can select:
 * Disabled
 
 Unison
-^^^^^^
+~~~~~~
 
-Unison is useful in creating the chorus like sound of many simultaneous
-oscillators
-
-Oscillator
-~~~~~~~~~~
-
-NOTE: TODO show waveforms, talk about distortions somewhere, etc
-
-.Oscillator Window
-image::images/uioscil.png[]

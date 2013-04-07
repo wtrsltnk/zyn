@@ -1,31 +1,28 @@
 Zynaddsubfx
-===========
-:Author: Paul Nasca and Mark McCurry
+___________
+:Author: Paul Nasca
 
-This documentation is a work in progress
 
-include::intro.txt[]
+:titles.underlines: "__","==","--","~~","^^"
 
-include::filter.txt[]
+include::./intro.txt[]
 
-include::lfo.txt[]
+include::./filter.txt[]
 
-include::envelope.txt[]
+include::./lfo.txt[]
 
-include::adsynth.txt[]
+include::./envelope.txt[]
 
-include::controller.txt[]
+include::./adsynth.txt[]
 
-include::effects.txt[]
+include::./controller.txt[]
 
-/////////////////////////////
-include::nrpn.txt[]
-/////////////////////////////
+include::./nrpn.txt[]
 
-include::saving.txt[]
+include::./saving.txt[]
 
-include::mididefaults.txt[]
+include::./mididefaults.txt[]
 
-include::build.txt[]
+include::./build.txt[]
 
-include::getting.txt[]
+include::./getting.txt[]

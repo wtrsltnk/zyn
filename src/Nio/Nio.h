@@ -1,47 +1,39 @@
-#ifndef NIO_H
+#ifndef NIO_H 
 #define NIO_H
 #include <string>
 #include <set>
 
-class WavFile;
-
 /**Interface to Nio Subsystem
- *
+ * 
  * Should be only externally included header */
-namespace Nio
+class Nio
 {
-    void init(void);
-    bool start(void);
-    void stop(void);
+    public:
+        static Nio &getInstance();
+        ~Nio();
 
-    void setDefaultSource(std::string name);
-    void setDefaultSink(std::string name);
+        void start();
+        void stop();
 
-    bool setSource(std::string name);
-    bool setSink(std::string name);
+        int setDefaultSource(std::string name);
+        int setDefaultSink(std::string name);
 
-    void setPostfix(std::string post);
-    std::string getPostfix(void);
+        bool setSource(std::string name);
+        bool setSink(std::string name);
 
-    std::set<std::string> getSources(void);
-    std::set<std::string> getSinks(void);
+        std::set<std::string> getSources() const;
+        std::set<std::string> getSinks() const;
 
-    std::string getSource(void);
-    std::string getSink(void);
+        std::string getSource() const;
+        std::string getSink()   const;
 
-    //Get the prefered sample rate from jack (if running)
-    void preferedSampleRate(unsigned &rate);
+    private:
+        Nio();
 
-
-    //Wave writing
-    void waveNew(class WavFile *wave);
-    void waveStart(void);
-    void waveStop(void);
-    void waveEnd(void);
-
-    extern bool autoConnect;
-    extern std::string defaultSource;
-    extern std::string defaultSink;
+        class InMgr     &in;
+        class OutMgr    &out;
+        class EngineMgr &eng;
 };
 
 #endif
+

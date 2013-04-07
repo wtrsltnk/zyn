@@ -96,17 +96,17 @@ const char *mxmlElementGetAttr(const mxml_node_t *node, const char *name)
 
 XMLwrapper::XMLwrapper()
 {
-    version.Major    = 2;
-    version.Minor    = 4;
-    version.Revision = 3;
+    version.Major    = 3;
+    version.Minor    = 0;
+    version.Revision = 0;
 
     minimal = true;
 
-    node = tree = mxmlNewElement(MXML_NO_PARENT,
-                                 "?xml version=\"1.0f\" encoding=\"UTF-8\"?");
-    /*  for mxml 2.1f (and older)
+    node    = tree = mxmlNewElement(MXML_NO_PARENT,
+                                    "?xml version=\"1.0\" encoding=\"UTF-8\"?");
+    /*  for mxml 2.1 (and older)
         tree=mxmlNewElement(MXML_NO_PARENT,"?xml");
-        mxmlElementSetAttr(tree,"version","1.0f");
+        mxmlElementSetAttr(tree,"version","1.0");
         mxmlElementSetAttr(tree,"encoding","UTF-8");
     */
 
@@ -184,6 +184,33 @@ bool XMLwrapper::hasPadSynth() const
         return false;
 }
 
+bool XMLwrapper::versionAtMost(int major, int minor, int revision)
+{
+    return (
+            (version.Major < major) ||
+
+           ((version.Major == major) &&
+            (version.Minor < minor)) ||
+
+           ((version.Major == major) &&
+            (version.Minor == minor) &&
+            (version.Revision <= revision))
+           );
+}
+
+bool XMLwrapper::versionAtLeast(int major, int minor, int revision)
+{
+    return (
+            (version.Major > major) ||
+
+           ((version.Major == major) &&
+            (version.Minor > minor)) ||
+
+           ((version.Major == major) &&
+            (version.Minor == minor) &&
+            (version.Revision >= revision))
+           );
+}
 
 /* SAVE XML members */
 
@@ -249,10 +276,10 @@ void XMLwrapper::addpar(const string &name, int val)
                   val).c_str());
 }
 
-void XMLwrapper::addparreal(const string &name, float val)
+void XMLwrapper::addparreal(const string &name, REALTYPE val)
 {
     addparams("par_real", 2, "name", name.c_str(), "value",
-              stringFrom<float>(val).c_str());
+              stringFrom<REALTYPE>(val).c_str());
 }
 
 void XMLwrapper::addparbool(const string &name, int val)
@@ -313,15 +340,14 @@ int XMLwrapper::loadXMLfile(const string &filename)
 
     const char *xmldata = doloadfile(filename.c_str());
     if(xmldata == NULL)
-        return -1;  //the file could not be loaded or uncompressed
+        return -1; //the file could not be loaded or uncompressed
 
-    root = tree = mxmlLoadString(NULL, trimLeadingWhite(
-                                     xmldata), MXML_OPAQUE_CALLBACK);
+    root = tree = mxmlLoadString(NULL, trimLeadingWhite(xmldata), MXML_OPAQUE_CALLBACK);
 
     delete[] xmldata;
 
     if(tree == NULL)
-        return -2;  //this is not XML
+        return -2; //this is not XML
 
     node = root = mxmlFindElement(tree,
                                   tree,
@@ -330,7 +356,7 @@ int XMLwrapper::loadXMLfile(const string &filename)
                                   NULL,
                                   MXML_DESCEND);
     if(root == NULL)
-        return -3;  //the XML doesnt embbed zynaddsubfx data
+        return -3; //the XML doesnt embbed zynaddsubfx data
 
     //fetch version information
     version.Major    = stringTo<int>(mxmlElementGetAttr(root, "version-major"));
@@ -385,8 +411,7 @@ bool XMLwrapper::putXMLdata(const char *xmldata)
     if(xmldata == NULL)
         return false;
 
-    root = tree = mxmlLoadString(NULL, trimLeadingWhite(
-                                     xmldata), MXML_OPAQUE_CALLBACK);
+    root = tree = mxmlLoadString(NULL, trimLeadingWhite(xmldata), MXML_OPAQUE_CALLBACK);
     if(tree == NULL)
         return false;
 
@@ -561,7 +586,7 @@ string XMLwrapper::getparstr(const string &name,
     return defaultpar;
 }
 
-float XMLwrapper::getparreal(const char *name, float defaultpar) const
+REALTYPE XMLwrapper::getparreal(const char *name, REALTYPE defaultpar) const
 {
     const mxml_node_t *tmp = mxmlFindElement(node,
                                              node,
@@ -576,15 +601,15 @@ float XMLwrapper::getparreal(const char *name, float defaultpar) const
     if(strval == NULL)
         return defaultpar;
 
-    return stringTo<float>(strval);
+    return stringTo<REALTYPE>(strval);
 }
 
-float XMLwrapper::getparreal(const char *name,
-                             float defaultpar,
-                             float min,
-                             float max) const
+REALTYPE XMLwrapper::getparreal(const char *name,
+                                REALTYPE defaultpar,
+                                REALTYPE min,
+                                REALTYPE max) const
 {
-    float result = getparreal(name, defaultpar);
+    REALTYPE result = getparreal(name, defaultpar);
 
     if(result < min)
         result = min;
@@ -621,3 +646,4 @@ mxml_node_t *XMLwrapper::addparams(const char *name, unsigned int params,
     }
     return element;
 }
+

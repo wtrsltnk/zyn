@@ -28,10 +28,10 @@
 #include "Presets.h"
 
 /**PresetsArray and Clipboard management*/
-class PresetsArray:public Presets
+class PresetsArray : public Presets
 {
     public:
-        PresetsArray();
+        PresetsArray(Node *parent, std::string id);
         virtual ~PresetsArray();
 
         void copy(const char *name); /**<if name==NULL, the clipboard is used*/
@@ -51,9 +51,10 @@ class PresetsArray:public Presets
         virtual void getfromXML(XMLwrapper *xml) = 0;
         virtual void defaults() = 0;
         virtual void add2XMLsection(XMLwrapper *xml, int n)    = 0;
-        virtual void getfromXMLsection(XMLwrapper *xml, int n) = 0;
+        virtual void getfromXMLsection(XMLwrapper *xml, int n) = 0; 
         virtual void defaults(int n) = 0;
         int nelement;
 };
 
 #endif
+

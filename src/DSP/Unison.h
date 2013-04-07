@@ -21,53 +21,49 @@
 
 #ifndef UNISON_H
 #define UNISON_H
+#include <stdlib.h>
+#include "../globals.h"
 
-#include "../Misc/Util.h"
-
+#define UNISON_FREQ_SPAN 2.0
 //how much the unison frequencies varies (always >= 1.0)
-#define UNISON_FREQ_SPAN 2.0f
 
 class Unison
 {
     public:
-        Unison(int update_period_samples_, float max_delay_sec_);
+        Unison(int update_period_samples_, REALTYPE max_delay_sec_);
         ~Unison();
 
-        void setSize(int new_size);
-        void setBaseFrequency(float freq);
-        void setBandwidth(float bandwidth_cents);
+        void set_size(int new_size);
+        void set_base_frequency(REALTYPE freq);
+        void set_bandwidth(REALTYPE bandwidth_cents);
 
-        void process(int bufsize, float *inbuf, float *outbuf = NULL);
+        void process(int bufsize, REALTYPE *inbuf, REALTYPE *outbuf = NULL);
 
     private:
-        void updateParameters(void);
-        void updateUnisonData(void);
+        void update_parameters();
+        void update_unison_data();
 
-        int   unison_size;
-        float base_freq;
+        int      unison_size;
+        REALTYPE base_freq;
         struct UnisonVoice {
-            float step;     //base LFO
-            float position;
-            float realpos1; //the position regarding samples
-            float realpos2;
-            float relative_amplitude;
-            float lin_fpos;
-            float lin_ffreq;
+            REALTYPE step, position; //base LFO
+            REALTYPE realpos1, realpos2; //the position regarding samples
+            REALTYPE relative_amplitude;
+            REALTYPE lin_fpos, lin_ffreq;
             UnisonVoice() {
-                position = RND * 1.8f - 0.9f;
-                realpos1 = 0.0f;
-                realpos2 = 0.0f;
-                step     = 0.0f;
-                relative_amplitude = 1.0f;
+                position = RND * 1.8 - 0.9;
+                realpos1 = 0.0;
+                realpos2 = 0.0;
+                step     = 0.0;
+                relative_amplitude = 1.0;
             }
         } *uv;
-
-        int    update_period_samples;
-        int    update_period_sample_k;
-        int    max_delay, delay_k;
-        bool   first_time;
-        float *delay_buffer;
-        float  unison_amplitude_samples;
-        float  unison_bandwidth_cents;
+        int       update_period_samples, update_period_sample_k;
+        int       max_delay, delay_k;
+        bool      first_time;
+        REALTYPE *delay_buffer;
+        REALTYPE  unison_amplitude_samples;
+        REALTYPE  unison_bandwidth_cents;
 };
 #endif
+

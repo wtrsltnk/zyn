@@ -20,92 +20,108 @@
 
 */
 
-#include "EffectLFO.h"
-#include "../Misc/Util.h"
-
+#include <cstdlib>
 #include <cmath>
 
-EffectLFO::EffectLFO(void)
-    :Pfreq(40),
-      Prandomness(0),
-      PLFOtype(0),
-      Pstereo(64),
-      xl(0.0f),
-      xr(0.0f),
-      ampl1(RND),
-      ampl2(RND),
-      ampr1(RND),
-      ampr2(RND),
-      lfornd(0.0f)
+#include "EffectLFO.h"
+
+
+EffectLFO::EffectLFO()
 {
+    xl          = 0.0;
+    xr          = 0.0;
+    Pfreq       = 40;
+    Prandomness = 0;
+    PLFOtype    = 0;
+    Pstereo     = 96;
+
     updateparams();
+
+    ampl1 = (1 - lfornd) + lfornd * RND;
+    ampl2 = (1 - lfornd) + lfornd * RND;
+    ampr1 = (1 - lfornd) + lfornd * RND;
+    ampr2 = (1 - lfornd) + lfornd * RND;
 }
 
-EffectLFO::~EffectLFO() {}
+EffectLFO::~EffectLFO()
+{}
 
-//Update the changed parameters
-void EffectLFO::updateparams(void)
+
+/*
+ * Update the changed parameters
+ */
+void EffectLFO::updateparams()
 {
-    float lfofreq = (powf(2.0f, Pfreq / 127.0f * 10.0f) - 1.0f) * 0.03f;
-    incx = fabsf(lfofreq) * synth->buffersize_f / synth->samplerate_f;
-    if(incx > 0.49999999f)
-        incx = 0.499999999f;  //Limit the Frequency
+    REALTYPE lfofreq = (pow(2, Pfreq / 127.0 * 10.0) - 1.0) * 0.03;
+    incx = fabs(lfofreq) * (REALTYPE)SOUND_BUFFER_SIZE / (REALTYPE)SAMPLE_RATE;
+    if(incx > 0.49999999)
+        incx = 0.499999999;                //Limit the Frequency
 
-    lfornd = Prandomness / 127.0f;
-    lfornd = (lfornd > 1.0f) ? 1.0f : lfornd;
+    lfornd = Prandomness / 127.0;
+    if(lfornd < 0.0)
+        lfornd = 0.0;
+    else
+    if(lfornd > 1.0)
+        lfornd = 1.0;
 
     if(PLFOtype > 1)
-        PLFOtype = 1;  //this has to be updated if more lfo's are added
+        PLFOtype = 1;          //this has to be updated if more lfo's are added
     lfotype = PLFOtype;
-    xr      = fmodf(xl + (Pstereo - 64.0f) / 127.0f + 1.0f, 1.0f);
+
+    xr      = fmod(xl + (Pstereo - 64.0) / 127.0 + 1.0, 1.0);
 }
 
 
-//Compute the shape of the LFO
-float EffectLFO::getlfoshape(float x)
+/*
+ * Compute the shape of the LFO
+ */
+REALTYPE EffectLFO::getlfoshape(REALTYPE x)
 {
-    float out;
+    REALTYPE out;
     switch(lfotype) {
-        case 1: //EffectLFO_TRIANGLE
-            if((x > 0.0f) && (x < 0.25f))
-                out = 4.0f * x;
-            else
-            if((x > 0.25f) && (x < 0.75f))
-                out = 2.0f - 4.0f * x;
-            else
-                out = 4.0f * x - 4.0f;
-            break;
-        //when adding more, ensure ::updateparams() gets updated
-        default:
-            out = cosf(x * 2.0f * PI); //EffectLFO_SINE
+    case 1: //EffectLFO_TRIANGLE
+        if((x > 0.0) && (x < 0.25))
+            out = 4.0 * x;
+        else
+        if((x > 0.25) && (x < 0.75))
+            out = 2 - 4 * x;
+        else
+            out = 4.0 * x - 4.0;
+        break;
+    /**\todo more to be added here; also ::updateparams() need to be updated (to allow more lfotypes)*/
+    default:
+        out = cos(x * 2 * PI); //EffectLFO_SINE
     }
     return out;
 }
 
-//LFO output
-void EffectLFO::effectlfoout(float *outl, float *outr)
+/*
+ * LFO output
+ */
+void EffectLFO::effectlfoout(REALTYPE *outl, REALTYPE *outr)
 {
-    float out;
+    REALTYPE out;
 
     out = getlfoshape(xl);
     if((lfotype == 0) || (lfotype == 1))
         out *= (ampl1 + xl * (ampl2 - ampl1));
     xl += incx;
-    if(xl > 1.0f) {
-        xl   -= 1.0f;
+    if(xl > 1.0) {
+        xl   -= 1.0;
         ampl1 = ampl2;
-        ampl2 = (1.0f - lfornd) + lfornd * RND;
+        ampl2 = (1.0 - lfornd) + lfornd * RND;
     }
-    *outl = (out + 1.0f) * 0.5f;
+    *outl = (out + 1.0) * 0.5;
 
-    out = getlfoshape(xr);
+    out   = getlfoshape(xr);
     if((lfotype == 0) || (lfotype == 1))
         out *= (ampr1 + xr * (ampr2 - ampr1));
-    xr += incx;
-    if(xr > 1.0f) {
-        xr   -= 1.0f;
+    xr   += incx;
+    if(xr > 1.0) {
+        xr   -= 1.0;
         ampr1 = ampr2;
-        ampr2 = (1.0f - lfornd) + lfornd * RND;
+        ampr2 = (1.0 - lfornd) + lfornd * RND;
     }
-    *outr = (out + 1.0f) * 0.5f;
+    *outr = (out + 1.0) * 0.5;
 }
+

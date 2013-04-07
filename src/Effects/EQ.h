@@ -23,33 +23,36 @@
 #ifndef EQ_H
 #define EQ_H
 
+#include "../globals.h"
+#include "../DSP/AnalogFilter.h"
 #include "Effect.h"
 
 /**EQ Effect*/
 class EQ:public Effect
 {
     public:
-        EQ(bool insertion_, float *efxoutl_, float *efxoutr_);
-        ~EQ() {}
+        EQ(const int &insertion_, REALTYPE *efxoutl_, REALTYPE *efxoutr_);
+        ~EQ();
         void out(const Stereo<float *> &smp);
         void setpreset(unsigned char npreset);
         void changepar(int npar, unsigned char value);
         unsigned char getpar(int npar) const;
-        void cleanup(void);
-        float getfreqresponse(float freq);
-
+        void cleanup();
+        REALTYPE getfreqresponse(REALTYPE freq);
     private:
         //Parameters
-        unsigned char Pvolume;
+        unsigned char Pvolume; /**<Volume*/
 
-        void setvolume(unsigned char _Pvolume);
+        void setvolume(unsigned char Pvolume);
 
         struct {
             //parameters
             unsigned char Ptype, Pfreq, Pgain, Pq, Pstages;
             //internal values
-            class AnalogFilter * l, *r;
+            AnalogFilter *l, *r;
         } filter[MAX_EQ_BANDS];
 };
 
+
 #endif
+

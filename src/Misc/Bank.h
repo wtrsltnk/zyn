@@ -25,6 +25,10 @@
 
 #include <string>
 #include <vector>
+#include "../globals.h"
+#include "Util.h"
+#include "XMLwrapper.h"
+#include "Part.h"
 
 //entries in a bank
 #define BANK_SIZE 160
@@ -38,9 +42,7 @@ class Bank
         ~Bank();
         std::string getname(unsigned int ninstrument);
         std::string getnamenumbered(unsigned int ninstrument);
-        void setname(unsigned int ninstrument,
-                     const std::string &newname,
-                     int newslot);                                                       //if newslot==-1 then this is ignored, else it will be put on that slot
+        void setname(unsigned int ninstrument, const std::string newname, int newslot); //if newslot==-1 then this is ignored, else it will be put on that slot
         bool isPADsynth_used(unsigned int ninstrument);
 
         /**returns true when slot is empty*/
@@ -49,9 +51,9 @@ class Bank
         /**Empties out the selected slot*/
         void clearslot(unsigned int ninstrument);
         /**Saves the given Part to slot*/
-        void savetoslot(unsigned int ninstrument, class Part * part);
+        void savetoslot(unsigned int ninstrument, Part *part);
         /**Loads the given slot into a Part*/
-        void loadfromslot(unsigned int ninstrument, class Part * part);
+        void loadfromslot(unsigned int ninstrument, Part *part);
 
         /**Swaps Slots*/
         void swapslot(unsigned int n1, unsigned int n2);
@@ -87,7 +89,7 @@ class Bank
 
         struct ins_t {
             ins_t();
-            bool used;
+            bool  used;
             std::string name;
             std::string filename;
             struct {
@@ -101,3 +103,4 @@ class Bank
 };
 
 #endif
+

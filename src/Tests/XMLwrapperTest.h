@@ -21,9 +21,8 @@
 */
 #include <cxxtest/TestSuite.h>
 #include "../Misc/XMLwrapper.h"
+#include "testing.h"
 #include <string>
-#include "../globals.h"
-SYNTH_T *synth;
 using namespace std;
 
 class XMLwrapperTest:public CxxTest::TestSuite
@@ -42,20 +41,20 @@ class XMLwrapperTest:public CxxTest::TestSuite
 
         //here to verify that no leaks occur
         void testLoad() {
-            string location = string(SOURCE_DIR) + string(
-                "/Tests/guitar-adnote.xmz");
+            string location = string(SOURCE_DIR) + string("/Tests/guitar-adnote.xmz");
             xmla->loadXMLfile(location);
         }
 
         void testAnotherLoad()
         {
-            string dat =
-                "\n<?xml version=\"1.0f\" encoding=\"UTF-8\"?>\n\
+            string dat = "\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
 <!DOCTYPE ZynAddSubFX-data>\n\
 <ZynAddSubFX-data version-major=\"2\" version-minor=\"4\"\n\
 version-revision=\"1\" ZynAddSubFX-author=\"Nasca Octavian Paul\">\n\
 </ZynAddSubFX-data>\n";
             xmlb->putXMLdata(dat.c_str());
+#warning todo contact mxml people about possible memoryleak when
+#warning       mxmlLoadString is giving something starting with a newline
         }
 
         void tearDown() {
@@ -68,3 +67,4 @@ version-revision=\"1\" ZynAddSubFX-author=\"Nasca Octavian Paul\">\n\
         XMLwrapper *xmla;
         XMLwrapper *xmlb;
 };
+

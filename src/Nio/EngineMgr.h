@@ -10,9 +10,8 @@ class MidiIn;
 class AudioOut;
 class OutMgr;
 /**Container/Owner of the long lived Engines*/
-class EngineMgr
+struct EngineMgr
 {
-    public:
         static EngineMgr &getInstance();
         ~EngineMgr();
 
@@ -23,7 +22,7 @@ class EngineMgr
         Engine *getEng(std::string name);
 
         /**Start up defaults*/
-        bool start();
+        void start();
 
         /**Stop all engines*/
         void stop();
@@ -41,3 +40,4 @@ class EngineMgr
         EngineMgr();
 };
 #endif
+

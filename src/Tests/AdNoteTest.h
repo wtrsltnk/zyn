@@ -1,27 +1,3 @@
-/*
-  ZynAddSubFX - a software synthesizer
-
-  AdNoteTest.h - CxxTest for Synth/ADnote
-  Copyright (C) 2009-2011 Mark McCurry
-  Copyright (C) 2009 Harald Hvaal
-  Authors: Mark McCurry, Harald Hvaal
-
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of version 2 of the GNU General Public License
-  as published by the Free Software Foundation.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License (version 2 or later) for more details.
-
-  You should have received a copy of the GNU General Public License (version 2)
-  along with this program; if not, write to the Free Software Foundation,
-  Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
-
-*/
-
-
 #include <cxxtest/TestSuite.h>
 #include <iostream>
 #include <fstream>
@@ -31,20 +7,17 @@
 #include "../Misc/Util.h"
 #include "../Synth/ADnote.h"
 #include "../Params/Presets.h"
-#include "../DSP/FFTwrapper.h"
 #include "../globals.h"
-SYNTH_T *synth;
+#include "testing.h"
 
 using namespace std;
-
 
 class AdNoteTest:public CxxTest::TestSuite
 {
     public:
 
-        ADnote       *note;
-        Master       *master;
-        FFTwrapper   *fft;
+        ADnote *note;
+        Master *master;
         Controller   *controller;
         unsigned char testnote;
 
@@ -53,36 +26,33 @@ class AdNoteTest:public CxxTest::TestSuite
 
         void setUp() {
             //First the sensible settings and variables that have to be set:
-            synth = new SYNTH_T;
-            synth->buffersize = 256;
+            SOUND_BUFFER_SIZE = 256;
 
-            outL = new float[synth->buffersize];
-            for(int i = 0; i < synth->buffersize; ++i)
+            outL = new float[SOUND_BUFFER_SIZE];
+            for(int i = 0; i < SOUND_BUFFER_SIZE; ++i)
                 *(outL + i) = 0;
-            outR = new float[synth->buffersize];
-            for(int i = 0; i < synth->buffersize; ++i)
+            outR = new float[SOUND_BUFFER_SIZE];
+            for(int i = 0; i < SOUND_BUFFER_SIZE; ++i)
                 *(outR + i) = 0;
 
             //next the bad global variables that for some reason have not been properly placed in some
             //initialization routine, but rather exist as cryptic oneliners in main.cpp:
-            denormalkillbuf = new float[synth->buffersize];
-            for(int i = 0; i < synth->buffersize; ++i)
+            denormalkillbuf = new REALTYPE[SOUND_BUFFER_SIZE];
+            for(int i = 0; i < SOUND_BUFFER_SIZE; i++)
                 denormalkillbuf[i] = 0;
 
             //phew, glad to get thouse out of my way. took me a lot of sweat and gdb to get this far...
 
-            fft = new FFTwrapper(synth->oscilsize);
+            Job::setEngineThread();
+
             //prepare the default settings
-            ADnoteParameters *defaultPreset = new ADnoteParameters(fft);
-
-            //Assert defaults
-            TS_ASSERT(!defaultPreset->VoicePar[1].Enabled);
-
+            ADnoteParameters *defaultPreset = new ADnoteParameters(
+                NULL, new FFTwrapper(OSCIL_SIZE));
             XMLwrapper *wrap = new XMLwrapper();
-            cout << string(SOURCE_DIR) + string("/guitar-adnote.xmz")
+            cout << string(SOURCE_DIR) + string("/Tests/guitar-adnote.xmz")
                  << endl;
             wrap->loadXMLfile(string(SOURCE_DIR)
-                              + string("/guitar-adnote.xmz"));
+                              + string("/Tests/guitar-adnote.xmz"));
             TS_ASSERT(wrap->enterbranch("MASTER"));
             TS_ASSERT(wrap->enterbranch("PART", 0));
             TS_ASSERT(wrap->enterbranch("INSTRUMENT"));
@@ -92,16 +62,13 @@ class AdNoteTest:public CxxTest::TestSuite
             defaultPreset->getfromXML(wrap);
             //defaultPreset->defaults();
 
-            //verify xml was loaded
-            TS_ASSERT(defaultPreset->VoicePar[1].Enabled);
-
 
 
             controller = new Controller();
 
             //lets go with.... 50! as a nice note
             testnote = 50;
-            float freq = 440.0f * powf(2.0f, (testnote - 69.0f) / 12.0f);
+            REALTYPE freq = 440.0 * pow(2.0, (testnote - 69.0) / 12.0);
 
             note = new ADnote(defaultPreset,
                               controller,
@@ -110,9 +77,6 @@ class AdNoteTest:public CxxTest::TestSuite
                               0,
                               testnote,
                               false);
-
-            delete defaultPreset;
-            delete wrap;
         }
 
         void willNoteBeRunButIsHereForLinkingReasonsHowsThisForCamelCaseEh()
@@ -122,16 +86,10 @@ class AdNoteTest:public CxxTest::TestSuite
 
         void tearDown() {
             delete note;
-            delete controller;
-            delete fft;
-            delete [] outL;
-            delete [] outR;
-            delete [] denormalkillbuf;
-            FFT_cleanup();
-            delete synth;
         }
 
         void testDefaults() {
+            TS_ASSERT(note->ready);
             int sampleCount = 0;
 
 //#define WRITE_OUTPUT
@@ -141,41 +99,41 @@ class AdNoteTest:public CxxTest::TestSuite
 #endif
             note->noteout(outL, outR);
 #ifdef WRITE_OUTPUT
-            for(int i = 0; i < synth->buffersize; ++i)
+            for(int i = 0; i < SOUND_BUFFER_SIZE; ++i)
                 file << outL[i] << std::endl;
 
 #endif
-            sampleCount += synth->buffersize;
+            sampleCount += SOUND_BUFFER_SIZE;
 
-            TS_ASSERT_DELTA(outL[255], 0.254609f, 0.0001f);
+            TS_ASSERT_DELTA(outL[255], 0.2410, 0.0001);
 
             note->relasekey();
 
 
             note->noteout(outL, outR);
-            sampleCount += synth->buffersize;
-            TS_ASSERT_DELTA(outL[255], -0.102197f, 0.0001f);
+            sampleCount += SOUND_BUFFER_SIZE;
+            TS_ASSERT_DELTA(outL[255], -0.1814, 0.0001);
 
             note->noteout(outL, outR);
-            sampleCount += synth->buffersize;
-            TS_ASSERT_DELTA(outL[255], -0.111422f, 0.0001f);
+            sampleCount += SOUND_BUFFER_SIZE;
+            TS_ASSERT_DELTA(outL[255], -0.0178, 0.0001);
 
             note->noteout(outL, outR);
-            sampleCount += synth->buffersize;
-            TS_ASSERT_DELTA(outL[255], -0.021375f, 0.0001f);
+            sampleCount += SOUND_BUFFER_SIZE;
+            TS_ASSERT_DELTA(outL[255], -0.0947, 0.0001);
 
             note->noteout(outL, outR);
-            sampleCount += synth->buffersize;
-            TS_ASSERT_DELTA(outL[255], 0.149882f, 0.0001f);
+            sampleCount += SOUND_BUFFER_SIZE;
+            TS_ASSERT_DELTA(outL[255], 0.1521, 0.0001);
 
             while(!note->finished()) {
                 note->noteout(outL, outR);
 #ifdef WRITE_OUTPUT
-                for(int i = 0; i < synth->buffersize; ++i)
+                for(int i = 0; i < SOUND_BUFFER_SIZE; ++i)
                     file << outL[i] << std::endl;
 
 #endif
-                sampleCount += synth->buffersize;
+                sampleCount += SOUND_BUFFER_SIZE;
             }
 #ifdef WRITE_OUTPUT
             file.close();
@@ -199,3 +157,4 @@ class AdNoteTest:public CxxTest::TestSuite
         }
 #endif
 };
+

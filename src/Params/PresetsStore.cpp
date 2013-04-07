@@ -88,7 +88,7 @@ bool PresetsStore::presetstruct::operator<(const presetstruct &b) const
 }
 
 
-void PresetsStore::rescanforpresets(const string &type)
+void PresetsStore::rescanforpresets(string type)
 {
     //std::cout << "Scanning For Presets" << std::endl;
     //std::cout << "Of Type: " << type << std::endl;
@@ -96,13 +96,13 @@ void PresetsStore::rescanforpresets(const string &type)
     clearpresets();
     string ftype = "." + type + ".xpz";
 
-    for(int i = 0; i < MAX_BANK_ROOT_DIRS; ++i) {
+    for(int i = 0; i < MAX_BANK_ROOT_DIRS; i++) {
         if(config.cfg.presetsDirList[i].empty())
             continue;
 
         //open directory
-        string dirname = config.cfg.presetsDirList[i];
-        DIR   *dir     = opendir(dirname.c_str());
+        string  dirname = config.cfg.presetsDirList[i];
+        DIR    *dir     = opendir(dirname.c_str());
         if(dir == NULL)
             continue;
         struct dirent *fn;
@@ -160,7 +160,7 @@ void PresetsStore::copypreset(XMLwrapper *xml, char *type, string name)
     xml->saveXMLfile(filename);
 }
 
-bool PresetsStore::pastepreset(XMLwrapper *xml, unsigned int npreset)
+bool PresetsStore::pastepreset(XMLwrapper *xml, int npreset)
 {
     npreset--;
     if(npreset >= presets.size())
@@ -168,11 +168,11 @@ bool PresetsStore::pastepreset(XMLwrapper *xml, unsigned int npreset)
     string filename = presets[npreset].file;
     if(filename.empty())
         return false;
-    bool result = (xml->loadXMLfile(filename) >= 0);
+    bool result    = (xml->loadXMLfile(filename) >= 0);
     return result;
 }
 
-void PresetsStore::deletepreset(unsigned int npreset)
+void PresetsStore::deletepreset(int npreset)
 {
     npreset--;
     if(npreset >= presets.size())
@@ -182,3 +182,4 @@ void PresetsStore::deletepreset(unsigned int npreset)
         return;
     remove(filename.c_str());
 }
+

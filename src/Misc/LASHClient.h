@@ -28,7 +28,9 @@
 
 
 /** This class wraps up some functions for initialising and polling
- *  the LASH daemon.*/
+ *  the LASH daemon.
+ *  \todo fix indentation nonconformism
+ *  \todo see why there is no destructor*/
 class LASHClient
 {
     public:
@@ -61,3 +63,4 @@ class LASHClient
 
 
 #endif
+

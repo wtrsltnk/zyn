@@ -1,8 +1,8 @@
 # data file for the Fltk User Interface Designer (fluid)
-version 1.0110 
+version 1.0107 
 header_name {.h} 
 code_name {.cc}
-decl {\#include <FL/fl_ask.H>} {selected public
+decl {\#include <FL/fl_ask.H>} {public
 } 
 
 decl {\#include <stdio.h>} {public
@@ -18,13 +18,9 @@ decl {\#include "../Params/Presets.h"} {public
 
 class PresetsUI_ {} {
   Function {refresh()} {open return_type {virtual void}
-  } {
-    code {;} {}
-  }
+  } {}
   Function {~PresetsUI_()} {open return_type virtual
-  } {
-    code {;} {}
-  }
+  } {}
 } 
 
 class PresetsUI {} {
@@ -39,7 +35,7 @@ pastewin->hide();delete(pastewin);} {}
   Function {make_window()} {} {
     Fl_Window copywin {
       label {Copy to Clipboard/Preset}
-      xywh {190 173 265 430} type Double box THIN_UP_BOX color 238 hide modal
+      xywh {190 173 265 430} type Double box PLASTIC_THIN_UP_BOX color 238 hide modal
     } {
       Fl_Browser copybrowse {
         callback {int val=o->value();
@@ -93,7 +89,7 @@ if (strlen(tmp)>0) {
     }
     Fl_Window pastewin {
       label {Paste from Clipboard/Preset}
-      xywh {463 173 265 430} type Double box THIN_UP_BOX color 238 hide modal
+      xywh {463 173 265 430} type Double box PLASTIC_THIN_UP_BOX color 238 hide modal
     } {
       Fl_Browser pastebrowse {
         callback {if (o->value()==0) {
@@ -193,13 +189,14 @@ paste(p,pui);} {}
 pastebrowse->clear();
 p->rescanforpresets();
 
-for (unsigned int i=0;i<presetsstore.presets.size();i++){
+for (int i=0;i<presetsstore.presets.size();i++){
    std::string name=presetsstore.presets[i].name;
    if(name.empty())
        continue;
    copybrowse->add(name.c_str());
    pastebrowse->add(name.c_str());
-};} {}
+};} {selected
+    }
   }
   decl {Presets *p;} {public
   }

@@ -37,11 +37,12 @@ Dump::Dump()
 Dump::~Dump()
 {
     if(file != NULL) {
-        int duration = tick * synth->buffersize_f / synth->samplerate_f;
+        double duration = (double)tick * (double) SOUND_BUFFER_SIZE
+                          / (double) SAMPLE_RATE;
         fprintf(
             file,
             "\n# statistics: duration = %d seconds; keyspressed = %d\n\n\n\n",
-            duration,
+            (int) duration,
             keyspressed);
         fclose(file);
     }
@@ -65,10 +66,11 @@ void Dump::startnow()
         time_t tm = time(NULL);
 
         fprintf(file, "#date/time = %s\n", ctime(&tm));
-        fprintf(file, "#1 tick = %g milliseconds\n",
-                synth->buffersize_f * 1000.0f / synth->samplerate_f);
-        fprintf(file, "SAMPLERATE = %d\n", synth->samplerate);
-        fprintf(file, "TICKSIZE = %d #samples\n", synth->buffersize);
+        fprintf(file,
+                "#1 tick = %g milliseconds\n",
+                SOUND_BUFFER_SIZE * 1000.0 / SAMPLE_RATE);
+        fprintf(file, "SAMPLERATE = %d\n", SAMPLE_RATE);
+        fprintf(file, "TICKSIZE = %d #samples\n", SOUND_BUFFER_SIZE);
         fprintf(file, "\n\nSTART\n");
     }
 }
@@ -88,7 +90,7 @@ void Dump::dumpnote(char chan, char note, char vel)
     if(vel == 0)
         fprintf(file, "n %d -> %d %d \n", tick, chan, note);    //note off
     else
-        fprintf(file, "N %d -> %d %d %d \n", tick, chan, note, vel);  //note on
+        fprintf(file, "N %d -> %d %d %d \n", tick, chan, note, vel); //note on
 
     if(vel != 0)
         keyspressed++;
@@ -105,12 +107,12 @@ void Dump::dumpcontroller(char chan, unsigned int type, int par)
     if(file == NULL)
         return;
     switch(type) {
-        case C_pitchwheel:
-            fprintf(file, "P %d -> %d %d\n", tick, chan, par);
-            break;
-        default:
-            fprintf(file, "C %d -> %d %d %d\n", tick, chan, type, par);
-            break;
+    case C_pitchwheel:
+        fprintf(file, "P %d -> %d %d\n", tick, chan, par);
+        break;
+    default:
+        fprintf(file, "C %d -> %d %d %d\n", tick, chan, type, par);
+        break;
     }
 #ifndef JACKAUDIOOUT
     if(k++ > 25) {
@@ -119,3 +121,4 @@ void Dump::dumpcontroller(char chan, unsigned int type, int par)
     }
 #endif
 }
+

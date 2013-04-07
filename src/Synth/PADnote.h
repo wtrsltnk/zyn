@@ -21,64 +21,68 @@
 #ifndef PAD_NOTE_H
 #define PAD_NOTE_H
 
-#include "SynthNote.h"
 #include "../globals.h"
 #include "../Params/PADnoteParameters.h"
 #include "../Params/Controller.h"
 #include "Envelope.h"
 #include "LFO.h"
+#include "../DSP/Filter.h"
 #include "../Params/Controller.h"
 
 /**The "pad" synthesizer*/
-class PADnote:public SynthNote
+class PADnote
 {
     public:
         PADnote(PADnoteParameters *parameters,
                 Controller *ctl_,
-                float freq,
-                float velocity,
+                REALTYPE freq,
+                REALTYPE velocity,
                 int portamento_,
                 int midinote,
                 bool besilent);
         ~PADnote();
 
-        void legatonote(float freq, float velocity, int portamento_,
-                        int midinote, bool externcall);
+        void PADlegatonote(REALTYPE freq,
+                           REALTYPE velocity,
+                           int portamento_,
+                           int midinote,
+                           bool externcall);
 
-        int noteout(float *outl, float *outr);
-        int finished() const;
+        int noteout(REALTYPE *outl, REALTYPE *outr);
+        int finished();
         void relasekey();
+
+        int ready;
+
     private:
-        void setup(float freq, float velocity, int portamento_,
-                   int midinote, bool legato = false);
-        void fadein(float *smps);
+        void fadein(REALTYPE *smps);
         void computecurrentparameters();
         bool finished_;
         PADnoteParameters *pars;
 
-        int   poshi_l, poshi_r;
-        float poslo;
+        int      poshi_l, poshi_r;
+        REALTYPE poslo;
 
-        float basefreq;
-        bool  firsttime, released;
+        REALTYPE basefreq;
+        bool     firsttime, released;
 
         int nsample, portamento;
 
-        int Compute_Linear(float *outl,
-                           float *outr,
+        int Compute_Linear(REALTYPE *outl,
+                           REALTYPE *outr,
                            int freqhi,
-                           float freqlo);
-        int Compute_Cubic(float *outl,
-                          float *outr,
+                           REALTYPE freqlo);
+        int Compute_Cubic(REALTYPE *outl,
+                          REALTYPE *outr,
                           int freqhi,
-                          float freqlo);
+                          REALTYPE freqlo);
 
 
         struct {
             /******************************************
             *     FREQUENCY GLOBAL PARAMETERS        *
             ******************************************/
-            float Detune;  //cents
+            REALTYPE  Detune; //cents
 
             Envelope *FreqEnvelope;
             LFO      *FreqLfo;
@@ -86,36 +90,54 @@ class PADnote:public SynthNote
             /********************************************
              *     AMPLITUDE GLOBAL PARAMETERS          *
              ********************************************/
-            float Volume;  // [ 0 .. 1 ]
+            REALTYPE  Volume; // [ 0 .. 1 ]
 
-            float Panning;  // [ 0 .. 1 ]
+            REALTYPE  Panning; // [ 0 .. 1 ]
 
             Envelope *AmpEnvelope;
             LFO      *AmpLfo;
 
             struct {
-                int   Enabled;
-                float initialvalue, dt, t;
+                int      Enabled;
+                REALTYPE initialvalue, dt, t;
             } Punch;
 
             /******************************************
             *        FILTER GLOBAL PARAMETERS        *
             ******************************************/
-            class Filter * GlobalFilterL, *GlobalFilterR;
+            Filter   *GlobalFilterL, *GlobalFilterR;
 
-            float FilterCenterPitch;  //octaves
-            float FilterQ;
-            float FilterFreqTracking;
+            REALTYPE  FilterCenterPitch; //octaves
+            REALTYPE  FilterQ;
+            REALTYPE  FilterFreqTracking;
 
             Envelope *FilterEnvelope;
 
-            LFO *FilterLfo;
+            LFO      *FilterLfo;
         } NoteGlobalPar;
 
 
-        float globaloldamplitude, globalnewamplitude, velocity, realfreq;
+        REALTYPE    globaloldamplitude, globalnewamplitude, velocity, realfreq;
+        REALTYPE   *tmpwave;
         Controller *ctl;
+
+        // Legato vars
+        struct {
+            bool      silent;
+            REALTYPE  lastfreq;
+            LegatoMsg msg;
+            int decounter;
+            struct { // Fade In/Out vars
+                int      length;
+                REALTYPE m, step;
+            } fade;
+            struct { // Note parameters
+                REALTYPE freq, vel;
+                int      portamento, midinote;
+            } param;
+        } Legato;
 };
 
 
 #endif
+

@@ -20,25 +20,26 @@
 
 */
 
-#include <cmath>
+#include <stdio.h>
 #include "Envelope.h"
-#include "../Params/EnvelopeParams.h"
 
-Envelope::Envelope(EnvelopeParams *envpars, float basefreq)
+Envelope::Envelope(EnvelopeParams *envpars, REALTYPE basefreq)
 {
     int i;
-    envpoints = envpars->Penvpoints;
+    envpoints      = envpars->envpoints();
     if(envpoints > MAX_ENVELOPE_POINTS)
         envpoints = MAX_ENVELOPE_POINTS;
-    envsustain     = (envpars->Penvsustain == 0) ? -1 : envpars->Penvsustain;
-    forcedrelase   = envpars->Pforcedrelease;
-    envstretch     = powf(440.0f / basefreq, envpars->Penvstretch / 64.0f);
-    linearenvelope = envpars->Plinearenvelope;
+    envsustain     = (envpars->envsustain() == 0) ? -1 : envpars->envsustain();
+    forcedrelase   = envpars->forcedrelease();
+    envstretch     = pow(440.0 / basefreq, envpars->envstretch() / 64.0);
+    linearenvelope = envpars->linearenvelope();
 
-    if(envpars->Pfreemode == 0)
+    //TODO: this changes the actual envelope parameters, so whether or not this is necessary to do
+    //here needs to be checked because the Envelope class is potentially instantiated a lot
+    if(envpars->freemode() == 0)
         envpars->converttofree();
 
-    float bufferdt = synth->buffersize_f / synth->samplerate_f;
+    REALTYPE bufferdt = SOUND_BUFFER_SIZE / (REALTYPE)SAMPLE_RATE;
 
     int mode = envpars->Envmode;
 
@@ -48,44 +49,43 @@ Envelope::Envelope(EnvelopeParams *envpars, float basefreq)
     if((mode == 2) && (linearenvelope != 0))
         mode = 1;                              //change to linear
 
-    for(i = 0; i < MAX_ENVELOPE_POINTS; ++i) {
-        float tmp = envpars->getdt(i) / 1000.0f * envstretch;
+    for(i = 0; i < MAX_ENVELOPE_POINTS; i++) {
+        REALTYPE tmp = envpars->getdt(i) / 1000.0 * envstretch;
         if(tmp > bufferdt)
             envdt[i] = bufferdt / tmp;
         else
-            envdt[i] = 2.0f;  //any value larger than 1
+            envdt[i] = 2.0; //any value larger than 1
 
         switch(mode) {
-            case 2:
-                envval[i] = (1.0f - envpars->Penvval[i] / 127.0f) * -40;
-                break;
-            case 3:
-                envval[i] =
-                    (powf(2, 6.0f
-                          * fabs(envpars->Penvval[i]
-                                 - 64.0f) / 64.0f) - 1.0f) * 100.0f;
-                if(envpars->Penvval[i] < 64)
-                    envval[i] = -envval[i];
-                break;
-            case 4:
-                envval[i] = (envpars->Penvval[i] - 64.0f) / 64.0f * 6.0f; //6 octaves (filtru)
-                break;
-            case 5:
-                envval[i] = (envpars->Penvval[i] - 64.0f) / 64.0f * 10;
-                break;
-            default:
-                envval[i] = envpars->Penvval[i] / 127.0f;
+        case 2:
+            envval[i] = (1.0 - envpars->envval[i]->getValue() / 127.0) * MIN_ENVELOPE_DB;
+            break;
+        case 3:
+            envval[i] =
+                (pow(2, 6.0
+                     * fabs(envpars->envval[i]->getValue() - 64.0) / 64.0) - 1.0) * 100.0;
+            if(envpars->envval[i]->getValue() < 64)
+                envval[i] = -envval[i];
+            break;
+        case 4:
+            envval[i] = (envpars->envval[i]->getValue() - 64.0) / 64.0 * 6.0; //6 octaves (filtru)
+            break;
+        case 5:
+            envval[i] = (envpars->envval[i]->getValue() - 64.0) / 64.0 * 10;
+            break;
+        default:
+            envval[i] = envpars->envval[i]->getValue() / 127.0;
         }
     }
 
-    envdt[0] = 1.0f;
+    envdt[0]     = 1.0;
 
     currentpoint = 1; //the envelope starts from 1
     keyreleased  = false;
-    t = 0.0f;
-    envfinish = false;
-    inct      = envdt[1];
-    envoutval = 0.0f;
+    t = 0.0;
+    envfinish    = false;
+    inct = envdt[1];
+    envoutval    = 0.0;
 }
 
 Envelope::~Envelope()
@@ -101,15 +101,15 @@ void Envelope::relasekey()
         return;
     keyreleased = true;
     if(forcedrelase != 0)
-        t = 0.0f;
+        t = 0.0;
 }
 
 /*
  * Envelope Output
  */
-float Envelope::envout()
+REALTYPE Envelope::envout()
 {
-    float out;
+    REALTYPE out;
 
     if(envfinish) { //if the envelope is finished
         envoutval = envval[envpoints - 1];
@@ -123,35 +123,35 @@ float Envelope::envout()
     if(keyreleased && (forcedrelase != 0)) { //do the forced release
         int tmp = (envsustain < 0) ? (envpoints - 1) : (envsustain + 1); //if there is no sustain point, use the last point for release
 
-        if(envdt[tmp] < 0.00000001f)
+        if(envdt[tmp] < 0.00000001)
             out = envval[tmp];
         else
             out = envoutval + (envval[tmp] - envoutval) * t;
         t += envdt[tmp] * envstretch;
 
-        if(t >= 1.0f) {
+        if(t >= 1.0) {
             currentpoint = envsustain + 2;
             forcedrelase = 0;
-            t    = 0.0f;
+            t    = 0.0;
             inct = envdt[currentpoint];
             if((currentpoint >= envpoints) || (envsustain < 0))
                 envfinish = true;
         }
         return out;
     }
-    if(inct >= 1.0f)
+    if(inct >= 1.0)
         out = envval[currentpoint];
     else
-        out = envval[currentpoint - 1]
-              + (envval[currentpoint] - envval[currentpoint - 1]) * t;
+        out = envval[currentpoint - 1] +
+             (envval[currentpoint] - envval[currentpoint - 1]) * t;
 
     t += inct;
-    if(t >= 1.0f) {
+    if(t >= 1.0) {
         if(currentpoint >= envpoints - 1)
             envfinish = true;
         else
             currentpoint++;
-        t    = 0.0f;
+        t    = 0.0;
         inct = envdt[currentpoint];
     }
 
@@ -162,29 +162,29 @@ float Envelope::envout()
 /*
  * Envelope Output (dB)
  */
-float Envelope::envout_dB()
+REALTYPE Envelope::envout_dB()
 {
-    float out;
+    REALTYPE out;
     if(linearenvelope != 0)
         return envout();
 
     if((currentpoint == 1) && (!keyreleased || (forcedrelase == 0))) { //first point is always lineary interpolated
-        float v1 = dB2rap(envval[0]);
-        float v2 = dB2rap(envval[1]);
+        REALTYPE v1 = dB2rap(envval[0]);
+        REALTYPE v2 = dB2rap(envval[1]);
         out = v1 + (v2 - v1) * t;
 
-        t += inct;
-        if(t >= 1.0f) {
-            t    = 0.0f;
+        t  += inct;
+        if(t >= 1.0) {
+            t    = 0.0;
             inct = envdt[2];
             currentpoint++;
-            out = v2;
+            out  = v2;
         }
 
-        if(out > 0.001f)
+        if(out > 0.001)
             envoutval = rap2dB(out);
         else
-            envoutval = MIN_ENVELOPE_DB;
+            envoutval = -40.0;
     }
     else
         out = dB2rap(envout());
@@ -196,3 +196,4 @@ bool Envelope::finished() const
 {
     return envfinish;
 }
+

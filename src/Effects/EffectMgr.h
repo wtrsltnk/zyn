@@ -35,6 +35,7 @@ class XMLwrapper;
 #include "Distorsion.h"
 #include "EQ.h"
 #include "DynamicFilter.h"
+#include "APhaser.h"
 #include "../Misc/XMLwrapper.h"
 #include "../Params/FilterParams.h"
 #include "../Params/Presets.h"
@@ -43,36 +44,53 @@ class XMLwrapper;
 class EffectMgr:public Presets
 {
     public:
-        EffectMgr(const bool insertion_, pthread_mutex_t *mutex_);
+        EffectMgr(int insertion_, pthread_mutex_t *mutex_);
         ~EffectMgr();
 
         void add2XML(XMLwrapper *xml);
-        void defaults(void);
+        void defaults();
         void getfromXML(XMLwrapper *xml);
 
-        void out(float *smpsl, float *smpsr);
+        void out(REALTYPE *smpsl, REALTYPE *smpsr);
 
         void setdryonly(bool value);
 
         /**get the output(to speakers) volume of the systemeffect*/
-        float sysefxgetvolume(void);
+        REALTYPE sysefxgetvolume();
 
-        void cleanup(void);
+        void cleanup(); /**<cleanup the effect*/
 
+        /**change effect to the given int
+             * @param nefx_ the number of the effect*/
         void changeeffect(int nefx_);
-        int geteffect(void);
+        /**Get the number of the effect
+         * @return the number*/
+        int geteffect();
+        /**
+         * Change the preset to the given one
+         * @param npreset number of the chosen preset
+         */
         void changepreset(unsigned char npreset);
+        /**
+         * Change the preset to the given one without locking the thread
+         * @param npreset number of the chosen preset
+         */
         void changepreset_nolock(unsigned char npreset);
-        unsigned char getpreset(void);
+        /**
+         * Get the current preset
+         * @return the current preset*/
+        unsigned char getpreset();
+        /**sets the effect par*/
         void seteffectpar(int npar, unsigned char value);
+        /**<sets the effect par without thread lock*/
         void seteffectpar_nolock(int npar, unsigned char value);
         unsigned char geteffectpar(int npar);
+        const bool insertion; /**<1 if the effect is connected as insertion effect*/
+        REALTYPE  *efxoutl, *efxoutr;
 
-        const bool insertion;
-        float     *efxoutl, *efxoutr;
-
-        // used by UI
-        float getEQfreqresponse(float freq);
+        /**used by UI
+             * \todo needs to be decoupled*/
+        REALTYPE getEQfreqresponse(REALTYPE freq);
 
         FilterParams *filterpars;
 
@@ -84,3 +102,4 @@ class EffectMgr:public Presets
 };
 
 #endif
+

@@ -25,12 +25,18 @@
 
 #include "../globals.h"
 #include "../Misc/XMLwrapper.h"
+#include "Presets.h"
+#include "../Controls/Ranger.h"
+#include "../Controls/DescRanger.h"
+#include "../Controls/Toggle.h"
+#include "../Controls/Selector.h"
 #include "PresetsArray.h"
 
-class FilterParams:public PresetsArray
+class FilterParams : public PresetsArray
 {
     public:
-        FilterParams(unsigned char Ptype_,
+        FilterParams(Node *parent,
+                     unsigned char Ptype_,
                      unsigned char Pfreq,
                      unsigned char Pq_);
         ~FilterParams();
@@ -44,24 +50,26 @@ class FilterParams:public PresetsArray
 
         void getfromFilterParams(FilterParams *pars);
 
-        float getfreq();
-        float getq();
-        float getfreqtracking(float notefreq);
-        float getgain();
+        REALTYPE getfreq();
+        REALTYPE getq();
+        REALTYPE getfreqtracking(REALTYPE notefreq);
+        REALTYPE getgain();
 
-        unsigned char Pcategory; //Filter category (Analog/Formant/StVar)
-        unsigned char Ptype; // Filter type  (for analog lpf,hpf,bpf..)
-        unsigned char Pfreq; // Frequency (64-central frequency)
-        unsigned char Pq; // Q parameters (resonance or bandwidth)
-        unsigned char Pstages; //filter stages+1
-        unsigned char Pfreqtrack; //how the filter frequency is changing according the note frequency
-        unsigned char Pgain; //filter's output gain
+        Selector category; //Filter category (Analog/Formant/StVar)
+        Selector type; // Filter type  (for analog lpf,hpf,bpf..)
+        Ranger frequency; // Frequency (64-central frequency)
+        DescRanger q; // Q parameters (resonance or bandwidth)
+        DescRanger stages; //filter stages+1
+        DescRanger freqtrack; //how the filter frequency is changing according the note frequency
+        DescRanger gain; //filter's output gain
 
         //Formant filter parameters
-        unsigned char Pnumformants; //how many formants are used
-        unsigned char Pformantslowness; //how slow varies the formants
-        unsigned char Pvowelclearness; //how vowels are kept clean (how much try to avoid "mixed" vowels)
-        unsigned char Pcenterfreq, Poctavesfreq; //the center frequency of the res. func., and the number of octaves
+        Node formantFilter;
+        DescRanger numformants; //how many formants are used
+        DescRanger formantslowness; //how slow varies the formants
+        DescRanger vowelclearness; //how vowels are kept clean (how much try to avoid "mixed" vowels)
+        DescRanger octavesfreq; //the center frequency of the res. func., and the number of octaves
+        Ranger centerFrequency;
 
         struct {
             struct {
@@ -70,23 +78,23 @@ class FilterParams:public PresetsArray
         } Pvowels[FF_MAX_VOWELS];
 
 
-        unsigned char Psequencesize; //how many vowels are in the sequence
-        unsigned char Psequencestretch; //how the sequence is stretched (how the input from filter envelopes/LFOs/etc. is "stretched")
-        unsigned char Psequencereversed; //if the input from filter envelopes/LFOs/etc. is reversed(negated)
+        DescRanger sequencesize; //how many vowels are in the sequence
+        DescRanger sequencestretch; //how the sequence is stretched (how the input from filter envelopes/LFOs/etc. is "stretched")
+        Toggle sequencereversed; //if the input from filter envelopes/LFOs/etc. is reversed(negated)
         struct {
             unsigned char nvowel; //the vowel from the position
         } Psequence[FF_MAX_SEQUENCE];
 
-        float getcenterfreq();
-        float getoctavesfreq();
-        float getfreqpos(float freq);
-        float getfreqx(float x);
+        REALTYPE getcenterfreq();
+        REALTYPE getoctavesfreq();
+        REALTYPE getfreqpos(REALTYPE freq);
+        REALTYPE getfreqx(REALTYPE x);
 
-        void formantfilterH(int nvowel, int nfreqs, float *freqs); //used by UI
+        void formantfilterH(int nvowel, int nfreqs, REALTYPE *freqs); //used by UI
 
-        float getformantfreq(unsigned char freq);
-        float getformantamp(unsigned char amp);
-        float getformantq(unsigned char q);
+        REALTYPE getformantfreq(unsigned char freq);
+        REALTYPE getformantamp(unsigned char amp);
+        REALTYPE getformantq(unsigned char q);
 
         bool changed;
 
@@ -95,8 +103,8 @@ class FilterParams:public PresetsArray
 
         //stored default parameters
         unsigned char Dtype;
-        unsigned char Dfreq;
         unsigned char Dq;
 };
 
 #endif
+

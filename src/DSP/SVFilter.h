@@ -24,46 +24,48 @@
 #define SV_FILTER_H
 
 #include "../globals.h"
-#include "Filter.h"
-
-class SVFilter:public Filter
+#include "Filter_.h"
+class SVFilter:public Filter_
 {
     public:
         SVFilter(unsigned char Ftype,
-                 float Ffreq,
-                 float Fq,
+                 REALTYPE Ffreq,
+                 REALTYPE Fq,
                  unsigned char Fstages);
         ~SVFilter();
-        void filterout(float *smp);
-        void setfreq(float frequency);
-        void setfreq_and_q(float frequency, float q_);
-        void setq(float q_);
+        void filterout(REALTYPE *smp);
+        void setfreq(REALTYPE frequency);
+        void setfreq_and_q(REALTYPE frequency, REALTYPE q_);
+        void setq(REALTYPE q_);
 
         void settype(int type_);
-        void setgain(float dBgain);
+        void setgain(REALTYPE dBgain);
         void setstages(int stages_);
         void cleanup();
 
     private:
         struct fstage {
-            float low, high, band, notch;
+            REALTYPE low, high, band, notch;
         } st[MAX_FILTER_STAGES + 1];
 
         struct parameters {
-            float f, q, q_sqrt;
+            REALTYPE f, q, q_sqrt;
         } par, ipar;
 
-        void singlefilterout(float *smp, fstage &x, parameters &par);
-        void computefiltercoefs(void);
-        int   type;    // The type of the filter (LPF1,HPF1,LPF2,HPF2...)
-        int   stages;  // how many times the filter is applied (0->1,1->2,etc.)
-        float freq; // Frequency given in Hz
-        float q;    // Q factor (resonance or Q factor)
-        float gain; // the gain of the filter (if are shelf/peak) filters
 
-        bool abovenq,   //if the frequency is above the nyquist
-             oldabovenq;
-        bool needsinterpolation, firsttime;
+        void singlefilterout(REALTYPE *smp, fstage &x, parameters &par);
+        void computefiltercoefs();
+        int      type; //The type of the filter (LPF1,HPF1,LPF2,HPF2...)
+        int      stages; //how many times the filter is applied (0->1,1->2,etc.)
+        REALTYPE freq; //Frequency given in Hz
+        REALTYPE q; //Q factor (resonance or Q factor)
+        REALTYPE gain; //the gain of the filter (if are shelf/peak) filters
+
+        int abovenq; //this is 1 if the frequency is above the nyquist
+        int oldabovenq;
+        int needsinterpolation, firsttime;
 };
 
+
 #endif
+

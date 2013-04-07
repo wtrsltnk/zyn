@@ -1,17 +1,31 @@
-#Find JACK Audio Connection Kit
+# - Try to find Motif (or lesstif)
+# Once done this will define:
+#  JACK_FOUND        - system has JACK
+#  JACK_INCLUDE_DIR  - incude paths to use Motif
+#  JACK_LIBRARIES    - Link these to use Motif
 
-include(LibFindMacros)
-libfind_pkg_check_modules(JACK jack)
-find_path(JACK_INCLUDE_DIR
-    NAMES jack/jack.h
-    PATHS ${JACK_INCLUDE_DIRS}
+SET(JACK_FOUND 0)
+
+IF(UNIX)
+  FIND_PATH(JACK_INCLUDE_DIR
+		  jack/ringbuffer.h
+    /usr/include
     )
 
-find_library(JACK_LIBRARY
-    NAMES jack
-    PATHS ${JACK_LIBRARY_DIRS}
+  FIND_LIBRARY(JACK_LIBRARIES
+		  jack
+    /usr/lib
     )
 
-set(JACK_PROCESS_INCLUDES JACK_INCLUDE_DIR)
-set(JACK_PROCESS_LIBS JACK_LIBRARY)
-libfind_process(JACK)
+ENDIF(UNIX)
+
+# handle the QUIETLY and REQUIRED arguments and set JACK_FOUND to TRUE if 
+# all listed variables are TRUE
+INCLUDE(FindPackageHandleStandardArgs)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(JACK DEFAULT_MSG JACK_LIBRARIES JACK_INCLUDE_DIR)
+
+
+MARK_AS_ADVANCED(
+  JACK_INCLUDE_DIR
+  JACK_LIBRARIES
+)

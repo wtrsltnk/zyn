@@ -1,14 +1,11 @@
-SOURCES=velf.tex ad-note.tex echo.tex distort.tex dynamic.tex reverb.tex chorus.tex
-OBJECTS=$(SOURCES:.tex=.png)
+all:echo.png ad-note.png
 
-all:$(OBJECTS)
+ad-note.png: ad-note.tex
+	pslatex ad-note.tex
+	convert ad-note.dvi -trim ad-note.png
+	rm ad-note.dvi ad-note.log ad-note.aux
 
-%.png: %.tex
-	pdflatex -shell-escape $<
-	convert -trim -density 300 $(<:.tex=.pdf) $@
-	rm -f $(<:.tex=.pdf) $(<:.tex=.log) $(<:.tex=.aux) $(<:.tex=-pic*) $(<:.tex=.pgf-plot*)
-
-.PHONY: clean
-clean:
-	rm -f *.png *~ *.aux *.auxlock *.table *.log *.gnuplot *.dpth *.dep
-
+echo.png: echo.tex
+	pslatex echo.tex
+	convert echo.dvi -trim echo.png
+	rm echo.dvi echo.log echo.aux

@@ -25,21 +25,28 @@
 
 #include "../globals.h"
 
+#include "Filter_.h"
+#include "AnalogFilter.h"
+#include "FormantFilter.h"
+#include "SVFilter.h"
+#include "../Params/FilterParams.h"
+
 class Filter
 {
     public:
-        static float getrealfreq(float freqpitch);
-        static Filter *generate(class FilterParams * pars);
+        Filter(FilterParams *pars);
+        ~Filter();
+        void filterout(REALTYPE *smp);
+        void setfreq(REALTYPE frequency);
+        void setfreq_and_q(REALTYPE frequency, REALTYPE q_);
+        void setq(REALTYPE q_);
 
-        virtual ~Filter() {}
-        virtual void filterout(float *smp)    = 0;
-        virtual void setfreq(float frequency) = 0;
-        virtual void setfreq_and_q(float frequency, float q_) = 0;
-        virtual void setq(float q_) = 0;
-        virtual void setgain(float dBgain) = 0;
-
-    protected:
-        float outgain;
+        REALTYPE getrealfreq(REALTYPE freqpitch);
+    private:
+        Filter_      *filter;
+        unsigned char category;
 };
 
+
 #endif
+

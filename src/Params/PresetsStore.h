@@ -20,9 +20,6 @@
 
 */
 
-#ifndef PRESETSTORE_H
-#define PRESETSTORE_H
-
 #include <string>
 #include <vector>
 #include "../Misc/XMLwrapper.h"
@@ -43,19 +40,19 @@ class PresetsStore
 
         //presets stuff
         void copypreset(XMLwrapper *xml, char *type, std::string name);
-        bool pastepreset(XMLwrapper *xml, unsigned int npreset);
-        void deletepreset(unsigned int npreset);
+        bool pastepreset(XMLwrapper *xml, int npreset);
+        void deletepreset(int npreset);
 
         struct presetstruct {
             presetstruct(std::string _file, std::string _name)
-                :file(_file), name(_name) {}
+                :file(_file),name(_name){};
             bool operator<(const presetstruct &b) const;
             std::string file;
             std::string name;
         };
         std::vector<presetstruct> presets;
 
-        void rescanforpresets(const std::string &type);
+        void rescanforpresets(const std::string type);
 
     private:
         struct {
@@ -67,4 +64,4 @@ class PresetsStore
 };
 
 extern PresetsStore presetsstore;
-#endif
+

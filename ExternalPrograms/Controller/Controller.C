@@ -8,7 +8,7 @@ int Pexitprogram;
 
 Controller::Controller() {
     //init
-    for(int i = 0; i < 6; ++i) {
+    for(int i = 0; i < 6; i++) {
         pars[i].mode      = 1;
         pars[i].val1      = 0;
         pars[i].val2      = 127;
@@ -77,8 +77,9 @@ void Controller::send(int npar, float xval) {
                    * (pars[npar].val2 - pars[npar].val1
                       - 1.0) * 0.9999 + pars[npar].val1 + 1.0);
     switch(pars[npar].mode) {
-        case 1: sendcontroller(pars[npar].ctl.par, val); break;
-        //case 2:break;
-        case 3: sendnrpn(npar, val); break;
+    case 1: sendcontroller(pars[npar].ctl.par, val); break;
+    //case 2:break;
+    case 3: sendnrpn(npar, val); break;
     }
 }
+

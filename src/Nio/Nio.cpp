@@ -4,135 +4,97 @@
 #include "EngineMgr.h"
 #include "MidiIn.h"
 #include "AudioOut.h"
-#include "WavEngine.h"
 #include <iostream>
-#include <algorithm>
-using std::string;
-using std::set;
-using std::cerr;
-using std::endl;
+using namespace std;
 
-InMgr     *in  = NULL;
-OutMgr    *out = NULL;
-EngineMgr *eng = NULL;
-string     postfix;
-
-bool   Nio::autoConnect   = false;
-string Nio::defaultSource = IN_DEFAULT;
-string Nio::defaultSink   = OUT_DEFAULT;
-
-void Nio::init(void)
+Nio &Nio::getInstance()
 {
-    in  = &InMgr::getInstance(); //Enable input wrapper
-    out = &OutMgr::getInstance(); //Initialize the Output Systems
-    eng = &EngineMgr::getInstance(); //Initialize The Engines
+    static Nio instance;
+    return instance;
 }
 
-bool Nio::start()
+Nio::Nio()
+:in(InMgr::getInstance()),//Enable input wrapper
+    out(OutMgr::getInstance()),//Initialize the Output Systems
+    eng(EngineMgr::getInstance())//Initialize The Engines
+{}
+
+Nio::~Nio()
 {
-    init();
-    return eng->start();
+    stop();
+}
+
+void Nio::start()
+{
+    eng.start();//Drivers start your engines!
 }
 
 void Nio::stop()
 {
-    eng->stop();
+    eng.stop();
 }
-
-void Nio::setDefaultSource(string name)
+    
+int Nio::setDefaultSource(string name)
 {
-    std::transform(name.begin(), name.end(), name.begin(), ::toupper);
-    defaultSource = name;
+    if(name.empty())
+        return 0;
+
+    if(!eng.setInDefault(name)) {
+        cerr << "There is no input for " << name << endl;
+        return false;
+    }
+    return 0;
 }
+    
 
-void Nio::setDefaultSink(string name)
+int Nio::setDefaultSink(string name)
 {
-    std::transform(name.begin(), name.end(), name.begin(), ::toupper);
-    defaultSink = name;
+    if(name.empty())
+        return 0;
+
+    if(!eng.setOutDefault(name)) {
+        cerr << "There is no output for " << name << endl;
+    }
+    return 0;
 }
 
 bool Nio::setSource(string name)
 {
-    return in->setSource(name);
+     return in.setSource(name);
 }
 
 bool Nio::setSink(string name)
 {
-    return out->setSink(name);
+     return out.setSink(name);
 }
-
-void Nio::setPostfix(std::string post)
-{
-    postfix = post;
-}
-
-std::string Nio::getPostfix(void)
-{
-    return postfix;
-}
-
-set<string> Nio::getSources(void)
+        
+set<string> Nio::getSources() const
 {
     set<string> sources;
-    for(std::list<Engine *>::iterator itr = eng->engines.begin();
-        itr != eng->engines.end(); ++itr)
+    for(list<Engine *>::iterator itr = eng.engines.begin();
+            itr != eng.engines.end(); ++itr)
         if(dynamic_cast<MidiIn *>(*itr))
             sources.insert((*itr)->name);
     return sources;
 }
 
-set<string> Nio::getSinks(void)
+set<string> Nio::getSinks() const
 {
     set<string> sinks;
-    for(std::list<Engine *>::iterator itr = eng->engines.begin();
-        itr != eng->engines.end(); ++itr)
+    for(list<Engine *>::iterator itr = eng.engines.begin();
+            itr != eng.engines.end(); ++itr)
         if(dynamic_cast<AudioOut *>(*itr))
             sinks.insert((*itr)->name);
     return sinks;
 }
-
-string Nio::getSource()
+        
+string Nio::getSource() const
 {
-    return in->getSource();
+     return in.getSource();
 }
 
-string Nio::getSink()
+string Nio::getSink() const
 {
-    return out->getSink();
+     return out.getSink();
 }
 
-#if JACK
-#include <jack/jack.h>
-void Nio::preferedSampleRate(unsigned &rate)
-{
-    jack_client_t *client = jack_client_open("temp-client",
-                                             JackNoStartServer, 0);
-    if(client) {
-        rate = jack_get_sample_rate(client);
-        jack_client_close(client);
-    }
-}
-#else
-void Nio::preferedSampleRate(unsigned &)
-{}
-#endif
-
-void Nio::waveNew(class WavFile *wave)
-{
-    out->wave->newFile(wave);
-}
-
-void Nio::waveStart(void)
-{
-    out->wave->Start();
-}
-
-void Nio::waveStop(void)
-{
-    out->wave->Stop();
-}
-
-void Nio::waveEnd(void)
-{
-    out->wave->destroyFile();
-}

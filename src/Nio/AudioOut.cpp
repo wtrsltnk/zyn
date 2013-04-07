@@ -31,11 +31,12 @@ using namespace std;
 #include "AudioOut.h"
 
 AudioOut::AudioOut()
-    :samplerate(synth->samplerate), bufferSize(synth->buffersize)
+    :samplerate(SAMPLE_RATE),bufferSize(SOUND_BUFFER_SIZE)
 {}
 
 AudioOut::~AudioOut()
-{}
+{
+}
 
 void AudioOut::setSamplerate(int _samplerate)
 {
@@ -52,7 +53,22 @@ void AudioOut::setBufferSize(int _bufferSize)
     bufferSize = _bufferSize;
 }
 
-const Stereo<float *> AudioOut::getNext()
+//delete me
+void AudioOut::bufferingSize(int nBuffering)
 {
-    return OutMgr::getInstance().tick(bufferSize);
+   //buffering = nBuffering;
+}
+
+//delete me
+int AudioOut::bufferingSize()
+{
+    //return buffering;
+}
+
+const Stereo<Sample> AudioOut::getNext(bool wait)
+{
+    Stereo<REALTYPE *> tmp = OutMgr::getInstance().tick(bufferSize);
+
+    //stop the samples
+    return Stereo<Sample>(Sample(bufferSize, tmp.l()), Sample(bufferSize, tmp.r()));
 }

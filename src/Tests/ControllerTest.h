@@ -2,7 +2,7 @@
   ZynAddSubFX - a software synthesizer
 
   ControllerTest.h - CxxTest for Params/Controller
-  Copyright (C) 2009-2011 Mark McCurry
+  Copyright (C) 2009-2009 Mark McCurry
   Author: Mark McCurry
 
   This program is free software; you can redistribute it and/or modify
@@ -22,20 +22,17 @@
 #include <cxxtest/TestSuite.h>
 #include <iostream>
 #include "../Params/Controller.h"
-#include "../globals.h"
-SYNTH_T *synth;
+#include "testing.h"
 
 class ControllerTest:public CxxTest::TestSuite
 {
     public:
         void setUp() {
-            synth   = new SYNTH_T;
             testCtl = new Controller();
         }
 
         void tearDown() {
             delete testCtl;
-            delete synth;
         }
 
 
@@ -43,33 +40,34 @@ class ControllerTest:public CxxTest::TestSuite
             //Initialize portamento
             testCtl->setportamento(127);
             testCtl->portamento.time = 127;
-            testCtl->initportamento(40.0f, 400.0f, false);
+            testCtl->initportamento(40.0, 400.0, false);
             //Bounds Check
             while(testCtl->portamento.used) {
-                TS_ASSERT((0.0f <= testCtl->portamento.x)
-                          && (testCtl->portamento.x <= 1.0f));
-                TS_ASSERT((0.1f <= testCtl->portamento.freqrap)
-                          && (testCtl->portamento.freqrap <= 1.0f));
+                TS_ASSERT((0.0 <= testCtl->portamento.x)
+                          && (testCtl->portamento.x <= 1.0));
+                TS_ASSERT((0.1 <= testCtl->portamento.freqrap)
+                          && (testCtl->portamento.freqrap <= 1.0));
                 testCtl->updateportamento();
             }
-            TS_ASSERT((0.0f <= testCtl->portamento.x)
-                      && (testCtl->portamento.x <= 1.0f));
-            TS_ASSERT((0.1f <= testCtl->portamento.freqrap)
-                      && (testCtl->portamento.freqrap <= 1.0f));
+            TS_ASSERT((0.0 <= testCtl->portamento.x)
+                      && (testCtl->portamento.x <= 1.0));
+            TS_ASSERT((0.1 <= testCtl->portamento.freqrap)
+                      && (testCtl->portamento.freqrap <= 1.0));
         }
 
         void testPortamentoValue() {
             testCtl->setportamento(127);
             testCtl->portamento.time = 127;
-            testCtl->initportamento(40.0f, 400.0f, false);
+            testCtl->initportamento(40.0, 400.0, false);
             int i;
             for(i = 0; i < 10; ++i)
                 testCtl->updateportamento();
             //Assert that the numbers are the same as they were at release
-            TS_ASSERT_DELTA(testCtl->portamento.x, 0.0290249f, 0.000001f)
-            TS_ASSERT_DELTA(testCtl->portamento.freqrap, 0.126122f, 0.000001f)
+            TS_ASSERT_DELTA(testCtl->portamento.x, 0.0290249, 0.000001)
+            TS_ASSERT_DELTA(testCtl->portamento.freqrap, 0.126122, 0.000001)
         }
 
     private:
         Controller *testCtl;
 };
+

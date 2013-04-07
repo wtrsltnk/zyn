@@ -47,8 +47,8 @@ class PADnoteParameters:public Presets
         void add2XML(XMLwrapper *xml);
         void getfromXML(XMLwrapper *xml);
 
-        //returns a value between 0.0f-1.0f that represents the estimation perceived bandwidth
-        float getprofile(float *smp, int size);
+        //returns a value between 0.0-1.0 that represents the estimation perceived bandwidth
+        REALTYPE getprofile(REALTYPE *smp, int size);
 
         //parameters
 
@@ -100,7 +100,7 @@ class PADnoteParameters:public Presets
         /* Equal temperate (this is used only if the Pfixedfreq is enabled)
            If this parameter is 0, the frequency is fixed (to 440 Hz);
            if this parameter is 64, 1 MIDI halftone -> 1 frequency halftone */
-        unsigned char PfixedfreqET;
+        unsigned char      PfixedfreqET;
         unsigned short int PDetune; //fine detune
         unsigned short int PCoarseDetune; //coarse detune+octave
         unsigned char      PDetuneType; //detune type
@@ -142,8 +142,8 @@ class PADnoteParameters:public Presets
 
 
 
-        float setPbandwidth(int Pbandwidth); //returns the BandWidth in cents
-        float getNhr(int n); //gets the n-th overtone position relatively to N harmonic
+        REALTYPE setPbandwidth(int Pbandwidth); //returns the BandWidth in cents
+        REALTYPE getNhr(int n); //gets the n-th overtone position relatively to N harmonic
 
         void applyparameters(bool lockmutex);
         void export2wav(std::string basefilename);
@@ -152,28 +152,32 @@ class PADnoteParameters:public Presets
         Resonance *resonance;
 
         struct {
-            int    size;
-            float  basefreq;
-            float *smp;
+            int size;
+            REALTYPE  basefreq;
+            REALTYPE *smp;
         } sample[PAD_MAX_SAMPLES], newsample;
 
     private:
-        void generatespectrum_bandwidthMode(float *spectrum,
+        void generatespectrum_bandwidthMode(REALTYPE *spectrum,
                                             int size,
-                                            float basefreq,
-                                            float *profile,
+                                            REALTYPE basefreq,
+                                            REALTYPE *profile,
                                             int profilesize,
-                                            float bwadjust);
-        void generatespectrum_otherModes(float *spectrum,
+                                            REALTYPE bwadjust);
+        void generatespectrum_otherModes(REALTYPE *spectrum,
                                          int size,
-                                         float basefreq);
+                                         REALTYPE basefreq,
+                                         REALTYPE *profile,
+                                         int profilesize,
+                                         REALTYPE bwadjust);
         void deletesamples();
         void deletesample(int n);
 
-        FFTwrapper *fft;
+        FFTwrapper      *fft;
         pthread_mutex_t *mutex;
 };
 
 
 
 #endif
+

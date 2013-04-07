@@ -1,5 +1,5 @@
 # data file for the Fltk User Interface Designer (fluid)
-version 1.0110 
+version 1.0106 
 header_name {.h} 
 code_name {.cc}
 decl {//Copyright (c) 2002-2005 Nasca Octavian Paul} {} 
@@ -36,9 +36,6 @@ decl {\#include <FL/fl_ask.H>} {public
 decl {\#include "PresetsUI.h"} {public
 } 
 
-decl {\#include "common.H"} {public
-} 
-
 class EnvelopeFreeEdit {: {public Fl_Box}
 } {
   Function {EnvelopeFreeEdit(int x,int y, int w, int h, const char *label=0):Fl_Box(x,y,w,h,label)} {} {
@@ -66,7 +63,7 @@ for (int i=1;i<npoints;i++) sum+=env->getdt(i)+1;
 float sumbefore=0;//the sum of all points before the computed point
 for (int i=1;i<=n;i++) sumbefore+=env->getdt(i)+1;
 
-return((int) (sumbefore/(float) sum*lx));} {}
+return((int) (sumbefore/(REALTYPE) sum*lx));} {}
   }
   Function {getpointy(int n)} {return_type int
   } {
@@ -198,7 +195,7 @@ return(1);} {}
   }
 } 
 
-class EnvelopeUI {open : {public Fl_Group,PresetsUI_}
+class EnvelopeUI {: {public Fl_Group,PresetsUI_}
 } {
   Function {EnvelopeUI(int x,int y, int w, int h, const char *label=0):Fl_Group(x,y,w,h,label)} {} {
     code {env=NULL;
@@ -215,11 +212,10 @@ hide();
 freemodeeditwindow->hide();
 delete (freemodeeditwindow);} {}
   }
-  Function {make_freemode_edit_window()} {open
-  } {
+  Function {make_freemode_edit_window()} {} {
     Fl_Window freemodeeditwindow {
       label Envelope
-      xywh {702 269 575 180} type Double visible
+      xywh {60 308 575 180} type Double hide
     } {
       Fl_Box freeedit {
         label Envelope
@@ -252,7 +248,7 @@ envfree->redraw();
 
 sustaincounter->value(env->Penvsustain);
 sustaincounter->maximum(env->Penvpoints-2);}
-        xywh {115 155 80 20} box THIN_UP_BOX labelsize 11
+        xywh {115 155 80 20} box THIN_UP_BOX
         code0 {if (env->Pfreemode==0) o->hide();}
       }
       Fl_Button deletepoint {
@@ -278,7 +274,7 @@ envfree->redraw();
 
 sustaincounter->value(env->Penvsustain);
 sustaincounter->maximum(env->Penvpoints-2);}
-        xywh {200 155 80 20} box THIN_UP_BOX labelsize 11
+        xywh {200 155 80 20} box THIN_UP_BOX
         code0 {if (env->Pfreemode==0) o->hide();}
       }
       Fl_Light_Button freemodebutton {
@@ -287,7 +283,7 @@ sustaincounter->maximum(env->Penvpoints-2);}
 
 freeedit->lastpoint=-1;
 freeedit->redraw();}
-        tooltip {Enable or disable the freemode} xywh {10 155 95 20} labelsize 11
+        tooltip {Enable or disable the freemode} xywh {10 155 95 25} box PLASTIC_UP_BOX
       }
       Fl_Check_Button forcedreleasecheck {
         label frcR
@@ -307,7 +303,7 @@ freeedit->redraw();}
       Fl_Button {} {
         label Close
         callback {freemodeeditwindow->hide();}
-        xywh {510 155 60 20} box THIN_UP_BOX
+        xywh {510 155 60 25} box THIN_UP_BOX
       }
       Fl_Check_Button linearenvelopecheck {
         label L
@@ -338,16 +334,14 @@ envfree->redraw();}
       }
     }
   }
-  Function {make_ADSR_window()} {open
-  } {
-    Fl_Window envADSR {open
-      xywh {344 788 205 70} type Double color 50 labelfont 1
-      class Fl_Group visible
+  Function {make_ADSR_window()} {} {
+    Fl_Window envADSR {
+      xywh {108 336 205 70} type Double color 50 labelfont 1 hide
+      class Fl_Group
     } {
       Fl_Group {} {
         label {Amplitude Envelope}
-        xywh {0 0 205 70} box UP_BOX color 223 labeltype ENGRAVED_LABEL labelsize 10 align 17
-        code0 {set_module_parameters(o);}
+        xywh {0 0 205 70} box PLASTIC_UP_BOX color 223 labeltype ENGRAVED_LABEL labelsize 10 align 17
       } {
         Fl_Dial e1adt {
           label {A.dt}
@@ -397,7 +391,7 @@ freeedit->redraw();}
         Fl_Button {} {
           label E
           callback {freemodeeditwindow->show();}
-          tooltip {Envelope window} xywh {185 5 15 15} labelfont 1 labelsize 10
+          tooltip {Envelope window} xywh {185 5 15 15} box PLASTIC_UP_BOX labelfont 1 labelsize 10
         }
         Fl_Check_Button e1linearenvelope {
           label L
@@ -418,16 +412,14 @@ freeedit->redraw();}
       }
     }
   }
-  Function {make_ASR_window()} {open
-  } {
-    Fl_Window envASR {open
-      xywh {648 667 210 70} type Double
-      class Fl_Group visible
+  Function {make_ASR_window()} {} {
+    Fl_Window envASR {
+      xywh {71 320 210 70} type Double hide
+      class Fl_Group
     } {
       Fl_Group {} {
         label {Frequency Envelope}
-        xywh {0 0 210 70} box UP_BOX color 223 labeltype ENGRAVED_LABEL labelsize 10 align 17
-        code0 {set_module_parameters(o);}
+        xywh {0 0 210 70} box PLASTIC_UP_BOX color 223 labeltype ENGRAVED_LABEL labelsize 10 align 17
       } {
         Fl_Dial e2aval {
           label {A.val}
@@ -488,20 +480,18 @@ freeedit->redraw();}
       Fl_Button {} {
         label E
         callback {freemodeeditwindow->show();}
-        tooltip {Envelope window} xywh {190 5 15 15} labelfont 1 labelsize 10
+        tooltip {Envelope window} xywh {190 5 15 15} box PLASTIC_UP_BOX labelfont 1 labelsize 10
       }
     }
   }
-  Function {make_ADSRfilter_window()} {open
-  } {
-    Fl_Window envADSRfilter {open selected
-      xywh {627 569 275 70} type Double color 50 labelfont 1
-      class Fl_Group visible
+  Function {make_ADSRfilter_window()} {} {
+    Fl_Window envADSRfilter {
+      xywh {87 143 275 70} type Double color 50 labelfont 1 hide
+      class Fl_Group
     } {
       Fl_Group {} {
         label {Filter Envelope}
-        xywh {0 0 275 70} box UP_BOX color 223 labeltype ENGRAVED_LABEL labelsize 10 align 17
-        code0 {set_module_parameters(o);}
+        xywh {0 0 275 70} box PLASTIC_UP_BOX color 223 labeltype ENGRAVED_LABEL labelsize 10 align 17
       } {
         Fl_Dial e3aval {
           label {A.val}
@@ -567,7 +557,7 @@ freeedit->redraw();}
         Fl_Button {} {
           label E
           callback {freemodeeditwindow->show();}
-          xywh {255 5 15 15} labelfont 1 labelsize 10
+          xywh {255 5 15 15} box PLASTIC_UP_BOX labelfont 1 labelsize 10
         }
         Fl_Button {} {
           label C
@@ -582,17 +572,14 @@ freeedit->redraw();}
       }
     }
   }
-  Function {make_ASRbw_window()} {open
-  } {
-    Fl_Window envASRbw {open
-      xywh {362 642 210 70} type Double
-      code0 {set_module_parameters(o);}
-      class Fl_Group visible
+  Function {make_ASRbw_window()} {} {
+    Fl_Window envASRbw {
+      xywh {224 539 210 70} type Double hide
+      class Fl_Group
     } {
       Fl_Group {} {
         label {BandWidth Envelope}
-        xywh {0 0 210 70} box UP_BOX color 223 labeltype ENGRAVED_LABEL labelsize 10 align 17
-        code0 {set_module_parameters(o);}
+        xywh {0 0 210 70} box PLASTIC_UP_BOX color 223 labeltype ENGRAVED_LABEL labelsize 10 align 17
       } {
         Fl_Dial e4aval {
           label {A.val}
@@ -653,21 +640,18 @@ freeedit->redraw();}
       Fl_Button {} {
         label E
         callback {freemodeeditwindow->show();}
-        xywh {190 5 15 15} labelfont 1 labelsize 10
+        xywh {190 5 15 15} box PLASTIC_UP_BOX labelfont 1 labelsize 10
       }
     }
   }
-  Function {make_free_window()} {open
-  } {
-    Fl_Window envfree {open
-      xywh {376 436 205 70} type Double color 50 labelfont 1 resizable
-      code0 {set_module_parameters(o);}
-      class Fl_Group visible
+  Function {make_free_window()} {} {
+    Fl_Window envfree {
+      xywh {373 413 205 70} type Double color 50 labelfont 1 hide resizable
+      class Fl_Group
     } {
       Fl_Group envfreegroup {
         label {Amplitude Envelope}
-        xywh {0 0 205 70} box UP_BOX color 223 labeltype ENGRAVED_LABEL labelsize 10 align 17 resizable
-        code0 {set_module_parameters(o);}
+        xywh {0 0 205 70} box PLASTIC_UP_BOX color 223 labeltype ENGRAVED_LABEL labelsize 10 align 17 resizable
       } {
         Fl_Box freeeditsmall {
           label Envelope
@@ -679,7 +663,7 @@ freeedit->redraw();}
         Fl_Button {} {
           label E
           callback {freemodeeditwindow->show();}
-          xywh {185 5 15 15} labelfont 1 labelsize 10
+          xywh {185 5 15 15} box PLASTIC_UP_BOX labelfont 1 labelsize 10
         }
         Fl_Button {} {
           label C
@@ -694,8 +678,7 @@ freeedit->redraw();}
       }
     }
   }
-  Function {init(EnvelopeParams *env_)} {open
-  } {
+  Function {init(EnvelopeParams *env_)} {} {
     code {env=env_;
 make_ADSR_window();
 make_ASR_window();
@@ -760,10 +743,10 @@ if (env->Pfreemode!=0) {
 	addpoint->hide();
 	deletepoint->hide();
 	forcedreleasecheck->hide();
-};} {}
+};} {selected
+    }
   }
-  Function {refresh()} {open
-  } {
+  Function {refresh()} {} {
     code {freemodebutton->value(env->Pfreemode);
 
 sustaincounter->value(env->Penvsustain);

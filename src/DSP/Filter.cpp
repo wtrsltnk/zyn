@@ -24,39 +24,64 @@
 #include <stdio.h>
 
 #include "Filter.h"
-#include "AnalogFilter.h"
-#include "FormantFilter.h"
-#include "SVFilter.h"
-#include "../Params/FilterParams.h"
 
-Filter *Filter::generate(FilterParams *pars)
+Filter::Filter(FilterParams *pars)
 {
-    unsigned char Ftype   = pars->Ptype;
-    unsigned char Fstages = pars->Pstages;
+    unsigned char Ftype   = pars->type();
+    unsigned char Fstages = pars->stages();
 
-    Filter *filter;
-    switch(pars->Pcategory) {
-        case 1:
-            filter = new FormantFilter(pars);
-            break;
-        case 2:
-            filter = new SVFilter(Ftype, 1000.0f, pars->getq(), Fstages);
+    category = pars->category();
+
+    switch(category) {
+    case 1:
+        filter = new FormantFilter(pars);
+        break;
+    case 2:
+        filter = new SVFilter(Ftype, 1000.0, pars->getq(), Fstages);
+        filter->outgain = dB2rap(pars->getgain());
+        if(filter->outgain > 1.0)
+            filter->outgain = sqrt(filter->outgain);
+        break;
+    default:
+        filter = new AnalogFilter(Ftype, 1000.0, pars->getq(), Fstages);
+        if((Ftype >= 6) && (Ftype <= 8))
+            filter->setgain(pars->getgain());
+        else
             filter->outgain = dB2rap(pars->getgain());
-            if(filter->outgain > 1.0f)
-                filter->outgain = sqrt(filter->outgain);
-            break;
-        default:
-            filter = new AnalogFilter(Ftype, 1000.0f, pars->getq(), Fstages);
-            if((Ftype >= 6) && (Ftype <= 8))
-                filter->setgain(pars->getgain());
-            else
-                filter->outgain = dB2rap(pars->getgain());
-            break;
+        break;
     }
-    return filter;
 }
 
-float Filter::getrealfreq(float freqpitch)
+Filter::~Filter()
 {
-    return powf(2.0f, freqpitch + 9.96578428f); //log2(1000)=9.95748f
+    delete (filter);
 }
+
+void Filter::filterout(REALTYPE *smp)
+{
+    filter->filterout(smp);
+}
+
+void Filter::setfreq(REALTYPE frequency)
+{
+    filter->setfreq(frequency);
+}
+
+void Filter::setfreq_and_q(REALTYPE frequency, REALTYPE q_)
+{
+    filter->setfreq_and_q(frequency, q_);
+}
+
+void Filter::setq(REALTYPE q_)
+{
+    filter->setq(q_);
+}
+
+REALTYPE Filter::getrealfreq(REALTYPE freqpitch)
+{
+    if((category == 0) || (category == 2))
+        return pow(2.0, freqpitch + 9.96578428);                            //log2(1000)=9.95748
+    else
+        return freqpitch;
+}
+

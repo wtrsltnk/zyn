@@ -22,10 +22,27 @@
 
 #ifndef FFT_WRAPPER_H
 #define FFT_WRAPPER_H
+
+#include "../globals.h"
+
+#ifdef FFTW_VERSION_2
+
+#include <fftw.h>
+
+/* If you got error messages about rfftw.h, replace the next include  line with "#include <srfftw.h>"
+or with "#include <drfftw.h> (if one doesn't work try the other). It may be necessary to replace
+the <fftw.h> with <dfftw.h> or <sfftw.h>. If the neither one doesn't work,
+please install latest version of fftw(recomanded from the sources) from www.fftw.org.
+If you'll install fftw3 you need to change the Makefile.inc
+Hope all goes right." */
+#include <rfftw.h>
+
+#else
+
 #include <fftw3.h>
-#include <complex>
-typedef double                  fftw_real;
-typedef std::complex<fftw_real> fft_t;
+#define fftw_real double
+#define rfftw_plan fftw_plan
+#endif
 
 /**A wrapper for the FFTW library (Fast Fourier Transforms)*/
 class FFTwrapper
@@ -39,14 +56,16 @@ class FFTwrapper
         /**Convert Samples to Frequencies using Fourier Transform
          * @param smps Pointer to Samples to be converted; has length fftsize_
          * @param freqs Structure FFTFREQS which stores the frequencies*/
-        void smps2freqs(const float *smps, fft_t *freqs);
-        void freqs2smps(const fft_t *freqs, float *smps);
+        void smps2freqs(REALTYPE *smps, FFTFREQS freqs);
+        void freqs2smps(FFTFREQS freqs, REALTYPE *smps);
     private:
         int fftsize;
-        fftw_real    *time;
-        fftw_complex *fft;
-        fftw_plan     planfftw, planfftw_inv;
+        fftw_real *tmpfftdata1, *tmpfftdata2;
+        rfftw_plan planfftw, planfftw_inv;
 };
 
+void newFFTFREQS(FFTFREQS *f, int size);
+void deleteFFTFREQS(FFTFREQS *f);
 void FFT_cleanup();
 #endif
+

@@ -43,7 +43,7 @@ class Microtonal
         void defaults();
         /**Calculates the frequency for a given note
          */
-        float getnotefreq(int note, int keyshift) const;
+        REALTYPE getnotefreq(int note, int keyshift) const;
 
 
         //Parameters
@@ -60,7 +60,7 @@ class Microtonal
         unsigned char PAnote;
 
         /**the frequency of the "A" note*/
-        float PAfreq;
+        REALTYPE PAfreq;
 
         /**if the scale is "tuned" to a note, you can tune to other note*/
         unsigned char Pscaleshift;
@@ -122,9 +122,9 @@ class Microtonal
         struct {
             unsigned char type; //1 for cents or 2 for division
 
-            // the real tuning (eg. +1.05946f for one halftone)
-            // or 2.0f for one octave
-            float tuning;
+            // the real tuning (eg. +1.05946 for one halftone)
+            // or 2.0 for one octave
+            REALTYPE tuning;
 
             //the real tunning is x1/x2
             unsigned int x1, x2;
@@ -132,3 +132,4 @@ class Microtonal
 };
 
 #endif
+

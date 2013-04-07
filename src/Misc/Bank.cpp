@@ -37,8 +37,6 @@
 #include <errno.h>
 
 #include "Config.h"
-#include "Util.h"
-#include "Part.h"
 
 #define INSTRUMENT_EXTENSION ".xiz"
 
@@ -84,14 +82,13 @@ string Bank::getnamenumbered(unsigned int ninstrument)
 /*
  * Changes the name of an instrument (and the filename)
  */
-void Bank::setname(unsigned int ninstrument, const string &newname, int newslot)
+void Bank::setname(unsigned int ninstrument, string newname, int newslot)
 {
     if(emptyslot(ninstrument))
         return;
 
     string newfilename;
-    char   tmpfilename[100 + 1];
-    tmpfilename[100] = 0;
+    char tmpfilename[100 + 1];
 
     if(newslot >= 0)
         snprintf(tmpfilename, 100, "%4d-%s", newslot + 1, newname.c_str());
@@ -99,7 +96,7 @@ void Bank::setname(unsigned int ninstrument, const string &newname, int newslot)
         snprintf(tmpfilename, 100, "%4d-%s", ninstrument + 1, newname.c_str());
 
     //add the zeroes at the start of filename
-    for(int i = 0; i < 4; ++i)
+    for(int i = 0; i < 4; i++)
         if(tmpfilename[i] == ' ')
             tmpfilename[i] = '0';
 
@@ -108,7 +105,7 @@ void Bank::setname(unsigned int ninstrument, const string &newname, int newslot)
     rename(ins[ninstrument].filename.c_str(), newfilename.c_str());
 
     ins[ninstrument].filename = newfilename;
-    ins[ninstrument].name     = newname;
+    ins[ninstrument].name = legalizeFilename(tmpfilename); //TODO limit name to PART_MAX_NAME_LEN
 }
 
 /*
@@ -157,7 +154,7 @@ void Bank::savetoslot(unsigned int ninstrument, Part *part)
              (char *)part->Pname);
 
     //add the zeroes at the start of filename
-    for(int i = 0; i < 4; ++i)
+    for(int i = 0; i < 4; i++)
         if(tmpfilename[i] == ' ')
             tmpfilename[i] = '0';
 
@@ -165,7 +162,7 @@ void Bank::savetoslot(unsigned int ninstrument, Part *part)
 
     remove(filename.c_str());
     part->saveXML(filename.c_str());
-    addtobank(ninstrument, legalizeFilename(tmpfilename) + ".xiz", (char *) part->Pname);
+    addtobank(ninstrument, legalizeFilename(tmpfilename), (char *) part->Pname);
 }
 
 /*
@@ -176,7 +173,6 @@ void Bank::loadfromslot(unsigned int ninstrument, Part *part)
     if(emptyslot(ninstrument))
         return;
 
-    part->AllNotesOff();
     part->defaultsinstrument();
 
     part->loadXMLinstrument(ins[ninstrument].filename.c_str());
@@ -210,7 +206,7 @@ int Bank::loadbank(string bankdirname)
         int no = 0;
         unsigned int startname = 0;
 
-        for(unsigned int i = 0; i < 4; ++i) {
+        for(unsigned int i = 0; i < 4; i++) {
             if(strlen(filename) <= i)
                 break;
 
@@ -221,16 +217,17 @@ int Bank::loadbank(string bankdirname)
         }
 
         if((startname + 1) < strlen(filename))
-            startname++;  //to take out the "-"
+            startname++; //to take out the "-"
 
         string name = filename;
 
         //remove the file extension
-        for(int i = name.size() - 1; i >= 2; i--)
+        for(int i = name.size() - 1; i >= 2; i--) {
             if(name[i] == '.') {
-                name = name.substr(0, i);
+                name = name.substr(0,i);
                 break;
             }
+        }
 
         if(no != 0) //the instrument position in the bank is found
             addtobank(no - 1, filename, name.substr(startname));
@@ -251,6 +248,7 @@ int Bank::loadbank(string bankdirname)
  */
 int Bank::newbank(string newbankdirname)
 {
+    int  result;
     string bankdir;
     bankdir = config.cfg.bankRootDirList[0];
 
@@ -259,10 +257,17 @@ int Bank::newbank(string newbankdirname)
         bankdir += "/";
 
     bankdir += newbankdirname;
-    if(mkdir(bankdir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) < 0)
+#if OS_WINDOWS
+    result = mkdir(bankdir.c_str());
+#elif OS_LINUX || OS_CYGWIN
+    result = mkdir(bankdir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+#else
+#warning Undefined OS
+#endif
+    if(result < 0)
         return -1;
 
-    const string tmpfilename = bankdir + '/' + FORCE_BANK_DIR_FILE;
+    string tmpfilename = bankdir + '/' + FORCE_BANK_DIR_FILE;
 
     FILE *tmpfile = fopen(tmpfilename.c_str(), "w+");
     fclose(tmpfile);
@@ -301,7 +306,7 @@ void Bank::swapslot(unsigned int n1, unsigned int n2)
 
         setname(n1, getname(n1), n2);
         setname(n2, getname(n2), n1);
-        swap(ins[n2], ins[n1]);
+        swap(ins[n2],ins[n1]);
     }
 }
 
@@ -320,7 +325,7 @@ void Bank::rescanforbanks()
     //remove old banks
     banks.clear();
 
-    for(int i = 0; i < MAX_BANK_ROOT_DIRS; ++i)
+    for(int i = 0; i < MAX_BANK_ROOT_DIRS; i++)
         if(!config.cfg.bankRootDirList[i].empty())
             scanrootdir(config.cfg.bankRootDirList[i]);
 
@@ -329,12 +334,11 @@ void Bank::rescanforbanks()
 
     //remove duplicate bank names
     int dupl = 0;
-    for(int j = 0; j < (int) banks.size() - 1; ++j)
-        for(int i = j + 1; i < (int) banks.size(); ++i) {
+    for(unsigned int j = 0; j < banks.size() - 1; j++) {
+        for(unsigned int i = j + 1; i < banks.size(); i++) {
             if(banks[i].name == banks[j].name) {
                 //add a [1] to the first bankname and [n] to others
-                banks[i].name = banks[i].name + '['
-                                + stringFrom(dupl + 2) + ']';
+                banks[i].name = banks[i].name + '[' + stringFrom(dupl +2) + ']';
                 if(dupl == 0)
                     banks[j].name += "[1]";
 
@@ -343,6 +347,7 @@ void Bank::rescanforbanks()
             else
                 dupl = 0;
         }
+    }
 }
 
 
@@ -369,12 +374,12 @@ void Bank::scanrootdir(string rootdir)
         if(dirname[0] == '.')
             continue;
 
-        bank.dir  = rootdir + separator + dirname + '/';
+        bank.dir =  rootdir + separator + dirname + '/';
         bank.name = dirname;
         //find out if the directory contains at least 1 instrument
         bool isbank = false;
 
-        DIR *d = opendir(bank.dir.c_str());
+        DIR *d      = opendir(bank.dir.c_str());
         if(d == NULL)
             continue;
 
@@ -410,27 +415,29 @@ int Bank::addtobank(int pos, string filename, string name)
 {
     if((pos >= 0) && (pos < BANK_SIZE)) {
         if(ins[pos].used)
-            pos = -1;  //force it to find a new free position
+            pos = -1; //force it to find a new free position
     }
     else
-    if(pos >= BANK_SIZE)
-        pos = -1;
+        if(pos >= BANK_SIZE)
+            pos = -1;
 
 
-    if(pos < 0)   //find a free position
-        for(int i = BANK_SIZE - 1; i >= 0; i--)
+    if(pos < 0) { //find a free position
+        for(int i = BANK_SIZE - 1; i >= 0; i--) {
             if(!ins[i].used) {
                 pos = i;
                 break;
             }
+        }
+    }
 
     if(pos < 0)
-        return -1;  //the bank is full
+        return -1;//the bank is full
 
     deletefrombank(pos);
 
-    ins[pos].used     = true;
-    ins[pos].name     = name;
+    ins[pos].used = true;
+    ins[pos].name = name;
     ins[pos].filename = dirname + '/' + filename;
 
     //see if PADsynth is used
@@ -467,3 +474,4 @@ Bank::ins_t::ins_t()
 {
     info.PADsynth_used = false;
 }
+

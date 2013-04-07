@@ -37,11 +37,11 @@ void Microtonal::defaults()
 {
     Pinvertupdown = 0;
     Pinvertupdowncenter = 60;
-    octavesize  = 12;
-    Penabled    = 0;
-    PAnote      = 69;
-    PAfreq      = 440.0f;
-    Pscaleshift = 64;
+    octavesize          = 12;
+    Penabled            = 0;
+    PAnote          = 69;
+    PAfreq          = 440.0;
+    Pscaleshift     = 64;
 
     Pfirstkey       = 0;
     Plastkey        = 127;
@@ -49,22 +49,22 @@ void Microtonal::defaults()
     Pmapsize        = 12;
     Pmappingenabled = 0;
 
-    for(int i = 0; i < 128; ++i)
+    for(int i = 0; i < 128; i++)
         Pmapping[i] = i;
 
-    for(int i = 0; i < MAX_OCTAVE_SIZE; ++i) {
-        octave[i].tuning = tmpoctave[i].tuning = powf(
+    for(int i = 0; i < MAX_OCTAVE_SIZE; i++) {
+        octave[i].tuning = tmpoctave[i].tuning = pow(
                                2,
                                (i % octavesize
-                                + 1) / 12.0f);
-        octave[i].type = tmpoctave[i].type = 1;
-        octave[i].x1   = tmpoctave[i].x1 = (i % octavesize + 1) * 100;
-        octave[i].x2   = tmpoctave[i].x2 = 0;
+                                                      + 1) / 12.0);
+        octave[i].type   = tmpoctave[i].type = 1;
+        octave[i].x1     = tmpoctave[i].x1 = (i % octavesize + 1) * 100;
+        octave[i].x2     = tmpoctave[i].x2 = 0;
     }
     octave[11].type = 2;
     octave[11].x1   = 2;
     octave[11].x2   = 1;
-    for(int i = 0; i < MICROTONAL_MAX_NAME_LEN; ++i) {
+    for(int i = 0; i < MICROTONAL_MAX_NAME_LEN; i++) {
         Pname[i]    = '\0';
         Pcomment[i] = '\0';
     }
@@ -95,7 +95,7 @@ unsigned char Microtonal::getoctavesize() const
 /*
  * Get the frequency according the note number
  */
-float Microtonal::getnotefreq(int note, int keyshift) const
+REALTYPE Microtonal::getnotefreq(int note, int keyshift) const
 {
     // in this function will appears many times things like this:
     // var=(a+b*100)%b
@@ -106,30 +106,29 @@ float Microtonal::getnotefreq(int note, int keyshift) const
         note = (int) Pinvertupdowncenter * 2 - note;
 
     //compute global fine detune
-    float globalfinedetunerap = powf(2.0f,
-                                     (Pglobalfinedetune - 64.0f) / 1200.0f);       //-64.0f .. 63.0f cents
+    REALTYPE globalfinedetunerap = pow(2.0, (Pglobalfinedetune - 64.0) / 1200.0); //-64.0 .. 63.0 cents
 
     if(Penabled == 0)
-        return powf(2.0f,
-                    (note - PAnote
-                     + keyshift) / 12.0f) * PAfreq * globalfinedetunerap;                     //12tET
+        return pow(2.0,
+                   (note - PAnote
+                    + keyshift) / 12.0) * PAfreq * globalfinedetunerap;                      //12tET
 
     int scaleshift =
         ((int)Pscaleshift - 64 + (int) octavesize * 100) % octavesize;
 
     //compute the keyshift
-    float rap_keyshift = 1.0f;
+    REALTYPE rap_keyshift = 1.0;
     if(keyshift != 0) {
         int kskey = (keyshift + (int)octavesize * 100) % octavesize;
         int ksoct = (keyshift + (int)octavesize * 100) / octavesize - 100;
-        rap_keyshift  = (kskey == 0) ? (1.0f) : (octave[kskey - 1].tuning);
-        rap_keyshift *= powf(octave[octavesize - 1].tuning, ksoct);
+        rap_keyshift  = (kskey == 0) ? (1.0) : (octave[kskey - 1].tuning);
+        rap_keyshift *= pow(octave[octavesize - 1].tuning, ksoct);
     }
 
     //if the mapping is enabled
     if(Pmappingenabled != 0) {
         if((note < Pfirstkey) || (note > Plastkey))
-            return -1.0f;
+            return -1.0;
         //Compute how many mapped keys are from middle note to reference note
         //and find out the proportion between the freq. of middle note and "A" note
         int tmp = PAnote - Pmiddlenote, minus = 0;
@@ -138,18 +137,17 @@ float Microtonal::getnotefreq(int note, int keyshift) const
             minus = 1;
         }
         int deltanote = 0;
-        for(int i = 0; i < tmp; ++i)
+        for(int i = 0; i < tmp; i++)
             if(Pmapping[i % Pmapsize] >= 0)
                 deltanote++;
-        float rap_anote_middlenote =
+        REALTYPE rap_anote_middlenote =
             (deltanote ==
-             0) ? (1.0f) : (octave[(deltanote - 1) % octavesize].tuning);
+             0) ? (1.0) : (octave[(deltanote - 1) % octavesize].tuning);
         if(deltanote != 0)
             rap_anote_middlenote *=
-                powf(octave[octavesize - 1].tuning,
-                     (deltanote - 1) / octavesize);
+                pow(octave[octavesize - 1].tuning, (deltanote - 1) / octavesize);
         if(minus != 0)
-            rap_anote_middlenote = 1.0f / rap_anote_middlenote;
+            rap_anote_middlenote = 1.0 / rap_anote_middlenote;
 
         //Convert from note (midi) to degree (note from the tunning)
         int degoct =
@@ -158,7 +156,7 @@ float Microtonal::getnotefreq(int note, int keyshift) const
         int degkey = (note - Pmiddlenote + (int)Pmapsize * 100) % Pmapsize;
         degkey = Pmapping[degkey];
         if(degkey < 0)
-            return -1.0f;           //this key is not mapped
+            return -1.0;           //this key is not mapped
 
         //invert the keyboard upside-down if it is asked for
         //TODO: do the right way by using Pinvertupdowncenter
@@ -171,8 +169,8 @@ float Microtonal::getnotefreq(int note, int keyshift) const
         degoct += degkey / octavesize;
         degkey %= octavesize;
 
-        float freq = (degkey == 0) ? (1.0f) : octave[degkey - 1].tuning;
-        freq *= powf(octave[octavesize - 1].tuning, degoct);
+        REALTYPE freq = (degkey == 0) ? (1.0) : octave[degkey - 1].tuning;
+        freq *= pow(octave[octavesize - 1].tuning, degoct);
         freq *= PAfreq / rap_anote_middlenote;
         freq *= globalfinedetunerap;
         if(scaleshift != 0)
@@ -180,20 +178,20 @@ float Microtonal::getnotefreq(int note, int keyshift) const
         return freq * rap_keyshift;
     }
     else {  //if the mapping is disabled
-        int nt    = note - PAnote + scaleshift;
-        int ntkey = (nt + (int)octavesize * 100) % octavesize;
-        int ntoct = (nt - ntkey) / octavesize;
+        int nt = note - PAnote + scaleshift;
+        int ntkey     = (nt + (int)octavesize * 100) % octavesize;
+        int ntoct     = (nt - ntkey) / octavesize;
 
-        float oct  = octave[octavesize - 1].tuning;
-        float freq =
-            octave[(ntkey + octavesize - 1) % octavesize].tuning * powf(oct,
-                                                                        ntoct)
+        REALTYPE oct  = octave[octavesize - 1].tuning;
+        REALTYPE freq =
+            octave[(ntkey + octavesize - 1) % octavesize].tuning *pow(oct,
+                                                                      ntoct)
             * PAfreq;
         if(ntkey == 0)
             freq /= oct;
         if(scaleshift != 0)
             freq /= octave[scaleshift - 1].tuning;
-//	fprintf(stderr,"note=%d freq=%.3f cents=%d\n",note,freq,(int)floor(logf(freq/PAfreq)/logf(2.0f)*1200.0f+0.5f));
+//	fprintf(stderr,"note=%d freq=%.3f cents=%d\n",note,freq,(int)floor(log(freq/PAfreq)/log(2.0)*1200.0+0.5));
         freq *= globalfinedetunerap;
         return freq * rap_keyshift;
     }
@@ -209,11 +207,11 @@ bool Microtonal::operator!=(const Microtonal &micro) const
     //A simple macro to test equality MiCRotonal EQuals (not the perfect
     //approach, but good enough)
 #define MCREQ(x) if(x != micro.x) \
-        return true
+        return true;
 
     //for floats
-#define FMCREQ(x) if(!((x < micro.x + 0.0001f) && (x > micro.x - 0.0001f))) \
-        return true
+#define FMCREQ(x) if(!((x < micro.x + 0.0001) && (x > micro.x - 0.0001))) \
+        return true;
 
     MCREQ(Pinvertupdown);
     MCREQ(Pinvertupdowncenter);
@@ -229,10 +227,10 @@ bool Microtonal::operator!=(const Microtonal &micro) const
     MCREQ(Pmapsize);
     MCREQ(Pmappingenabled);
 
-    for(int i = 0; i < 128; ++i)
+    for(int i = 0; i < 128; i++)
         MCREQ(Pmapping[i]);
 
-    for(int i = 0; i < octavesize; ++i) {
+    for(int i = 0; i < octavesize; i++) {
         FMCREQ(octave[i].tuning);
         MCREQ(octave[i].type);
         MCREQ(octave[i].x1);
@@ -256,8 +254,8 @@ bool Microtonal::operator!=(const Microtonal &micro) const
  */
 int Microtonal::linetotunings(unsigned int nline, const char *line)
 {
-    int   x1 = -1, x2 = -1, type = -1;
-    float x  = -1.0f, tmp, tuning = 1.0f;
+    int      x1 = -1, x2 = -1, type = -1;
+    REALTYPE x  = -1.0, tmp, tuning = 1.0;
     if(strstr(line, "/") == NULL) {
         if(strstr(line, ".") == NULL) { // M case (M=M/1)
             sscanf(line, "%d", &x1);
@@ -266,7 +264,7 @@ int Microtonal::linetotunings(unsigned int nline, const char *line)
         }
         else {  // float number case
             sscanf(line, "%f", &x);
-            if(x < 0.000001f)
+            if(x < 0.000001)
                 return 1;
             type = 1; //float type(cents)
         }
@@ -287,19 +285,19 @@ int Microtonal::linetotunings(unsigned int nline, const char *line)
     if((type == 2)
        && ((x1 > (128 * 128 * 128 - 1)) || (x2 > (128 * 128 * 128 - 1)))) {
         type = 1;
-        x    = ((float) x1) / x2;
+        x    = ((REALTYPE) x1) / x2;
     }
     switch(type) {
-        case 1:
-            x1     = (int) floor(x);
-            tmp    = fmod(x, 1.0f);
-            x2     = (int) (floor(tmp * 1e6));
-            tuning = powf(2.0f, x / 1200.0f);
-            break;
-        case 2:
-            x      = ((float)x1) / x2;
-            tuning = x;
-            break;
+    case 1:
+        x1     = (int) floor(x);
+        tmp    = fmod(x, 1.0);
+        x2     = (int) (floor(tmp * 1e6));
+        tuning = pow(2.0, x / 1200.0);
+        break;
+    case 2:
+        x      = ((REALTYPE)x1) / x2;
+        tuning = x;
+        break;
     }
 
     tmpoctave[nline].tuning = tuning;
@@ -319,7 +317,7 @@ int Microtonal::texttotunings(const char *text)
     char *lin;
     lin = new char[MAX_LINE_SIZE + 1];
     while(k < strlen(text)) {
-        for(i = 0; i < MAX_LINE_SIZE; ++i) {
+        for(i = 0; i < MAX_LINE_SIZE; i++) {
             lin[i] = text[k++];
             if(lin[i] < 0x20)
                 break;
@@ -340,7 +338,7 @@ int Microtonal::texttotunings(const char *text)
     if(nl == 0)
         return -2;        //the input is empty
     octavesize = nl;
-    for(i = 0; i < octavesize; ++i) {
+    for(i = 0; i < octavesize; i++) {
         octave[i].tuning = tmpoctave[i].tuning;
         octave[i].type   = tmpoctave[i].type;
         octave[i].x1     = tmpoctave[i].x1;
@@ -357,11 +355,11 @@ void Microtonal::texttomapping(const char *text)
     unsigned int i, k = 0;
     char *lin;
     lin = new char[MAX_LINE_SIZE + 1];
-    for(i = 0; i < 128; ++i)
+    for(i = 0; i < 128; i++)
         Pmapping[i] = -1;
     int tx = 0;
     while(k < strlen(text)) {
-        for(i = 0; i < MAX_LINE_SIZE; ++i) {
+        for(i = 0; i < MAX_LINE_SIZE; i++) {
             lin[i] = text[k++];
             if(lin[i] < 0x20)
                 break;
@@ -397,7 +395,7 @@ void Microtonal::tuningtoline(int n, char *line, int maxn)
         return;
     }
     if(octave[n].type == 1)
-        snprintf(line, maxn, "%d.%06d", octave[n].x1, octave[n].x2);
+        snprintf(line, maxn, "%d.%d", octave[n].x1, octave[n].x2);
     if(octave[n].type == 2)
         snprintf(line, maxn, "%d/%d", octave[n].x1, octave[n].x2);
 }
@@ -422,7 +420,7 @@ int Microtonal::loadscl(const char *filename)
     //loads the short description
     if(loadline(file, &tmp[0]) != 0)
         return 2;
-    for(int i = 0; i < 500; ++i)
+    for(int i = 0; i < 500; i++)
         if(tmp[i] < 32)
             tmp[i] = 0;
     snprintf((char *) Pname, MICROTONAL_MAX_NAME_LEN, "%s", tmp);
@@ -435,7 +433,7 @@ int Microtonal::loadscl(const char *filename)
     if(nnotes > MAX_OCTAVE_SIZE)
         return 2;
     //load the tunnings
-    for(int nline = 0; nline < nnotes; ++nline) {
+    for(int nline = 0; nline < nnotes; nline++) {
         if(loadline(file, &tmp[0]) != 0)
             return 2;
         linetotunings(nline, &tmp[0]);
@@ -443,7 +441,7 @@ int Microtonal::loadscl(const char *filename)
     fclose(file);
 
     octavesize = nnotes;
-    for(int i = 0; i < octavesize; ++i) {
+    for(int i = 0; i < octavesize; i++) {
         octave[i].tuning = tmpoctave[i].tuning;
         octave[i].type   = tmpoctave[i].type;
         octave[i].x1     = tmpoctave[i].x1;
@@ -516,7 +514,7 @@ int Microtonal::loadkbm(const char *filename)
     //loads the reference freq.
     if(loadline(file, &tmp[0]) != 0)
         return 2;
-    float tmpPAfreq = 440.0f;
+    REALTYPE tmpPAfreq = 440.0;
     if(sscanf(&tmp[0], "%f", &tmpPAfreq) == 0)
         return 2;
     PAfreq = tmpPAfreq;
@@ -527,7 +525,7 @@ int Microtonal::loadkbm(const char *filename)
 
     //load the mappings
     if(Pmapsize != 0) {
-        for(int nline = 0; nline < Pmapsize; ++nline) {
+        for(int nline = 0; nline < Pmapsize; nline++) {
             if(loadline(file, &tmp[0]) != 0)
                 return 2;
             if(sscanf(&tmp[0], "%d", &x) == 0)
@@ -573,7 +571,7 @@ void Microtonal::add2XML(XMLwrapper *xml) const
 
     xml->beginbranch("OCTAVE");
     xml->addpar("octave_size", octavesize);
-    for(int i = 0; i < octavesize; ++i) {
+    for(int i = 0; i < octavesize; i++) {
         xml->beginbranch("DEGREE", i);
         if(octave[i].type == 1)
             xml->addparreal("cents", octave[i].tuning);
@@ -589,7 +587,7 @@ void Microtonal::add2XML(XMLwrapper *xml) const
     xml->beginbranch("KEYBOARD_MAPPING");
     xml->addpar("map_size", Pmapsize);
     xml->addpar("mapping_enabled", Pmappingenabled);
-    for(int i = 0; i < Pmapsize; ++i) {
+    for(int i = 0; i < Pmapsize; i++) {
         xml->beginbranch("KEYMAP", i);
         xml->addpar("degree", Pmapping[i]);
         xml->endbranch();
@@ -612,7 +610,7 @@ void Microtonal::getfromXML(XMLwrapper *xml)
     Pglobalfinedetune = xml->getpar127("global_fine_detune", Pglobalfinedetune);
 
     PAnote = xml->getpar127("a_note", PAnote);
-    PAfreq = xml->getparreal("a_freq", PAfreq, 1.0f, 10000.0f);
+    PAfreq = xml->getparreal("a_freq", PAfreq, 1.0, 10000.0);
 
     if(xml->enterbranch("SCALE")) {
         Pscaleshift = xml->getpar127("scale_shift", Pscaleshift);
@@ -622,7 +620,7 @@ void Microtonal::getfromXML(XMLwrapper *xml)
 
         if(xml->enterbranch("OCTAVE")) {
             octavesize = xml->getpar127("octave_size", octavesize);
-            for(int i = 0; i < octavesize; ++i) {
+            for(int i = 0; i < octavesize; i++) {
                 if(xml->enterbranch("DEGREE", i) == 0)
                     continue;
                 octave[i].x2     = 0;
@@ -632,14 +630,8 @@ void Microtonal::getfromXML(XMLwrapper *xml)
 
                 if(octave[i].x2 != 0)
                     octave[i].type = 2;
-                else {
+                else
                     octave[i].type = 1;
-                    //populate fields for display
-                    float x = logf(octave[i].tuning) / LOG_2 * 1200.0f;
-                    octave[i].x1 = (int) floor(x);
-                    octave[i].x2 = (int) (floor(fmodf(x, 1.0f) * 1e6));
-                }
-
 
                 xml->exitbranch();
             }
@@ -649,7 +641,7 @@ void Microtonal::getfromXML(XMLwrapper *xml)
         if(xml->enterbranch("KEYBOARD_MAPPING")) {
             Pmapsize = xml->getpar127("map_size", Pmapsize);
             Pmappingenabled = xml->getpar127("mapping_enabled", Pmappingenabled);
-            for(int i = 0; i < Pmapsize; ++i) {
+            for(int i = 0; i < Pmapsize; i++) {
                 if(xml->enterbranch("KEYMAP", i) == 0)
                     continue;
                 Pmapping[i] = xml->getpar127("degree", Pmapping[i]);
@@ -692,3 +684,4 @@ int Microtonal::loadXML(const char *filename)
     delete (xml);
     return 0;
 }
+

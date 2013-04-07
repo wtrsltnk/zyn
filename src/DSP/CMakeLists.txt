@@ -1,9 +1,14 @@
 set(zynaddsubfx_dsp_SRCS
-    DSP/AnalogFilter.cpp
-    DSP/FFTwrapper.cpp
-    DSP/Filter.cpp
-    DSP/FormantFilter.cpp
-    DSP/SVFilter.cpp
-    DSP/Unison.cpp
-    PARENT_SCOPE
+	AnalogFilter.cpp
+	FFTwrapper.cpp
+	Filter.cpp
+	FormantFilter.cpp
+	SVFilter.cpp
+        Unison.cpp
 )
+
+add_library(zynaddsubfx_dsp STATIC
+	${zynaddsubfx_dsp_SRCS} 
+	)
+
+target_link_libraries(zynaddsubfx_dsp)

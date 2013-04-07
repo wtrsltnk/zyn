@@ -24,9 +24,10 @@
 #include <string.h>
 
 
-Presets::Presets()
+Presets::Presets(Node *parent, std::string id) :
+    Node(parent, id)
 {
-    type[0] = 0;
+    type[0]  = 0;
 }
 
 Presets::~Presets()
@@ -85,14 +86,16 @@ void Presets::paste(int npreset)
             return;
         }
     }
-    else
-    if(!presetsstore.pastepreset(xml, npreset)) {
-        delete (xml);
-        return;
+    else {
+        if(!presetsstore.pastepreset(xml, npreset)) {
+            delete (xml);
+            return;
+        }
     }
 
-    if(xml->enterbranch(type) == 0)
+    if(xml->enterbranch(type) == 0) {
         return;
+    }
 
     defaults();
     getfromXML(xml);
@@ -117,3 +120,4 @@ void Presets::deletepreset(int npreset)
 {
     presetsstore.deletepreset(npreset);
 }
+

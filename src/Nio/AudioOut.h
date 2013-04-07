@@ -24,10 +24,10 @@
 #define AUDIO_OUT_H
 
 #include "../Misc/Stereo.h"
-#include "../globals.h"
+#include "../Samples/Sample.h"
 #include "Engine.h"
 
-class AudioOut:public virtual Engine
+class AudioOut : public virtual Engine
 {
     public:
         AudioOut();
@@ -46,16 +46,17 @@ class AudioOut:public virtual Engine
         void bufferingSize(int nBuffering);
         int bufferingSize();
 
-        virtual void setAudioEn(bool nval) = 0;
-        virtual bool getAudioEn() const    = 0;
+        virtual void setAudioEn(bool nval)=0;
+        virtual bool getAudioEn() const=0;
 
     protected:
         /**Get the next sample for output.
          * (has nsamples sampled at a rate of samplerate)*/
-        const Stereo<float *> getNext();
+        const Stereo<Sample> getNext(bool wait = false);
 
         int samplerate;
         int bufferSize;
 };
 
 #endif
+

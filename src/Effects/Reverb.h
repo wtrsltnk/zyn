@@ -23,19 +23,25 @@
 #ifndef REVERB_H
 #define REVERB_H
 
+#include <math.h>
+#include "../globals.h"
+#include "../DSP/AnalogFilter.h"
+#include "../DSP/FFTwrapper.h"
+#include "../DSP/Unison.h"
 #include "Effect.h"
 
 #define REV_COMBS 8
 #define REV_APS 4
 
 /**Creates Reverberation Effects*/
+
 class Reverb:public Effect
 {
     public:
-        Reverb(bool insertion_, float *efxoutl_, float *efxoutr_);
+        Reverb(const int &insertion_, REALTYPE *efxoutl_, REALTYPE *efxoutr_);
         ~Reverb();
         void out(const Stereo<float *> &smp);
-        void cleanup(void);
+        void cleanup();
 
         void setpreset(unsigned char npreset);
         void changepar(int npar, unsigned char value);
@@ -43,55 +49,87 @@ class Reverb:public Effect
 
     private:
         //Parametrii
+        /**Amount of the reverb*/
         unsigned char Pvolume;
-        unsigned char Ptime;        //duration
-        unsigned char Pidelay;      //initial delay
-        unsigned char Pidelayfb;    //initial feedback
-        unsigned char Prdelay;      //delay between ER/Reverbs
-        unsigned char Perbalance;   //EarlyReflections/Reverb Balance
+
+        /**Left/Right Panning*/
+        unsigned char Ppan;
+
+        /**duration of reverb*/
+        unsigned char Ptime;
+
+        /**Initial delay*/
+        unsigned char Pidelay;
+
+        /**Initial delay feedback*/
+        unsigned char Pidelayfb;
+
+        /**delay between ER/Reverbs*/
+        unsigned char Prdelay;
+
+        /**EarlyReflections/Reverb Balance*/
+        unsigned char Perbalance;
+
+        /**HighPassFilter*/
         unsigned char Plpf;
+
+        /**LowPassFilter*/
         unsigned char Phpf;
-        unsigned char Plohidamp;    //Low/HighFrequency Damping
-        unsigned char Ptype;        //reverb type
-        unsigned char Proomsize;    //room size
-        unsigned char Pbandwidth;   //bandwidth
+
+        /**Low/HighFrequency Damping
+             * \todo 0..63 lpf,64=off,65..127=hpf(TODO)*/
+        unsigned char Plohidamp;
+
+        /**Reverb type*/
+        unsigned char Ptype;
+
+        /**Room Size*/
+        unsigned char Proomsize;
+
+        /**Bandwidth */
+        unsigned char Pbandwidth;
 
         //parameter control
-        void setvolume(unsigned char _Pvolume);
-        void settime(unsigned char _Ptime);
-        void setlohidamp(unsigned char _Plohidamp);
-        void setidelay(unsigned char _Pidelay);
-        void setidelayfb(unsigned char _Pidelayfb);
-        void sethpf(unsigned char _Phpf);
-        void setlpf(unsigned char _Plpf);
-        void settype(unsigned char _Ptype);
-        void setroomsize(unsigned char _Proomsize);
-        void setbandwidth(unsigned char _Pbandwidth);
-        void processmono(int ch, float *output, float *inputbuf);
+        void setvolume(unsigned char Pvolume);
+        void setpan(unsigned char Ppan);
+        void settime(unsigned char Ptime);
+        void setlohidamp(unsigned char Plohidamp);
+        void setidelay(unsigned char Pidelay);
+        void setidelayfb(unsigned char Pidelayfb);
+        void sethpf(unsigned char Phpf);
+        void setlpf(unsigned char Plpf);
+        void settype(unsigned char Ptype);
+        void setroomsize(unsigned char Proomsize);
+        void setbandwidth(unsigned char Pbandwidth);
 
-        float erbalance;
-
+        REALTYPE pan, erbalance;
         //Parameters
-        int   lohidamptype;   //0=disable, 1=highdamp (lowpass), 2=lowdamp (highpass)
-        int   idelaylen, rdelaylen;
-        int   idelayk;
-        float lohifb;
-        float idelayfb;
-        float roomsize;
-        float rs;   //rs is used to "normalise" the volume according to the roomsize
-        int   comblen[REV_COMBS * 2];
-        int   aplen[REV_APS * 2];
-        class Unison * bandwidth;
+        int      lohidamptype; /**<0=disable,1=highdamp(lowpass),2=lowdamp(highpass)*/
+        int      idelaylen, rdelaylen;
+        int      idelayk;
+        REALTYPE lohifb, idelayfb, roomsize, rs; //rs is used to "normalise" the volume according to the roomsize
+        int      comblen[REV_COMBS * 2];
+        int      aplen[REV_APS * 2];
+        Unison  *bandwidth;
 
         //Internal Variables
-        float *comb[REV_COMBS * 2];
-        int    combk[REV_COMBS * 2];
-        float  combfb[REV_COMBS * 2]; //feedback-ul fiecarui filtru "comb"
-        float  lpcomb[REV_COMBS * 2]; //pentru Filtrul LowPass
-        float *ap[REV_APS * 2];
-        int    apk[REV_APS * 2];
-        float *idelay;
-        class AnalogFilter * lpf, *hpf; //filters
+
+        REALTYPE *comb[REV_COMBS * 2];
+
+        int      combk[REV_COMBS * 2];
+        REALTYPE combfb[REV_COMBS * 2]; /**<feedback-ul fiecarui filtru "comb"*/
+        REALTYPE lpcomb[REV_COMBS * 2]; /**<pentru Filtrul LowPass*/
+
+        REALTYPE *ap[REV_APS * 2];
+
+        int apk[REV_APS * 2];
+
+        REALTYPE     *idelay;
+        AnalogFilter *lpf, *hpf; //filters
+        REALTYPE     *inputbuf;
+
+        void processmono(int ch, REALTYPE *output);
 };
 
 #endif
+

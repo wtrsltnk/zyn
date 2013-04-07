@@ -22,8 +22,7 @@
 
 #include "Part.h"
 #include "Microtonal.h"
-#include "Util.h"
-#include "XMLwrapper.h"
+#include "db2rapInjFunc.h"
 #include "../Effects/EffectMgr.h"
 #include "../Params/ADnoteParameters.h"
 #include "../Params/SUBnoteParameters.h"
@@ -31,50 +30,99 @@
 #include "../Synth/ADnote.h"
 #include "../Synth/SUBnote.h"
 #include "../Synth/PADnote.h"
-#include "../DSP/FFTwrapper.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "../Misc/Bank.h"
 
-Part::Part(Microtonal *microtonal_, FFTwrapper *fft_, pthread_mutex_t *mutex_)
+using namespace std;
+
+REALINJFUNCFUNC(panningFunc,
+        pan2int, pan2real,
+        x * 127.0,
+        x / 127.0)
+
+Part::Part(Node *parent,
+           Microtonal *microtonal_,
+           FFTwrapper *fft_,
+           pthread_mutex_t *mutex_)
+    :Node(parent, "Part"),
+      instrument        (this, "INSTRUMENT"),
+      instrumentKit     (&instrument, "INSTRUMENT_KIT"),
+      tempInstrumentKitItem1 (&instrumentKit, "INSTRUMENT_KIT_ITEM"),
+      instrumentControl (this),
+      bankControl       (this),
+      minKey            (this, "min_key", 0),
+      maxKey            (this, "max_key", 127),
+      keyShift          (this, "key_shift", 64),
+      receiveChannel    (this, "ReceiveChannel", 0),
+      panning           (this, "panning", pan2real(64), new panningFunc()),
+      velSns            (this, "velocity_sensing", 64),
+      velOffs           (this, "velocity_offset", 64),
+      partVolume        (this, "volume", 30, new db2rapInjFunc<REALTYPE>(-40, 12.91666)),
+      enabled           (this, "enabled", false)
 {
-    microtonal = microtonal_;
-    fft      = fft_;
-    mutex    = mutex_;
-    pthread_mutex_init(&load_mutex, NULL);
-    partoutl = new float [synth->buffersize];
-    partoutr = new float [synth->buffersize];
+    instrumentControl.addRedirection(this, new TypeFilter(Event::NewValueEvent));
+    bankControl.addRedirection(this, new TypeFilter(Event::NewValueEvent));
 
-    for(int n = 0; n < NUM_KIT_ITEMS; ++n) {
+    receiveChannel.addOption("Channel 1");
+    receiveChannel.addOption("Channel 2");
+    receiveChannel.addOption("Channel 3");
+    receiveChannel.addOption("Channel 4");
+    receiveChannel.addOption("Channel 5");
+    receiveChannel.addOption("Channel 6");
+    receiveChannel.addOption("Channel 7");
+    receiveChannel.addOption("Channel 8");
+    receiveChannel.addOption("Channel 9");
+    receiveChannel.addOption("10(drums)");
+    receiveChannel.addOption("Channel 11");
+    receiveChannel.addOption("Channel 12");
+    receiveChannel.addOption("Channel 13");
+    receiveChannel.addOption("Channel 14");
+    receiveChannel.addOption("Channel 15");
+    receiveChannel.addOption("Channel 16");
+
+    microtonal = microtonal_;
+    fft = fft_;
+    mutex      = mutex_;
+    partoutl   = new REALTYPE [SOUND_BUFFER_SIZE];
+    partoutr   = new REALTYPE [SOUND_BUFFER_SIZE];
+    tmpoutl    = new REALTYPE [SOUND_BUFFER_SIZE];
+    tmpoutr    = new REALTYPE [SOUND_BUFFER_SIZE];
+
+    for(int n = 0; n < NUM_KIT_ITEMS; n++) {
         kit[n].Pname   = new unsigned char [PART_MAX_NAME_LEN];
         kit[n].adpars  = NULL;
         kit[n].subpars = NULL;
         kit[n].padpars = NULL;
     }
 
-    kit[0].adpars  = new ADnoteParameters(fft);
+    kit[0].adpars  = new ADnoteParameters(&instrumentKit, fft);
     kit[0].subpars = new SUBnoteParameters();
     kit[0].padpars = new PADnoteParameters(fft, mutex);
+//    ADPartParameters=kit[0].adpars;
+//    SUBPartParameters=kit[0].subpars;
 
     //Part's Insertion Effects init
-    for(int nefx = 0; nefx < NUM_PART_EFX; ++nefx) {
+    for(int nefx = 0; nefx < NUM_PART_EFX; nefx++) {
         partefx[nefx]    = new EffectMgr(1, mutex);
         Pefxbypass[nefx] = false;
     }
 
-    for(int n = 0; n < NUM_PART_EFX + 1; ++n) {
-        partfxinputl[n] = new float [synth->buffersize];
-        partfxinputr[n] = new float [synth->buffersize];
+    for(int n = 0; n < NUM_PART_EFX + 1; n++) {
+        partfxinputl[n] = new REALTYPE [SOUND_BUFFER_SIZE];
+        partfxinputr[n] = new REALTYPE [SOUND_BUFFER_SIZE];
     }
 
     killallnotes = 0;
-    oldfreq      = -1.0f;
+    oldfreq      = -1.0;
 
-    for(int i = 0; i < POLIPHONY; ++i) {
+    int i, j;
+    for(i = 0; i < POLIPHONY; i++) {
         partnote[i].status = KEY_OFF;
         partnote[i].note   = -1;
         partnote[i].itemsplaying = 0;
-        for(int j = 0; j < NUM_KIT_ITEMS; ++j) {
+        for(j = 0; j < NUM_KIT_ITEMS; j++) {
             partnote[i].kititem[j].adnote  = NULL;
             partnote[i].kititem[j].subnote = NULL;
             partnote[i].kititem[j].padnote = NULL;
@@ -83,31 +131,32 @@ Part::Part(Microtonal *microtonal_, FFTwrapper *fft_, pthread_mutex_t *mutex_)
     }
     cleanup();
 
-    Pname = new unsigned char [PART_MAX_NAME_LEN];
+    Pname      = new unsigned char [PART_MAX_NAME_LEN];
 
-    oldvolumel = oldvolumer = 0.5f;
+    oldvolumel = oldvolumer = 0.5;
     lastnote   = -1;
     lastpos    = 0; // lastpos will store previously used NoteOn(...)'s pos.
     lastlegatomodevalid = false; // To store previous legatomodevalid value.
+
 
     defaults();
 }
 
 void Part::defaults()
 {
-    Penabled    = 0;
-    Pminkey     = 0;
-    Pmaxkey     = 127;
+    enabled.defaults();
+    minKey.defaults();
+    maxKey.defaults();
     Pnoteon     = 1;
     Ppolymode   = 1;
     Plegatomode = 0;
     setPvolume(96);
-    Pkeyshift = 64;
-    Prcvchn   = 0;
-    setPpanning(64);
-    Pvelsns   = 64;
-    Pveloffs  = 64;
-    Pkeylimit = 15;
+    keyShift.defaults();
+    receiveChannel.defaults();
+    panning.defaults();
+    velSns.defaults();
+    velOffs.defaults();
+    Pkeylimit   = 15;
     defaultsinstrument();
     ctl.defaults();
 }
@@ -123,8 +172,9 @@ void Part::defaultsinstrument()
     Pkitmode  = 0;
     Pdrummode = 0;
 
-    for(int n = 0; n < NUM_KIT_ITEMS; ++n) {
+    for(int n = 0; n < NUM_KIT_ITEMS; n++) {
         kit[n].Penabled    = 0;
+        //kit[n].enabled.setValue(false);
         kit[n].Pmuted      = 0;
         kit[n].Pminkey     = 0;
         kit[n].Pmaxkey     = 127;
@@ -137,12 +187,13 @@ void Part::defaultsinstrument()
             setkititemstatus(n, 0);
     }
     kit[0].Penabled   = 1;
+    //kit[0].enabled.setValue(true);
     kit[0].Padenabled = 1;
     kit[0].adpars->defaults();
     kit[0].subpars->defaults();
     kit[0].padpars->defaults();
 
-    for(int nefx = 0; nefx < NUM_PART_EFX; ++nefx) {
+    for(int nefx = 0; nefx < NUM_PART_EFX; nefx++) {
         partefx[nefx]->defaults();
         Pefxroute[nefx] = 0; //route to next effect
     }
@@ -155,26 +206,29 @@ void Part::defaultsinstrument()
  */
 void Part::cleanup(bool final)
 {
-    for(int k = 0; k < POLIPHONY; ++k)
+    for(int k = 0; k < POLIPHONY; k++)
         KillNotePos(k);
-    for(int i = 0; i < synth->buffersize; ++i) {
-        partoutl[i] = final ? 0.0f : denormalkillbuf[i];
-        partoutr[i] = final ? 0.0f : denormalkillbuf[i];
+    for(int i = 0; i < SOUND_BUFFER_SIZE; i++) {
+        partoutl[i] = final ? 0.0 : denormalkillbuf[i];
+        partoutr[i] = final ? 0.0 : denormalkillbuf[i];
+        tmpoutl[i]  = 0.0;
+        tmpoutr[i]  = 0.0;
     }
     ctl.resetall();
-    for(int nefx = 0; nefx < NUM_PART_EFX; ++nefx)
+    for(int nefx = 0; nefx < NUM_PART_EFX; nefx++)
         partefx[nefx]->cleanup();
-    for(int n = 0; n < NUM_PART_EFX + 1; ++n)
-        for(int i = 0; i < synth->buffersize; ++i) {
-            partfxinputl[n][i] = final ? 0.0f : denormalkillbuf[i];
-            partfxinputr[n][i] = final ? 0.0f : denormalkillbuf[i];
+    for(int n = 0; n < NUM_PART_EFX + 1; n++) {
+        for(int i = 0; i < SOUND_BUFFER_SIZE; i++) {
+            partfxinputl[n][i] = final ? 0.0 : denormalkillbuf[i];
+            partfxinputr[n][i] = final ? 0.0 : denormalkillbuf[i];
         }
+    }
 }
 
 Part::~Part()
 {
     cleanup(true);
-    for(int n = 0; n < NUM_KIT_ITEMS; ++n) {
+    for(int n = 0; n < NUM_KIT_ITEMS; n++) {
         if(kit[n].adpars != NULL)
             delete (kit[n].adpars);
         if(kit[n].subpars != NULL)
@@ -190,9 +244,11 @@ Part::~Part()
     delete [] Pname;
     delete [] partoutl;
     delete [] partoutr;
-    for(int nefx = 0; nefx < NUM_PART_EFX; ++nefx)
+    delete [] tmpoutl;
+    delete [] tmpoutr;
+    for(int nefx = 0; nefx < NUM_PART_EFX; nefx++)
         delete (partefx[nefx]);
-    for(int n = 0; n < NUM_PART_EFX + 1; ++n) {
+    for(int n = 0; n < NUM_PART_EFX + 1; n++) {
         delete [] partfxinputl[n];
         delete [] partfxinputr[n];
     }
@@ -217,7 +273,7 @@ void Part::NoteOn(unsigned char note,
 
     if(Pnoteon == 0)
         return;
-    if((note < Pminkey) || (note > Pmaxkey))
+    if((note < minKey()) || (note > maxKey()))
         return;
 
     // MonoMem stuff:
@@ -228,7 +284,7 @@ void Part::NoteOn(unsigned char note,
                          I'm not sure why though... */
         if((partnote[lastpos].status != KEY_PLAYING)
            && (partnote[lastpos].status != KEY_RELASED_AND_SUSTAINED))
-            ismonofirstnote = true;  // No other keys are held or sustained.
+            ismonofirstnote = true; // No other keys are held or sustained.
     }
     else
     // Poly mode is On so just make sure the list is empty.
@@ -237,12 +293,13 @@ void Part::NoteOn(unsigned char note,
 
     lastnote = note;
 
-    pos = -1;
-    for(i = 0; i < POLIPHONY; ++i)
+    pos      = -1;
+    for(i = 0; i < POLIPHONY; i++) {
         if(partnote[i].status == KEY_OFF) {
             pos = i;
             break;
         }
+    }
 
     if((Plegatomode != 0) && (Pdrummode == 0)) {
         if(Ppolymode != 0) {
@@ -263,14 +320,14 @@ void Part::NoteOn(unsigned char note,
             }
             else {
                 // Legato mode is valid, but this is only a first note.
-                for(i = 0; i < POLIPHONY; ++i)
+                for(i = 0; i < POLIPHONY; i++)
                     if((partnote[i].status == KEY_PLAYING)
                        || (partnote[i].status == KEY_RELASED_AND_SUSTAINED))
                         RelaseNotePos(i);
 
                 // Set posb
                 posb = (pos + 1) % POLIPHONY; //We really want it (if the following fails)
-                for(i = 0; i < POLIPHONY; ++i)
+                for(i = 0; i < POLIPHONY; i++)
                     if((partnote[i].status == KEY_OFF) && (pos != i)) {
                         posb = i;
                         break;
@@ -281,7 +338,7 @@ void Part::NoteOn(unsigned char note,
     }
     else     // Legato mode is either off or non-applicable.
     if(Ppolymode == 0) {   //if the mode is 'mono' turn off all other notes
-        for(i = 0; i < POLIPHONY; ++i)
+        for(i = 0; i < POLIPHONY; i++)
             if(partnote[i].status == KEY_PLAYING)
                 RelaseNotePos(i);
         RelaseSustainedKeys();
@@ -303,33 +360,33 @@ void Part::NoteOn(unsigned char note,
         }
 
         //this computes the velocity sensing of the part
-        float vel = VelF(velocity / 127.0f, Pvelsns);
+        REALTYPE vel = VelF(velocity / 127.0, velSns());
 
         //compute the velocity offset
-        vel += (Pveloffs - 64.0f) / 64.0f;
-        if(vel < 0.0f)
-            vel = 0.0f;
+        vel += (velOffs() - 64.0) / 64.0;
+        if(vel < 0.0)
+            vel = 0.0;
         else
-        if(vel > 1.0f)
-            vel = 1.0f;
+        if(vel > 1.0)
+            vel = 1.0;
 
         //compute the keyshift
-        int partkeyshift = (int)Pkeyshift - 64;
+        int partkeyshift = keyShift() - 64;
         int keyshift     = masterkeyshift + partkeyshift;
 
         //initialise note frequency
-        float notebasefreq;
+        REALTYPE notebasefreq;
         if(Pdrummode == 0) {
             notebasefreq = microtonal->getnotefreq(note, keyshift);
-            if(notebasefreq < 0.0f)
+            if(notebasefreq < 0.0)
                 return;                  //the key is no mapped
         }
         else
-            notebasefreq = 440.0f * powf(2.0f, (note - 69.0f) / 12.0f);
+            notebasefreq = 440.0 * pow(2.0, (note - 69.0) / 12.0);
         ;
 
         //Portamento
-        if(oldfreq < 1.0f)
+        if(oldfreq < 1.0)
             oldfreq = notebasefreq;           //this is only the first note is played
 
         // For Mono/Legato: Force Portamento Off on first
@@ -355,39 +412,55 @@ void Part::NoteOn(unsigned char note,
                 if((kit[0].Padenabled != 0)
                    && (partnote[pos].kititem[0].adnote != NULL)
                    && (partnote[posb].kititem[0].adnote != NULL)) {
-                    partnote[pos].kititem[0].adnote->legatonote(notebasefreq,
-                                                                vel,
-                                                                portamento,
-                                                                note,
-                                                                true); //'true' is to tell it it's being called from here.
-                    partnote[posb].kititem[0].adnote->legatonote(notebasefreq,
-                                                                 vel,
-                                                                 portamento,
-                                                                 note,
-                                                                 true);
+                    partnote[pos].kititem[0].adnote->ADlegatonote(notebasefreq,
+                                                                  vel,
+                                                                  portamento,
+                                                                  note,
+                                                                  true);                                     //'true' is to tell it it's being called from here.
+                    partnote[posb].kititem[0].adnote->ADlegatonote(notebasefreq,
+                                                                   vel,
+                                                                   portamento,
+                                                                   note,
+                                                                   true);
                 }
 
                 if((kit[0].Psubenabled != 0)
                    && (partnote[pos].kititem[0].subnote != NULL)
                    && (partnote[posb].kititem[0].subnote != NULL)) {
-                    partnote[pos].kititem[0].subnote->legatonote(
-                        notebasefreq, vel, portamento, note, true);
-                    partnote[posb].kititem[0].subnote->legatonote(
-                        notebasefreq, vel, portamento, note, true);
+                    partnote[pos].kititem[0].subnote->SUBlegatonote(
+                        notebasefreq,
+                        vel,
+                        portamento,
+                        note,
+                        true);
+                    partnote[posb].kititem[0].subnote->SUBlegatonote(
+                        notebasefreq,
+                        vel,
+                        portamento,
+                        note,
+                        true);
                 }
 
                 if((kit[0].Ppadenabled != 0)
                    && (partnote[pos].kititem[0].padnote != NULL)
                    && (partnote[posb].kititem[0].padnote != NULL)) {
-                    partnote[pos].kititem[0].padnote->legatonote(
-                        notebasefreq, vel, portamento, note, true);
-                    partnote[posb].kititem[0].padnote->legatonote(
-                        notebasefreq, vel, portamento, note, true);
+                    partnote[pos].kititem[0].padnote->PADlegatonote(
+                        notebasefreq,
+                        vel,
+                        portamento,
+                        note,
+                        true);
+                    partnote[posb].kititem[0].padnote->PADlegatonote(
+                        notebasefreq,
+                        vel,
+                        portamento,
+                        note,
+                        true);
                 }
             }
             else {   // "kit mode" legato note
                 int ci = 0;
-                for(int item = 0; item < NUM_KIT_ITEMS; ++item) {
+                for(int item = 0; item < NUM_KIT_ITEMS; item++) {
                     if(kit[item].Pmuted != 0)
                         continue;
                     if((note < kit[item].Pminkey) || (note > kit[item].Pmaxkey))
@@ -395,12 +468,12 @@ void Part::NoteOn(unsigned char note,
 
                     if((lastnotecopy < kit[item].Pminkey)
                        || (lastnotecopy > kit[item].Pmaxkey))
-                        continue;  // We will not perform legato across 2 key regions.
+                        continue; // We will not perform legato across 2 key regions.
 
-                    partnote[pos].kititem[ci].sendtoparteffect =
+                    partnote[pos].kititem[ci].sendtoparteffect  =
                         (kit[item].Psendtoparteffect <
                          NUM_PART_EFX ? kit[item].Psendtoparteffect :
-                         NUM_PART_EFX);                                        //if this parameter is 127 for "unprocessed"
+                         NUM_PART_EFX);                                                                                                                //if this parameter is 127 for "unprocessed"
                     partnote[posb].kititem[ci].sendtoparteffect =
                         (kit[item].Psendtoparteffect <
                          NUM_PART_EFX ? kit[item].Psendtoparteffect :
@@ -409,28 +482,52 @@ void Part::NoteOn(unsigned char note,
                     if((kit[item].Padenabled != 0) && (kit[item].adpars != NULL)
                        && (partnote[pos].kititem[ci].adnote != NULL)
                        && (partnote[posb].kititem[ci].adnote != NULL)) {
-                        partnote[pos].kititem[ci].adnote->legatonote(
-                            notebasefreq, vel, portamento, note, true);
-                        partnote[posb].kititem[ci].adnote->legatonote(
-                            notebasefreq, vel, portamento, note, true);
+                        partnote[pos].kititem[ci].adnote->ADlegatonote(
+                            notebasefreq,
+                            vel,
+                            portamento,
+                            note,
+                            true);
+                        partnote[posb].kititem[ci].adnote->ADlegatonote(
+                            notebasefreq,
+                            vel,
+                            portamento,
+                            note,
+                            true);
                     }
                     if((kit[item].Psubenabled != 0)
                        && (kit[item].subpars != NULL)
                        && (partnote[pos].kititem[ci].subnote != NULL)
                        && (partnote[posb].kititem[ci].subnote != NULL)) {
-                        partnote[pos].kititem[ci].subnote->legatonote(
-                            notebasefreq, vel, portamento, note, true);
-                        partnote[posb].kititem[ci].subnote->legatonote(
-                            notebasefreq, vel, portamento, note, true);
+                        partnote[pos].kititem[ci].subnote->SUBlegatonote(
+                            notebasefreq,
+                            vel,
+                            portamento,
+                            note,
+                            true);
+                        partnote[posb].kititem[ci].subnote->SUBlegatonote(
+                            notebasefreq,
+                            vel,
+                            portamento,
+                            note,
+                            true);
                     }
                     if((kit[item].Ppadenabled != 0)
                        && (kit[item].padpars != NULL)
                        && (partnote[pos].kititem[ci].padnote != NULL)
                        && (partnote[posb].kititem[ci].padnote != NULL)) {
-                        partnote[pos].kititem[ci].padnote->legatonote(
-                            notebasefreq, vel, portamento, note, true);
-                        partnote[posb].kititem[ci].padnote->legatonote(
-                            notebasefreq, vel, portamento, note, true);
+                        partnote[pos].kititem[ci].padnote->PADlegatonote(
+                            notebasefreq,
+                            vel,
+                            portamento,
+                            note,
+                            true);
+                        partnote[posb].kititem[ci].padnote->PADlegatonote(
+                            notebasefreq,
+                            vel,
+                            portamento,
+                            note,
+                            true);
                     }
 
                     if((kit[item].adpars != NULL)
@@ -496,7 +593,7 @@ void Part::NoteOn(unsigned char note,
                                                                   vel,
                                                                   portamento,
                                                                   note,
-                                                                  true);     //true for silent.
+                                                                  true);                                                                        //true for silent.
                 if(kit[0].Psubenabled != 0)
                     partnote[posb].kititem[0].subnote = new SUBnote(
                         kit[0].subpars,
@@ -520,8 +617,8 @@ void Part::NoteOn(unsigned char note,
                     partnote[posb].itemsplaying++;
             }
         }
-        else    //init the notes for the "kit mode"
-            for(int item = 0; item < NUM_KIT_ITEMS; ++item) {
+        else {  //init the notes for the "kit mode"
+            for(int item = 0; item < NUM_KIT_ITEMS; item++) {
                 if(kit[item].Pmuted != 0)
                     continue;
                 if((note < kit[item].Pminkey) || (note > kit[item].Pmaxkey))
@@ -529,10 +626,10 @@ void Part::NoteOn(unsigned char note,
 
                 int ci = partnote[pos].itemsplaying; //ci=current item
 
-                //if this parameter is 127 for "unprocessed"
                 partnote[pos].kititem[ci].sendtoparteffect =
                     (kit[item].Psendtoparteffect < NUM_PART_EFX ?
-                     kit[item].Psendtoparteffect : NUM_PART_EFX);
+                     kit[item].
+                     Psendtoparteffect : NUM_PART_EFX);            //if this parameter is 127 for "unprocessed"
 
                 if((kit[item].adpars != NULL) && ((kit[item].Padenabled) != 0))
                     partnote[pos].kititem[ci].adnote = new ADnote(
@@ -580,7 +677,7 @@ void Part::NoteOn(unsigned char note,
                             vel,
                             portamento,
                             note,
-                            true);                                            //true for silent.
+                            true);                                                                                                //true for silent.
                     if((kit[item].subpars != NULL)
                        && ((kit[item].Psubenabled) != 0))
                         partnote[posb].kititem[ci].subnote =
@@ -615,6 +712,7 @@ void Part::NoteOn(unsigned char note,
                         break;
                 }
             }
+        }
     }
 
     //this only relase the keys if there is maximum number of keys allowed
@@ -636,66 +734,14 @@ void Part::NoteOff(unsigned char note) //relase the key
         if((partnote[i].status == KEY_PLAYING) && (partnote[i].note == note)) {
             if(ctl.sustain.sustain == 0) { //the sustain pedal is not pushed
                 if((Ppolymode == 0) && (not monomemnotes.empty()))
-                    MonoMemRenote();  // To play most recent still held note.
+                    MonoMemRenote(); // To play most recent still held note.
                 else
                     RelaseNotePos(i);
-                /// break;
+                    /// break;
             }
             else    //the sustain pedal is pushed
                 partnote[i].status = KEY_RELASED_AND_SUSTAINED;
         }
-}
-
-void Part::PolyphonicAftertouch(unsigned char note,
-                                unsigned char velocity,
-                                int masterkeyshift)
-{
-    (void) masterkeyshift;
-    if(!Pnoteon || (note < Pminkey) || (note > Pmaxkey))
-        return;
-    if(Pdrummode)
-        return;
-
-    // MonoMem stuff:
-    if(!Ppolymode)   // if Poly is off
-
-        monomem[note].velocity = velocity;       // Store this note's velocity.
-
-
-    for(int i = 0; i < POLIPHONY; ++i)
-        if((partnote[i].note == note) && (partnote[i].status == KEY_PLAYING)) {
-            /* update velocity */
-            // compute the velocity offset
-            float vel =
-                VelF(velocity / 127.0f, Pvelsns) + (Pveloffs - 64.0f) / 64.0f;
-            vel = (vel < 0.0f) ? 0.0f : vel;
-            vel = (vel > 1.0f) ? 1.0f : vel;
-
-            if(!Pkitmode) { // "normal mode"
-                if(kit[0].Padenabled)
-                    partnote[i].kititem[0].adnote->setVelocity(vel);
-                if(kit[0].Psubenabled)
-                    partnote[i].kititem[0].subnote->setVelocity(vel);
-                if(kit[0].Ppadenabled)
-                    partnote[i].kititem[0].padnote->setVelocity(vel);
-            }
-            else     // "kit mode"
-                for(int item = 0; item < NUM_KIT_ITEMS; ++item) {
-                    if(kit[item].Pmuted)
-                        continue;
-                    if((note < kit[item].Pminkey)
-                       || (note > kit[item].Pmaxkey))
-                        continue;
-
-                    if(kit[item].Padenabled)
-                        partnote[i].kititem[item].adnote->setVelocity(vel);
-                    if(kit[item].Psubenabled)
-                        partnote[i].kititem[item].subnote->setVelocity(vel);
-                    if(kit[item].Ppadenabled)
-                        partnote[i].kititem[item].padnote->setVelocity(vel);
-                }
-        }
-
 }
 
 /*
@@ -704,89 +750,88 @@ void Part::PolyphonicAftertouch(unsigned char note,
 void Part::SetController(unsigned int type, int par)
 {
     switch(type) {
-        case C_pitchwheel:
-            ctl.setpitchwheel(par);
-            break;
-        case C_expression:
-            ctl.setexpression(par);
-            setPvolume(Pvolume); //update the volume
-            break;
-        case C_portamento:
-            ctl.setportamento(par);
-            break;
-        case C_panning:
-            ctl.setpanning(par);
-            setPpanning(Ppanning); //update the panning
-            break;
-        case C_filtercutoff:
-            ctl.setfiltercutoff(par);
-            break;
-        case C_filterq:
-            ctl.setfilterq(par);
-            break;
-        case C_bandwidth:
-            ctl.setbandwidth(par);
-            break;
-        case C_modwheel:
-            ctl.setmodwheel(par);
-            break;
-        case C_fmamp:
-            ctl.setfmamp(par);
-            break;
-        case C_volume:
-            ctl.setvolume(par);
-            if(ctl.volume.receive != 0)
-                volume = ctl.volume.volume;
-            else
-                setPvolume(Pvolume);
-            break;
-        case C_sustain:
-            ctl.setsustain(par);
-            if(ctl.sustain.sustain == 0)
-                RelaseSustainedKeys();
-            break;
-        case C_allsoundsoff:
-            AllNotesOff(); //Panic
-            break;
-        case C_resetallcontrollers:
-            ctl.resetall();
+    case C_pitchwheel:
+        ctl.setpitchwheel(par);
+        break;
+    case C_expression:
+        ctl.setexpression(par);
+        setPvolume(Pvolume); //update the volume
+        break;
+    case C_portamento:
+        ctl.setportamento(par);
+        break;
+    case C_panning:
+        ctl.setpanning(par);
+        panning.setInt(panning.getInt() + ctl.panning.pan);
+        break;
+    case C_filtercutoff:
+        ctl.setfiltercutoff(par);
+        break;
+    case C_filterq:
+        ctl.setfilterq(par);
+        break;
+    case C_bandwidth:
+        ctl.setbandwidth(par);
+        break;
+    case C_modwheel:
+        ctl.setmodwheel(par);
+        break;
+    case C_fmamp:
+        ctl.setfmamp(par);
+        break;
+    case C_volume:
+        ctl.setvolume(par);
+        if(ctl.volume.receive != 0)
+            partVolume.setInt(ctl.volume.volume);
+        else
+            setPvolume(Pvolume);
+        break;
+    case C_sustain:
+        ctl.setsustain(par);
+        if(ctl.sustain.sustain == 0)
             RelaseSustainedKeys();
-            if(ctl.volume.receive != 0)
-                volume = ctl.volume.volume;
-            else
-                setPvolume(Pvolume);
-            setPvolume(Pvolume); //update the volume
-            setPpanning(Ppanning); //update the panning
+        break;
+    case C_allsoundsoff:
+        AllNotesOff(); //Panic
+        break;
+    case C_resetallcontrollers:
+        ctl.resetall();
+        RelaseSustainedKeys();
+        if(ctl.volume.receive != 0)
+            partVolume.setInt(ctl.volume.volume);
+        else
+            setPvolume(Pvolume);
+        setPvolume(Pvolume); //update the volume
+        panning.setInt(panning.getInt() + ctl.panning.pan);
 
-            for(int item = 0; item < NUM_KIT_ITEMS; ++item) {
-                if(kit[item].adpars == NULL)
-                    continue;
-                kit[item].adpars->GlobalPar.Reson->
-                sendcontroller(C_resonance_center, 1.0f);
+        for(int item = 0; item < NUM_KIT_ITEMS; item++) {
+            if(kit[item].adpars == NULL)
+                continue;
+            kit[item].adpars->Reson->
+            sendcontroller(C_resonance_center, 1.0);
 
-                kit[item].adpars->GlobalPar.Reson->
-                sendcontroller(C_resonance_bandwidth, 1.0f);
-            }
-            //more update to add here if I add controllers
-            break;
-        case C_allnotesoff:
-            RelaseAllKeys();
-            break;
-        case C_resonance_center:
-            ctl.setresonancecenter(par);
-            for(int item = 0; item < NUM_KIT_ITEMS; ++item) {
-                if(kit[item].adpars == NULL)
-                    continue;
-                kit[item].adpars->GlobalPar.Reson->
-                sendcontroller(C_resonance_center,
-                               ctl.resonancecenter.relcenter);
-            }
-            break;
-        case C_resonance_bandwidth:
-            ctl.setresonancebw(par);
-            kit[0].adpars->GlobalPar.Reson->
-            sendcontroller(C_resonance_bandwidth, ctl.resonancebandwidth.relbw);
-            break;
+            kit[item].adpars->Reson->
+            sendcontroller(C_resonance_bandwidth, 1.0);
+        }
+        //more update to add here if I add controllers
+        break;
+    case C_allnotesoff:
+        RelaseAllKeys();
+        break;
+    case C_resonance_center:
+        ctl.setresonancecenter(par);
+        for(int item = 0; item < NUM_KIT_ITEMS; item++) {
+            if(kit[item].adpars == NULL)
+                continue;
+            kit[item].adpars->Reson->
+            sendcontroller(C_resonance_center, ctl.resonancecenter.relcenter);
+        }
+        break;
+    case C_resonance_bandwidth:
+        ctl.setresonancebw(par);
+        kit[0].adpars->Reson->
+        sendcontroller(C_resonance_bandwidth, ctl.resonancebandwidth.relbw);
+        break;
     }
 }
 /*
@@ -798,9 +843,9 @@ void Part::RelaseSustainedKeys()
     // Let's call MonoMemRenote() on some conditions:
     if((Ppolymode == 0) && (not monomemnotes.empty()))
         if(monomemnotes.back() != lastnote) // Sustain controller manipulation would cause repeated same note respawn without this check.
-            MonoMemRenote();  // To play most recent still held note.
+            MonoMemRenote(); // To play most recent still held note.
 
-    for(int i = 0; i < POLIPHONY; ++i)
+    for(int i = 0; i < POLIPHONY; i++)
         if(partnote[i].status == KEY_RELASED_AND_SUSTAINED)
             RelaseNotePos(i);
 }
@@ -811,10 +856,11 @@ void Part::RelaseSustainedKeys()
 
 void Part::RelaseAllKeys()
 {
-    for(int i = 0; i < POLIPHONY; ++i)
+    for(int i = 0; i < POLIPHONY; i++)
         if((partnote[i].status != KEY_RELASED)
            && (partnote[i].status != KEY_OFF)) //thanks to Frank Neumann
             RelaseNotePos(i);
+    ;
 }
 
 // Call NoteOn(...) with the most recent still held key as new note
@@ -835,7 +881,7 @@ void Part::MonoMemRenote()
  */
 void Part::RelaseNotePos(int pos)
 {
-    for(int j = 0; j < NUM_KIT_ITEMS; ++j) {
+    for(int j = 0; j < NUM_KIT_ITEMS; j++) {
         if(partnote[pos].kititem[j].adnote != NULL)
             if(partnote[pos].kititem[j].adnote)
                 partnote[pos].kititem[j].adnote->relasekey();
@@ -862,7 +908,7 @@ void Part::KillNotePos(int pos)
     partnote[pos].time   = 0;
     partnote[pos].itemsplaying = 0;
 
-    for(int j = 0; j < NUM_KIT_ITEMS; ++j) {
+    for(int j = 0; j < NUM_KIT_ITEMS; j++) {
         if(partnote[pos].kititem[j].adnote != NULL) {
             delete (partnote[pos].kititem[j].adnote);
             partnote[pos].kititem[j].adnote = NULL;
@@ -896,15 +942,14 @@ void Part::setkeylimit(unsigned char Pkeylimit)
     //release old keys if the number of notes>keylimit
     if(Ppolymode != 0) {
         int notecount = 0;
-        for(int i = 0; i < POLIPHONY; ++i)
+        for(int i = 0; i < POLIPHONY; i++)
             if((partnote[i].status == KEY_PLAYING)
                || (partnote[i].status == KEY_RELASED_AND_SUSTAINED))
                 notecount++;
-
-        int oldestnotepos = -1;
-        if(notecount > keylimit)   //find out the oldest note
-            for(int i = 0; i < POLIPHONY; ++i) {
-                int maxtime = 0;
+        ;
+        int oldestnotepos = -1, maxtime = 0;
+        if(notecount > keylimit) { //find out the oldest note
+            for(int i = 0; i < POLIPHONY; i++) {
                 if(((partnote[i].status == KEY_PLAYING)
                     || (partnote[i].status == KEY_RELASED_AND_SUSTAINED))
                    && (partnote[i].time > maxtime)) {
@@ -912,6 +957,7 @@ void Part::setkeylimit(unsigned char Pkeylimit)
                     oldestnotepos = i;
                 }
             }
+        }
         if(oldestnotepos != -1)
             RelaseNotePos(oldestnotepos);
     }
@@ -926,104 +972,140 @@ void Part::AllNotesOff()
     killallnotes = 1;
 }
 
-void Part::RunNote(unsigned int k)
-{
-    unsigned noteplay = 0;
-    for(int item = 0; item < partnote[k].itemsplaying; ++item) {
-        int sendcurrenttofx = partnote[k].kititem[item].sendtoparteffect;
-
-        for(unsigned type = 0; type < 3; ++type) {
-            //Select a note
-            SynthNote **note;
-            if(type == 0)
-                note = &partnote[k].kititem[item].adnote;
-            else
-            if(type == 1)
-                note = &partnote[k].kititem[item].subnote;
-            else
-            if(type == 2)
-                note = &partnote[k].kititem[item].padnote;
-
-            //Process if it exists
-            if(!(*note))
-                continue;
-            noteplay++;
-
-            float *tmpoutr = getTmpBuffer();
-            float *tmpoutl = getTmpBuffer();
-            (*note)->noteout(&tmpoutl[0], &tmpoutr[0]);
-
-            if((*note)->finished()) {
-                delete (*note);
-                (*note) = NULL;
-            }
-            for(int i = 0; i < synth->buffersize; ++i) { //add the note to part(mix)
-                partfxinputl[sendcurrenttofx][i] += tmpoutl[i];
-                partfxinputr[sendcurrenttofx][i] += tmpoutr[i];
-            }
-            returnTmpBuffer(tmpoutr);
-            returnTmpBuffer(tmpoutl);
-        }
-    }
-
-    //Kill note if there is no synth on that note
-    if(noteplay == 0)
-        KillNotePos(k);
-}
 
 /*
  * Compute Part samples and store them in the partoutl[] and partoutr[]
  */
 void Part::ComputePartSmps()
 {
-    for(unsigned nefx = 0; nefx < NUM_PART_EFX + 1; ++nefx)
-        for(int i = 0; i < synth->buffersize; ++i) {
-            partfxinputl[nefx][i] = 0.0f;
-            partfxinputr[nefx][i] = 0.0f;
+    int i, k;
+    int noteplay; //0 if there is nothing activated
+    for(int nefx = 0; nefx < NUM_PART_EFX + 1; nefx++) {
+        for(i = 0; i < SOUND_BUFFER_SIZE; i++) {
+            partfxinputl[nefx][i] = 0.0;
+            partfxinputr[nefx][i] = 0.0;
         }
+    }
 
-    for(unsigned k = 0; k < POLIPHONY; ++k) {
+    for(k = 0; k < POLIPHONY; k++) {
         if(partnote[k].status == KEY_OFF)
             continue;
+        noteplay = 0;
         partnote[k].time++;
         //get the sampledata of the note and kill it if it's finished
-        RunNote(k);
+
+        for(int item = 0; item < partnote[k].itemsplaying; item++) {
+            int sendcurrenttofx = partnote[k].kititem[item].sendtoparteffect;
+
+            ADnote  *adnote     = partnote[k].kititem[item].adnote;
+            SUBnote *subnote    = partnote[k].kititem[item].subnote;
+            PADnote *padnote    = partnote[k].kititem[item].padnote;
+            //get from the ADnote
+            if(adnote != NULL) {
+                noteplay++;
+                if(adnote->ready != 0)
+                    adnote->noteout(&tmpoutl[0], &tmpoutr[0]);
+                else
+                    for(i = 0; i < SOUND_BUFFER_SIZE; i++) {
+                        tmpoutl[i] = 0.0;
+                        tmpoutr[i] = 0.0;
+                    }
+                ;
+                if(adnote->finished() != 0) {
+                    delete (adnote);
+                    partnote[k].kititem[item].adnote = NULL;
+                }
+                for(i = 0; i < SOUND_BUFFER_SIZE; i++) { //add the ADnote to part(mix)
+                    partfxinputl[sendcurrenttofx][i] += tmpoutl[i];
+                    partfxinputr[sendcurrenttofx][i] += tmpoutr[i];
+                }
+            }
+            //get from the SUBnote
+            if(subnote != NULL) {
+                noteplay++;
+                if(subnote->ready != 0)
+                    subnote->noteout(&tmpoutl[0], &tmpoutr[0]);
+                else
+                    for(i = 0; i < SOUND_BUFFER_SIZE; i++) {
+                        tmpoutl[i] = 0.0;
+                        tmpoutr[i] = 0.0;
+                    }
+                ;
+
+                for(i = 0; i < SOUND_BUFFER_SIZE; i++) { //add the SUBnote to part(mix)
+                    partfxinputl[sendcurrenttofx][i] += tmpoutl[i];
+                    partfxinputr[sendcurrenttofx][i] += tmpoutr[i];
+                }
+                if(subnote->finished() != 0) {
+                    delete (subnote);
+                    partnote[k].kititem[item].subnote = NULL;
+                }
+            }
+            //get from the PADnote
+            if(padnote != NULL) {
+                noteplay++;
+                if(padnote->ready != 0)
+                    padnote->noteout(&tmpoutl[0], &tmpoutr[0]);
+                else
+                    for(i = 0; i < SOUND_BUFFER_SIZE; i++) {
+                        tmpoutl[i] = 0.0;
+                        tmpoutr[i] = 0.0;
+                    }
+                ;
+                if(padnote->finished() != 0) {
+                    delete (padnote);
+                    partnote[k].kititem[item].padnote = NULL;
+                }
+                for(i = 0; i < SOUND_BUFFER_SIZE; i++) { //add the PADnote to part(mix)
+                    partfxinputl[sendcurrenttofx][i] += tmpoutl[i];
+                    partfxinputr[sendcurrenttofx][i] += tmpoutr[i];
+                }
+            }
+        }
+        //Kill note if there is no synth on that note
+        if(noteplay == 0)
+            KillNotePos(k);
     }
 
 
     //Apply part's effects and mix them
-    for(int nefx = 0; nefx < NUM_PART_EFX; ++nefx) {
+    for(int nefx = 0; nefx < NUM_PART_EFX; nefx++) {
         if(!Pefxbypass[nefx]) {
             partefx[nefx]->out(partfxinputl[nefx], partfxinputr[nefx]);
-            if(Pefxroute[nefx] == 2)
-                for(int i = 0; i < synth->buffersize; ++i) {
+            if(Pefxroute[nefx] == 2) {
+                for(i = 0; i < SOUND_BUFFER_SIZE; i++) {
                     partfxinputl[nefx + 1][i] += partefx[nefx]->efxoutl[i];
                     partfxinputr[nefx + 1][i] += partefx[nefx]->efxoutr[i];
                 }
+            }
         }
         int routeto = ((Pefxroute[nefx] == 0) ? nefx + 1 : NUM_PART_EFX);
-        for(int i = 0; i < synth->buffersize; ++i) {
+        for(i = 0; i < SOUND_BUFFER_SIZE; i++) {
             partfxinputl[routeto][i] += partfxinputl[nefx][i];
             partfxinputr[routeto][i] += partfxinputr[nefx][i];
         }
     }
-    for(int i = 0; i < synth->buffersize; ++i) {
+    for(i = 0; i < SOUND_BUFFER_SIZE; i++) {
         partoutl[i] = partfxinputl[NUM_PART_EFX][i];
         partoutr[i] = partfxinputr[NUM_PART_EFX][i];
     }
 
     //Kill All Notes if killallnotes!=0
     if(killallnotes != 0) {
-        for(int i = 0; i < synth->buffersize; ++i) {
-            float tmp = (synth->buffersize_f - i) / synth->buffersize_f;
+        for(i = 0; i < SOUND_BUFFER_SIZE; i++) {
+            REALTYPE tmp =
+                (SOUND_BUFFER_SIZE - i) / (REALTYPE) SOUND_BUFFER_SIZE;
             partoutl[i] *= tmp;
             partoutr[i] *= tmp;
+            tmpoutl[i]   = 0.0;
+            tmpoutr[i]   = 0.0;
         }
-        for(int k = 0; k < POLIPHONY; ++k)
+        for(int k = 0; k < POLIPHONY; k++)
             KillNotePos(k);
         killallnotes = 0;
-        for(int nefx = 0; nefx < NUM_PART_EFX; ++nefx)
+        for(int nefx = 0; nefx < NUM_PART_EFX; nefx++)
             partefx[nefx]->cleanup();
+        ;
     }
     ctl.updateportamento();
 }
@@ -1034,19 +1116,7 @@ void Part::ComputePartSmps()
 void Part::setPvolume(char Pvolume_)
 {
     Pvolume = Pvolume_;
-    volume  =
-        dB2rap((Pvolume - 96.0f) / 96.0f * 40.0f) * ctl.expression.relvolume;
-}
-
-void Part::setPpanning(char Ppanning_)
-{
-    Ppanning = Ppanning_;
-    panning  = Ppanning / 127.0f + ctl.panning.pan;
-    if(panning < 0.0f)
-        panning = 0.0f;
-    else
-    if(panning > 1.0f)
-        panning = 1.0f;
+    partVolume.setInt(Pvolume_);
 }
 
 /*
@@ -1054,7 +1124,7 @@ void Part::setPpanning(char Ppanning_)
  */
 void Part::setkititemstatus(int kititem, int Penabled_)
 {
-    if((kititem == 0) || (kititem >= NUM_KIT_ITEMS))
+    if((kititem == 0) && (kititem >= NUM_KIT_ITEMS))
         return;                                        //nonexistent kit item and the first kit item is always enabled
     kit[kititem].Penabled = Penabled_;
 
@@ -1075,7 +1145,7 @@ void Part::setkititemstatus(int kititem, int Penabled_)
     }
     else {
         if(kit[kititem].adpars == NULL)
-            kit[kititem].adpars = new ADnoteParameters(fft);
+            kit[kititem].adpars = new ADnoteParameters(&instrumentKit, fft);
         if(kit[kititem].subpars == NULL)
             kit[kititem].subpars = new SUBnoteParameters();
         if(kit[kititem].padpars == NULL)
@@ -1083,9 +1153,11 @@ void Part::setkititemstatus(int kititem, int Penabled_)
     }
 
     if(resetallnotes)
-        for(int k = 0; k < POLIPHONY; ++k)
+        for(int k = 0; k < POLIPHONY; k++)
             KillNotePos(k);
 }
+
+
 
 void Part::add2XMLinstrument(XMLwrapper *xml)
 {
@@ -1101,7 +1173,7 @@ void Part::add2XMLinstrument(XMLwrapper *xml)
     xml->addpar("kit_mode", Pkitmode);
     xml->addparbool("drum_mode", Pdrummode);
 
-    for(int i = 0; i < NUM_KIT_ITEMS; ++i) {
+    for(int i = 0; i < NUM_KIT_ITEMS; i++) {
         xml->beginbranch("INSTRUMENT_KIT_ITEM", i);
         xml->addparbool("enabled", kit[i].Penabled);
         if(kit[i].Penabled != 0) {
@@ -1139,7 +1211,7 @@ void Part::add2XMLinstrument(XMLwrapper *xml)
     xml->endbranch();
 
     xml->beginbranch("INSTRUMENT_EFFECTS");
-    for(int nefx = 0; nefx < NUM_PART_EFX; ++nefx) {
+    for(int nefx = 0; nefx < NUM_PART_EFX; nefx++) {
         xml->beginbranch("INSTRUMENT_EFFECT", nefx);
         xml->beginbranch("EFFECT");
         partefx[nefx]->add2XML(xml);
@@ -1153,23 +1225,24 @@ void Part::add2XMLinstrument(XMLwrapper *xml)
     xml->endbranch();
 }
 
+
 void Part::add2XML(XMLwrapper *xml)
 {
     //parameters
-    xml->addparbool("enabled", Penabled);
-    if((Penabled == 0) && (xml->minimal))
+    xml->addparbool("enabled", enabled.getInt());
+    if((enabled()) && (xml->minimal))
         return;
 
     xml->addpar("volume", Pvolume);
-    xml->addpar("panning", Ppanning);
+    xml->addpar("panning", panning.getInt());
 
-    xml->addpar("min_key", Pminkey);
-    xml->addpar("max_key", Pmaxkey);
-    xml->addpar("key_shift", Pkeyshift);
-    xml->addpar("rcv_chn", Prcvchn);
+    xml->addpar("min_key", minKey());
+    xml->addpar("max_key", maxKey());
+    xml->addpar("key_shift", keyShift());
+    xml->addpar("rcv_chn", receiveChannel());
 
-    xml->addpar("velocity_sensing", Pvelsns);
-    xml->addpar("velocity_offset", Pveloffs);
+    xml->addpar("velocity_sensing", velSns());
+    xml->addpar("velocity_offset", velOffs());
 
     xml->addparbool("note_on", Pnoteon);
     xml->addparbool("poly_mode", Ppolymode);
@@ -1199,7 +1272,7 @@ int Part::saveXML(const char *filename)
     return result;
 }
 
-int Part::loadXMLinstrument(const char *filename) /*{*/
+int Part::loadXMLinstrument(const char *filename)
 {
     XMLwrapper *xml = new XMLwrapper();
     if(xml->loadXMLfile(filename) < 0) {
@@ -1214,14 +1287,15 @@ int Part::loadXMLinstrument(const char *filename) /*{*/
 
     delete (xml);
     return 0;
-} /*}*/
+}
 
-void Part::applyparameters(bool lockmutex) /*{*/
+
+void Part::applyparameters(bool lockmutex)
 {
-    for(int n = 0; n < NUM_KIT_ITEMS; ++n)
+    for(int n = 0; n < NUM_KIT_ITEMS; n++)
         if((kit[n].padpars != NULL) && (kit[n].Ppadenabled != 0))
             kit[n].padpars->applyparameters(lockmutex);
-} /*}*/
+}
 
 void Part::getfromXMLinstrument(XMLwrapper *xml)
 {
@@ -1239,7 +1313,7 @@ void Part::getfromXMLinstrument(XMLwrapper *xml)
         Pdrummode = xml->getparbool("drum_mode", Pdrummode);
 
         setkititemstatus(0, 0);
-        for(int i = 0; i < NUM_KIT_ITEMS; ++i) {
+        for(int i = 0; i < NUM_KIT_ITEMS; i++) {
             if(xml->enterbranch("INSTRUMENT_KIT_ITEM", i) == 0)
                 continue;
             setkititemstatus(i, xml->getparbool("enabled", kit[i].Penabled));
@@ -1287,7 +1361,7 @@ void Part::getfromXMLinstrument(XMLwrapper *xml)
 
 
     if(xml->enterbranch("INSTRUMENT_EFFECTS")) {
-        for(int nefx = 0; nefx < NUM_PART_EFX; ++nefx) {
+        for(int nefx = 0; nefx < NUM_PART_EFX; nefx++) {
             if(xml->enterbranch("INSTRUMENT_EFFECT", nefx) == 0)
                 continue;
             if(xml->enterbranch("EFFECT")) {
@@ -1295,10 +1369,10 @@ void Part::getfromXMLinstrument(XMLwrapper *xml)
                 xml->exitbranch();
             }
 
-            Pefxroute[nefx] = xml->getpar("route",
-                                          Pefxroute[nefx],
-                                          0,
-                                          NUM_PART_EFX);
+            Pefxroute[nefx]  = xml->getpar("route",
+                                           Pefxroute[nefx],
+                                           0,
+                                           NUM_PART_EFX);
             partefx[nefx]->setdryonly(Pefxroute[nefx] == 2);
             Pefxbypass[nefx] = xml->getparbool("bypass", Pefxbypass[nefx]);
             xml->exitbranch();
@@ -1309,25 +1383,25 @@ void Part::getfromXMLinstrument(XMLwrapper *xml)
 
 void Part::getfromXML(XMLwrapper *xml)
 {
-    Penabled = xml->getparbool("enabled", Penabled);
+    enabled.setInt(xml->getparbool("enabled", enabled.getInt()));
 
     setPvolume(xml->getpar127("volume", Pvolume));
-    setPpanning(xml->getpar127("panning", Ppanning));
+    panning.setInt(xml->getpar127("panning", panning.getInt()));
 
-    Pminkey   = xml->getpar127("min_key", Pminkey);
-    Pmaxkey   = xml->getpar127("max_key", Pmaxkey);
-    Pkeyshift = xml->getpar127("key_shift", Pkeyshift);
-    Prcvchn   = xml->getpar127("rcv_chn", Prcvchn);
+    minKey.setValue(xml->getpar127("min_key", minKey()));
+    maxKey.setValue(xml->getpar127("max_key", maxKey()));
+    keyShift.setValue(xml->getpar127("key_shift", keyShift()));
+    receiveChannel.setInt(xml->getpar127("rcv_chn", receiveChannel()));
 
-    Pvelsns  = xml->getpar127("velocity_sensing", Pvelsns);
-    Pveloffs = xml->getpar127("velocity_offset", Pveloffs);
+    velSns.setValue(xml->getpar127("velocity_sensing", velSns()));
+    velOffs.setValue(xml->getpar127("velocity_offset", velOffs()));
 
     Pnoteon     = xml->getparbool("note_on", Pnoteon);
     Ppolymode   = xml->getparbool("poly_mode", Ppolymode);
     Plegatomode = xml->getparbool("legato_mode", Plegatomode); //older versions
     if(!Plegatomode)
         Plegatomode = xml->getpar127("legato_mode", Plegatomode);
-    Pkeylimit = xml->getpar127("key_limit", Pkeylimit);
+    Pkeylimit   = xml->getpar127("key_limit", Pkeylimit);
 
 
     if(xml->enterbranch("INSTRUMENT")) {
@@ -1340,3 +1414,56 @@ void Part::getfromXML(XMLwrapper *xml)
         xml->exitbranch();
     }
 }
+
+void Part::handleSyncEvent(Event *event)
+{
+    if(event->type() == Event::NewValueEvent) {
+        NewValueEvent *newValue = static_cast<NewValueEvent *>(event);
+
+        if(newValue->control == &instrumentControl) {
+            instrumentControl.bank->loadfromslot(instrumentControl.getInt(), this);
+
+            //The current nio implementation locks the master mutex before handling jobs etc, which
+            //means that we have to be careful not to lock the mutex from here.
+            applyparameters(false);
+        }
+    }
+}
+
+void Part::handleEvent(Event *event)
+{
+    if(event->type() == Event::NewValueEvent) {
+        NewValueEvent *newValue = static_cast<NewValueEvent *>(event);
+
+        if (newValue->wasChanged) {
+
+            if(newValue->control == &bankControl)
+
+                instrumentControl.loadBank(
+                        bankControl.bank->banks[bankControl()].dir);
+
+            else if (newValue->control == &instrumentControl) {
+
+                Job::push(new NodeJob(this, new NewValueEvent(*newValue)));
+
+            } else {
+
+                std::cout << "Part: NewValueEvent for unknown control" << std::endl;
+
+            }
+        }
+    }
+}
+
+void Part::enablePart()
+{
+    //if (Penabled) return;
+    //Penabled = true;
+}
+
+void Part::disablePart()
+{
+    //if (!Penabled) return;
+    //Penabled = false;
+}
+
