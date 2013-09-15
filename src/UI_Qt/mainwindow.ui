@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1332</width>
+    <height>665</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <item>
+     <widget class="QMdiArea" name="mdiArea"/>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1332</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionNew_erase_all"/>
+    <addaction name="actionOpen_Parameters"/>
+    <addaction name="actionSave_All_Parameters"/>
+    <addaction name="separator"/>
+    <addaction name="actionLoad_Scale_Settings"/>
+    <addaction name="actionSave_Scale_Settings"/>
+    <addaction name="actionShow_Scale_Settings"/>
+    <addaction name="separator"/>
+    <addaction name="actionSettings"/>
+    <addaction name="separator"/>
+    <addaction name="actionCopyright"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuInstrument">
+    <property name="title">
+     <string>Instrument</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuRecord">
+    <property name="title">
+     <string>Record</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuMisc">
+    <property name="title">
+     <string>Misc</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuUi">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <addaction name="actionFullscreen"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuInstrument"/>
+   <addaction name="menuRecord"/>
+   <addaction name="menuMisc"/>
+   <addaction name="menuUi"/>
+  </widget>
+  <widget class="QToolBar" name="mainToolBar">
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionToggle_AddSynth"/>
+   <addaction name="separator"/>
+   <addaction name="actionToggle_Piano"/>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+  <action name="actionToggle_AddSynth">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="ressources.qrc">
+     <normaloff>:/icons/add</normaloff>:/icons/add</iconset>
+   </property>
+   <property name="text">
+    <string>toggle AddSynth</string>
+   </property>
+  </action>
+  <action name="actionToggle_Piano">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="ressources.qrc">
+     <normaloff>:/icons/piano</normaloff>:/icons/piano</iconset>
+   </property>
+   <property name="text">
+    <string>toggle Piano</string>
+   </property>
+  </action>
+  <action name="actionNew_erase_all">
+   <property name="text">
+    <string>New (erase all)...</string>
+   </property>
+  </action>
+  <action name="actionOpen_Parameters">
+   <property name="text">
+    <string>Open Parameters</string>
+   </property>
+  </action>
+  <action name="actionSave_All_Parameters">
+   <property name="text">
+    <string>Save All Parameters</string>
+   </property>
+  </action>
+  <action name="actionLoad_Scale_Settings">
+   <property name="text">
+    <string>Load Scale Settings...</string>
+   </property>
+  </action>
+  <action name="actionSave_Scale_Settings">
+   <property name="text">
+    <string>Save Scale Settings...</string>
+   </property>
+  </action>
+  <action name="actionShow_Scale_Settings">
+   <property name="text">
+    <string>Show Scale Settings...</string>
+   </property>
+  </action>
+  <action name="actionSettings">
+   <property name="text">
+    <string>Settings...</string>
+   </property>
+  </action>
+  <action name="actionCopyright">
+   <property name="text">
+    <string>Copyright...</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionFullscreen">
+   <property name="text">
+    <string>Fullscreen</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources>
+  <include location="ressources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

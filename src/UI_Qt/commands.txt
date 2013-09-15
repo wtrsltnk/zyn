@@ -1,0 +1,9 @@
+push:
+
+git push origin abs-qt:abs-qt
+
+pull:
+
+git clone git://git.code.sf.net/p/zynaddsubfx/code zynaddsubfx
+cd zynaddsubfx
+git checkout -b abs-qt origin/abs-qt

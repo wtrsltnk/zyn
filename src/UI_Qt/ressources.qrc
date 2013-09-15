@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file alias="add">lmms_include/data/themes/default/add.png</file>
+        <file alias="piano">lmms_include/data/themes/default/piano.png</file>
+    </qresource>
+</RCC>
