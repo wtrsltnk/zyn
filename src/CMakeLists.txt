@@ -15,6 +15,7 @@ pkg_check_modules(PORTAUDIO portaudio-2.0>=19)
 set(FLTK_SKIP_OPENGL true)
 pkg_check_modules(NTK ntk)
 pkg_check_modules(NTK_IMAGES ntk_images)
+FIND_PACKAGE(Qt4)
 find_package(FLTK)
 find_package(OpenGL) #for FLTK
 find_package(CxxTest)
@@ -26,7 +27,7 @@ pkg_search_module(LASH lash-1.0)
 mark_as_advanced(LASH_LIBRARIES)
 pkg_search_module(DSSI dssi>=0.9.0)
 mark_as_advanced(DSSI_LIBRARIES)
-pkg_search_module(LIBLO liblo>=0.26 REQUIRED)
+pkg_search_module(LIBLO liblo>=0.25 REQUIRED) # TODO: was 0.26
 mark_as_advanced(LIBLO_LIBRARIES)
 
 ######### Settings ###########
@@ -229,6 +230,14 @@ if(NTK_FOUND)
 	mark_as_advanced(FORCE NTK_INCLUDE_DIR)
 	mark_as_advanced(FORCE NTK_MATH_LIBRARY)
 endif(NTK_FOUND)
+
+if(QtGui)
+	set(GUI_LIBRARIES ${QT_LIBRARIES} zynaddsubfx_gui)
+	add_subdirectory(UI_Qt)
+	add_definitions(-DQT_GUI)
+	
+	message(STATUS "Will build Qt gui")
+endif()
 
 if(FltkGui)
 	#UGLY WORKAROUND

@@ -302,7 +302,7 @@ class DummyDataObj:public rtosc::RtData
 
 
 static Fl_Osc_Interface *genOscInterface(struct MiddleWareImpl*);
-
+void dummy_callback_fn(void*, const char *) {} // TODO
 /* Implementation */
 struct MiddleWareImpl
 {
@@ -313,7 +313,7 @@ struct MiddleWareImpl
         fprintf(stderr, "lo server running on %d\n", lo_server_get_port(server));
 
         //dummy callback for starters
-        cb = [](void*, const char*){};
+        cb = dummy_callback_fn;//[](void*, const char*){}; // TODO
 
         master = new Master();
         osc    = genOscInterface(this);

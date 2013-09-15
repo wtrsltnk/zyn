@@ -166,7 +166,7 @@ namespace NSM
     void
     Client::check(int timeout)
     {
-        if(lo_server_wait(_server, timeout))
+//        if(lo_server_wait(_server, timeout)) // TODO
             while(lo_server_recv_noblock(_server, 0)) {}
     }
 
