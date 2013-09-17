@@ -11,7 +11,7 @@ typedef int FL_Widget;
 
 //#include <FL/Fl.H>
 //#include "Fl_Osc_Tree.H"
-//#include "common.H"
+#include "../UI/common.H"
 #include "MasterUI.h"
 
 #include "mainwindow.h"
@@ -41,35 +41,17 @@ set_module_parameters ( Fl_Widget *o )
 #endif
 }*/
 
+void GUI::initUi(int & argc, char ** argv)
+{
+	ui->init(argc, argv);
+}
+
 ui_handle_t GUI::createUi(Fl_Osc_Interface *osc, void *exit)
 {
+	//::osc = osc; // TODO: save osc as global?
 	return (void*)(ui = new MasterUI((int*)exit, osc));
 /*
     ::osc = osc;
-#ifdef NTK_GUI
-    fl_register_images();
-
-    Fl_Dial::default_style(Fl_Dial::PIXMAP_DIAL);
-
-    if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/knob.png"))
-	Fl_Dial::default_image(img);
-    else
-	Fl_Dial::default_image(Fl_Shared_Image::get(SOURCE_DIR "/../pixmaps/knob.png"));
-
-    if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/window_backdrop.png"))
-	Fl::scheme_bg(new Fl_Tiled_Image(img));
-    else
-	Fl::scheme_bg(new Fl_Tiled_Image(Fl_Shared_Image::get(SOURCE_DIR "/../pixmaps/window_backdrop.png")));
-
-    if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/module_backdrop.png"))
-	module_backdrop = new Fl_Tiled_Image(img);
-    else
-	module_backdrop = new Fl_Tiled_Image(Fl_Shared_Image::get(SOURCE_DIR "/../pixmaps/module_backdrop.png"));
-
-    Fl::background(50,  50,  50);
-    Fl::background2(70, 70,  70);
-    Fl::foreground(255, 255, 255);
-#endif
 
     Fl_Window *midi_win = new Fl_Double_Window(400, 400, "Midi connections");
     Fl_Osc_Tree *tree   = new Fl_Osc_Tree(0,0,400,400);
@@ -148,32 +130,23 @@ void GUI::raiseUi(ui_handle_t gui, const char *message)
     d.loc_size = 1024;
     d.obj = gui;
     ports.dispatch(message+1, d);*/
+	// TODO: simply an msg box?
 }
 
 void GUI::raiseUi(ui_handle_t gui, const char *dest, const char *args, ...)
 {
-/*    char buffer[1024];
-    va_list va;
-    va_start(va,args);
-    if(rtosc_vmessage(buffer,1024,dest,args,va))
-	raiseUi(gui, buffer);*/
-	/*	QApplication a(argc, argv);
-	MainWindow w;
-	w.show();
-
-	return a.exec();
-*/}
+	char buffer[1024];
+	va_list va;
+	va_start(va,args);
+	if(rtosc_vmessage(buffer,1024,dest,args,va))
+	 raiseUi(gui, buffer);
+}
 
 #include <QApplication>
 
 void GUI::tickUi(ui_handle_t)
 {
-//    Fl::wait(0.02f);
 	ui->a->processEvents(QEventLoop::AllEvents, 20);
 }
 
-void GUI::initUi(int & argc, char ** argv)
-{
-	ui->init(argc, argv);
-}
 

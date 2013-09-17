@@ -22,12 +22,14 @@
 #include "../Nio/Nio.h"
 
 #include "MasterUI.h"
-#include <FL/Fl.H>
+//#include <FL/Fl.H>
+#include <cstring>
 #include <stdio.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
+typedef int Fl_Widget;
 extern int Pexitprogram;
 extern MasterUI *ui;
 
@@ -63,7 +65,7 @@ NSM_Client::command_open(const char *name,
 			 const char *client_id,
 			 char **out_msg)
 {
-/*    Nio::stop();
+    Nio::stop();
 
     if(instance_name)
 	free(instance_name);
@@ -102,21 +104,18 @@ NSM_Client::command_open(const char *name,
     this->display_name = strdup(display_name);
 
     return r;
-*/
-
 }
 
 static void save_callback(Fl_Widget *, void *v)
 {
-/*    MasterUI *ui = static_cast<MasterUI*>(v);
-    ui->do_save_master();
-*/
-
+	MasterUI *ui = static_cast<MasterUI*>(v);
+	ui->do_save_master();
 }
 
 void
 NSM_Client::command_active(bool active)
 {
+	// TODO: do some GUI stuff with the menus, etc.
  /*   if(active) {
 	Fl_Menu_Item *m;
 	//TODO see if there is a cleaner way of doing this without voiding

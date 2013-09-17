@@ -19,7 +19,8 @@ SOURCES += main.cpp\
     zyndial.cpp \
     Connection.cpp \
     NSM.cpp \
-    MasterUI.cpp
+    MasterUI.cpp \
+    treedialog.cpp
 
 HEADERS  += mainwindow.h \
     addsynthwidget.h \
@@ -27,12 +28,14 @@ HEADERS  += mainwindow.h \
     zyndial.h \
     models.h \
     MasterUI.h \
-    NSM.h
+    NSM.h \
+    treedialog.h
 
 FORMS    += mainwindow.ui \
     addsynthwidget.ui \
     lfowidget.ui \
-    zyndial.ui
+    zyndial.ui \
+    treedialog.ui
 
 RESOURCES += \
     ressources.qrc

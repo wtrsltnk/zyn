@@ -41,6 +41,11 @@ set_module_parameters ( Fl_Widget *o )
 #endif
 }
 
+void GUI::initUi(int & argc, char ** argv)
+{
+	(void) argc; (void) argv;
+}
+
 ui_handle_t GUI::createUi(Fl_Osc_Interface *osc, void *exit)
 {
     ::osc = osc;

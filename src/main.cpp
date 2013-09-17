@@ -134,6 +134,8 @@ void exitprogram()
 
 int main(int argc, char *argv[])
 {
+    GUI::initUi(argc, argv);
+    
     main_thread =  (long int)syscall(224);
     synth = new SYNTH_T;
     config.init();
