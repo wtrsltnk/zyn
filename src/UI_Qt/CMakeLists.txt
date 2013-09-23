@@ -59,14 +59,10 @@ file(GLOB zyn_HEADERS "*.h")
 file(GLOB zyn_FORMS "*.ui")
 file(GLOB zyn_RESOURCES "*.qrc")
 
-#SET(zyn_SOURCES main.cpp hellowindow.cpp)
-#SET(zyn_HEADERS hellowindow.h)
-#SET(zyn_FORMS hellowindow.ui)
-#SET(zyn_RESOURCES images.qrc)
+#MESSAGE("SRC, HDR:")
+#MESSAGE("${zyn_SOURCES}")
+#MESSAGE("${zyn_HEADERS}")
 
-MESSAGE("SRC, HDR:")
-MESSAGE("${zyn_SOURCES}")
-MESSAGE("${zyn_HEADERS}")
 #
 # modules
 #
@@ -85,29 +81,14 @@ ADD_LIBRARY(zynaddsubfx_gui STATIC ${zyn_SOURCES}
     ${zyn_HEADERS_MOC} 
     ${zyn_FORMS_HEADERS} 
     ${zyn_RESOURCES_RCC})
-file(GLOB RTOSC_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/abs/rtosc/*.so)
-# TARGET_LINK_LIBRARIES(ui ${QT_LIBRARIES} 
-# 	${ZLIB_LIBRARIES}
-#         ${FFTW_LIBRARIES}
-#         ${MXML_LIBRARIES}
-#         ${OS_LIBRARIES}
-#         pthread
-# 	zynaddsubfx_core
-# 	${RTOSC_LIBRARIES}
-# 	
-# )
 
-MESSAGE("NIO:")
-MESSAGE("${NIO_LIBRARIES}")
-MESSAGE("${AUDIO_LIBRARIES}")
+MESSAGE("RES:")
+MESSAGE("${zyn_RESOURCES_RCC}")
 
 TARGET_LINK_LIBRARIES(zynaddsubfx_gui
 ${QT_LIBRARIES} 
 zynaddsubfx_core zynaddsubfx_nio ${NIO_LIBRARIES}
 ${AUDIO_LIBRARIES})
-
-
-
 
 #
 # CPack Stuff

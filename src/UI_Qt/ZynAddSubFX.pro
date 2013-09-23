@@ -20,7 +20,12 @@ SOURCES += main.cpp\
     Connection.cpp \
     NSM.cpp \
     MasterUI.cpp \
-    treedialog.cpp
+    treedialog.cpp \
+    zyncombo.cpp \
+    zyncheckbox.cpp \
+    envwidget.cpp \
+    filterparamwidget.cpp \
+    zynslider.cpp
 
 HEADERS  += mainwindow.h \
     addsynthwidget.h \
@@ -29,13 +34,23 @@ HEADERS  += mainwindow.h \
     models.h \
     MasterUI.h \
     NSM.h \
-    treedialog.h
+    treedialog.h \
+    zyncombo.h \
+    zyncheckbox.h \
+    envwidget.h \
+    filterparamwidget.h \
+    zynslider.h
 
 FORMS    += mainwindow.ui \
     addsynthwidget.ui \
     lfowidget.ui \
     zyndial.ui \
-    treedialog.ui
+    treedialog.ui \
+    zyncombo.ui \
+    zyncheckbox.ui \
+    envwidget.ui \
+    filterparamwidget.ui \
+    zynslider.ui
 
 RESOURCES += \
     ressources.qrc

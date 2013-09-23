@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>LfoWidget</class>
- <widget class="QWidget" name="LfoWidget">
+ <class>FilterParamWidget</class>
+ <widget class="QWidget" name="FilterParamWidget">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>694</width>
-    <height>223</height>
+    <width>871</width>
+    <height>300</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,10 +15,10 @@
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <item>
-    <widget class="ZynDial" name="widget" native="true"/>
+    <widget class="ZynCheckBox" name="widget" native="true"/>
    </item>
    <item>
-    <widget class="ZynDial" name="widget_2" native="true"/>
+    <widget class="ZynCheckBox" name="widget_2" native="true"/>
    </item>
    <item>
     <widget class="ZynDial" name="widget_3" native="true"/>
@@ -30,10 +30,16 @@
     <widget class="ZynDial" name="widget_5" native="true"/>
    </item>
    <item>
-    <widget class="ZynCheckBox" name="widget_6" native="true"/>
+    <widget class="ZynDial" name="widget_6" native="true"/>
    </item>
    <item>
-    <widget class="ZynCombo" name="widget_7" native="true"/>
+    <widget class="ZynDial" name="widget_7" native="true"/>
+   </item>
+   <item>
+    <widget class="ZynDial" name="widget_8" native="true"/>
+   </item>
+   <item>
+    <widget class="ZynCheckBox" name="widget_9" native="true"/>
    </item>
   </layout>
  </widget>
@@ -48,12 +54,6 @@
    <class>ZynCheckBox</class>
    <extends>QWidget</extends>
    <header>zyncheckbox.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>ZynCombo</class>
-   <extends>QWidget</extends>
-   <header>zyncombo.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

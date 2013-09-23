@@ -1,11 +1,12 @@
 #include <QMdiSubWindow>
 #include <QMessageBox>
+#include <QDebug> // TODO
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "addsynthwidget.h"
 
-
+// TODO: change name
 template<class T> void pack(QMdiArea* mdiArea, QMdiSubWindow*& window, /*T* widget,*/ bool visible)
 {
 	if(!window)  {
@@ -32,6 +33,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(ui->actionAbout_Qt, SIGNAL(triggered()), this, SLOT(helpAboutQt()));
 	connect(ui->actionFullscreen, SIGNAL(triggered(bool)), this, SLOT(toggleFullScreen(bool)));
 	connect(ui->actionShow_Parameter_Tree, SIGNAL(triggered(bool)), this, SLOT(toggleParameterTree(bool)));
+
+	qDebug() << QString::fromUtf8(":/icons/piano");
 }
 
 MainWindow::~MainWindow()
