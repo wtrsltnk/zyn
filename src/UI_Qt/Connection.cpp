@@ -11,6 +11,7 @@ typedef int FL_Widget;
 
 //#include <FL/Fl.H>
 //#include "Fl_Osc_Tree.H"
+#include "../src/Misc/Master.h"
 #include "../UI/common.H"
 #include "MasterUI.h"
 
@@ -48,7 +49,7 @@ void GUI::initUi(int & argc, char ** argv)
 
 ui_handle_t GUI::createUi(Fl_Osc_Interface *osc, void *exit)
 {
-	//::osc = osc; // TODO: save osc as global?
+	::osc = osc;
 	return (void*)(ui = new MasterUI((int*)exit, osc));
 /*
     ::osc = osc;
@@ -64,20 +65,26 @@ ui_handle_t GUI::createUi(Fl_Osc_Interface *osc, void *exit)
     */
 }
 
-void GUI::destroyUi(ui_handle_t ui)
+void GUI::destroyUi(ui_handle_t _ui)
 {
-	delete MasterUI::a;
-	delete static_cast<MasterUI*>(ui);
+	MasterUI* ui = static_cast<MasterUI*>(_ui);
+	ui->quit();
+	delete ui;
 }
 
-/*
+
 #define BEGIN(x) {x,"",NULL,[](const char *m, rtosc::RtData d){ \
     MasterUI *ui   = static_cast<MasterUI*>(d.obj); \
     rtosc_arg_t a0 = rtosc_argument(m,0);
-    //rtosc_arg_t a1 = rtosc_argument(m,1); \
+/*    //rtosc_arg_t a1 = rtosc_argument(m,1); \
     //rtosc_arg_t a2 = rtosc_argument(m,2); \
-    //rtosc_arg_t a3 = rtosc_argument(m,3);
+    //rtosc_arg_t a3 = rtosc_argument(m,3);*/
 #define END }},
+
+#include <QMessageBox>
+inline void fl_alert(const char* text) {
+	QMessageBox::warning(NULL, "Alert!", text);
+}
 
 //DSL based ports
 static rtosc::Ports ports = {
@@ -114,23 +121,21 @@ static rtosc::Ports ports = {
 		ui->panellistitem[i]->partvu->update(partvu[i]);
 	}
     } END
-};*/
+};
 
 void GUI::raiseUi(ui_handle_t gui, const char *message)
 {
-
+	(void)gui;
 	printf("got message for UI '%s'\n", message);
-/*    MasterUI *mui = (MasterUI*)gui;
-    mui->osc->tryLink(message);
-    //printf("got message for UI '%s'\n", message);
-    char buffer[1024];
-    memset(buffer, 0, sizeof(buffer));
-    rtosc::RtData d;
-    d.loc = buffer;
-    d.loc_size = 1024;
-    d.obj = gui;
-    ports.dispatch(message+1, d);*/
-	// TODO: simply an msg box?
+	MasterUI *mui = (MasterUI*)gui;
+	mui->osc->tryLink(message); // TODO: must we implement this?
+	char buffer[1024];
+	memset(buffer, 0, sizeof(buffer));
+	rtosc::RtData d;
+	d.loc = buffer;
+	d.loc_size = 1024;
+	d.obj = gui;
+	ports.dispatch(message+1, d);
 }
 
 void GUI::raiseUi(ui_handle_t gui, const char *dest, const char *args, ...)

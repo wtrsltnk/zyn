@@ -1,8 +1,8 @@
 #include "addsynthwidget.h"
 #include "ui_addsynthwidget.h"
 
-AddSynthWidget::AddSynthWidget(QWidget *parent) :
-	QWidget(parent),
+AddSynthWidget::AddSynthWidget(QtOscObject& parent) :
+	QtOscNode(parent),
 	ui(new Ui::AddSynthWidget)
 {
 	ui->setupUi(this);

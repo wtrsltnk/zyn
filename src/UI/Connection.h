@@ -9,7 +9,7 @@ typedef void *ui_handle_t;
 
 void initUi(int & argc, char ** argv);
 ui_handle_t createUi(Fl_Osc_Interface *osc, void *exit);
-void destroyUi(ui_handle_t);
+void destroyUi(ui_handle_t _ui);
 void raiseUi(ui_handle_t, const char *);
 void raiseUi(ui_handle_t, const char *, const char *, ...);
 void tickUi(ui_handle_t);

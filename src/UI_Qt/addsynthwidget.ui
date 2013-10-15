@@ -21,7 +21,7 @@
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
-       <widget class="LfoWidget" name="widget" native="true"/>
+       <widget class="FuncWidget" name="widget" native="true"/>
       </item>
      </layout>
     </widget>
@@ -33,7 +33,7 @@
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
-       <widget class="QWidget" name="widget_2" native="true"/>
+       <widget class="FuncWidget" name="widget_2" native="true"/>
       </item>
      </layout>
     </widget>
@@ -45,7 +45,7 @@
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_3">
       <item>
-       <widget class="QWidget" name="widget_3" native="true"/>
+       <widget class="FuncWidget" name="widget_3" native="true"/>
       </item>
      </layout>
     </widget>
@@ -66,9 +66,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>LfoWidget</class>
+   <class>FuncWidget</class>
    <extends>QWidget</extends>
-   <header>lfowidget.h</header>
+   <header>funcwidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

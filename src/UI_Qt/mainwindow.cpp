@@ -5,13 +5,16 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "addsynthwidget.h"
+//#include "treedialog.h"
+#include "treewidget.h"
+#include "vkwidget.h"
 
 // TODO: change name
-template<class T> void pack(QMdiArea* mdiArea, QMdiSubWindow*& window, /*T* widget,*/ bool visible)
+template<class T> void addMdiWindow(QtOscNode& osc, QMdiArea* mdiArea, QMdiSubWindow*& window, /*T* widget,*/ bool visible)
 {
 	if(!window)  {
-		T* addSynthWidget = new T(); // TODO: name
-		window = mdiArea->addSubWindow(addSynthWidget);
+		T* subWidget = new T(osc); // TODO: name
+		window = mdiArea->addSubWindow(subWidget);
 	}
 	window->setVisible(visible);
 }
@@ -19,10 +22,15 @@ template<class T> void pack(QMdiArea* mdiArea, QMdiSubWindow*& window, /*T* widg
 /*template<class T> T* new_if_null(T*& ptr) {
 	return T ? T : new T();
 }*/
+#include <QDirIterator>
 
-MainWindow::MainWindow(QWidget *parent) :
+#include <QFile>
+MainWindow::MainWindow(Fl_Osc_Interface *osc, QWidget *parent) :
 	QMainWindow(parent),
+//	QtOscObject(NULL, "/", this),
+	QtOscNode(QtOscNode::makeRoot(osc)),
 	addSynthWindow(NULL),
+	treeDlg(NULL),
 	ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
@@ -33,8 +41,22 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(ui->actionAbout_Qt, SIGNAL(triggered()), this, SLOT(helpAboutQt()));
 	connect(ui->actionFullscreen, SIGNAL(triggered(bool)), this, SLOT(toggleFullScreen(bool)));
 	connect(ui->actionShow_Parameter_Tree, SIGNAL(triggered(bool)), this, SLOT(toggleParameterTree(bool)));
+	connect(ui->actionExit, SIGNAL(triggered()), this, SLOT(exit()));
 
-	qDebug() << QString::fromUtf8(":/icons/piano");
+//	qDebug() << QString::fromUtf8(":/icons/piano");
+
+
+	 QDirIterator it(":", QDirIterator::Subdirectories);
+while (it.hasNext()) {
+    qDebug() << it.next();
+}
+
+	// this is a dumb fix for a current bug ... (TODO)
+	ui->mdiArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+	ui->mdiArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+	/*if(!QFile::exists(":/icons/piano"))
+	 exit(99);
+*/
 }
 
 MainWindow::~MainWindow()
@@ -50,12 +72,13 @@ void MainWindow::toggleAddSynth(bool visible)
 		addSynthWindow = ui->mdiArea->addSubWindow(addSynthWidget);
 	}
 	addSynthWindow->setVisible(visible);*/
-	pack<AddSynthWidget>(ui->mdiArea, addSynthWindow, visible);
+	addMdiWindow<AddSynthWidget>(makeChild("/part1/kit1/adpars/voice1"), ui->mdiArea, addSynthWindow, visible);
 }
 
 void MainWindow::togglePiano(bool visible)
 {
 	Q_UNUSED(visible);
+	addMdiWindow<VkWidget>(this, ui->mdiArea, vkWindow, visible);
 	/*if(!pianoWindow){
 		AddSynthWidget* addSynthWidget = new AddSynthWidget();
 		addSynthWindow = ui->mdiArea->addSubWindow(addSynthWidget);
@@ -79,26 +102,10 @@ void MainWindow::helpAboutQt() {
 
 void MainWindow::close()
 {
+	QMainWindow::close();
 }
 
 void MainWindow::toggleParameterTree(bool visible)
 {
-	pack<TreeDialog>(ui->mdiArea, treeDlg, visible);
+	addMdiWindow<TreeWidget>(makeChild(""), ui->mdiArea, treeDlg, visible);
 }
-
-/*template<class T> pack(QMdiArea* mdiArea, QMdiSubWindow* window, T* widget, bool visible)
-{
-	if(!window)  {
-		T* addSynthWidget = new T(); // TODO: name
-		window = mdiArea->addSubWindow(addSynthWidget);
-	}
-}*/
-/*
-void MainWindow::toggleWin(QWidget* content, bool visible)
-{
-	if(!addSynthWindow)  {
-		AddSynthWidget* addSynthWidget = new AddSynthWidget();
-		addSynthWindow = ui->mdiArea->addSubWindow(addSynthWidget);
-	}
-	addSynthWindow->setVisible(visible);
-}*/

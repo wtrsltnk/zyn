@@ -6,7 +6,7 @@ ZynSlider::ZynSlider(QWidget *parent) :
 	ui(new Ui::ZynSlider)
 {
 	ui->setupUi(this);
-	ui->horizontalSlider
+	//ui->horizontalSlider
 }
 
 ZynSlider::~ZynSlider()

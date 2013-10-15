@@ -1,18 +1,18 @@
 #ifndef ADDSYNTHWIDGET_H
 #define ADDSYNTHWIDGET_H
 
-#include <QWidget>
+#include "qtoscwidget.h"
 
 namespace Ui {
 	class AddSynthWidget;
 }
 
-class AddSynthWidget : public QWidget
+class AddSynthWidget : public QtOscWidget
 {
 	Q_OBJECT
 	
 public:
-	explicit AddSynthWidget(QWidget *parent = 0);
+	explicit AddSynthWidget(QtOscObject& parent);
 	~AddSynthWidget();
 	
 private:

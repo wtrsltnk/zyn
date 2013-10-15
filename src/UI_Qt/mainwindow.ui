@@ -14,7 +14,16 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <layout class="QHBoxLayout" name="horizontalLayout">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QWidget" name="widget" native="true">
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="ZynSpinBox" name="widget_2" native="true"/>
+       </item>
+      </layout>
+     </widget>
+    </item>
     <item>
      <widget class="QMdiArea" name="mdiArea"/>
     </item>
@@ -26,7 +35,7 @@
      <x>0</x>
      <y>0</y>
      <width>1332</width>
-     <height>20</height>
+     <height>19</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -100,8 +109,8 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="ressources.qrc">
-     <normaloff>:/icons/add</normaloff>:/icons/add</iconset>
+    <iconset>
+     <normaloff>:/images/pixmaps/add.png</normaloff>:/images/pixmaps/add.png</iconset>
    </property>
    <property name="text">
     <string>toggle AddSynth</string>
@@ -112,8 +121,8 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="ressources.qrc">
-     <normaloff>:/icons/piano</normaloff>:/icons/piano</iconset>
+    <iconset>
+     <normaloff>:/images/pixmaps/piano.png</normaloff>:/images/pixmaps/piano.png</iconset>
    </property>
    <property name="text">
     <string>toggle Piano</string>
@@ -201,8 +210,14 @@
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <resources>
-  <include location="ressources.qrc"/>
- </resources>
+ <customwidgets>
+  <customwidget>
+   <class>ZynSpinBox</class>
+   <extends>QWidget</extends>
+   <header>zynspinbox.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
  <connections/>
 </ui>

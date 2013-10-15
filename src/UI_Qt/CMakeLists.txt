@@ -25,7 +25,8 @@ MESSAGE("Options: (-D...=..., cmake -L for details)")
 SET(NIO_LIBRARIES "")
 SET(AUDIO_LIBRARIES "")
 
-#add_subdirectory(abs)
+add_subdirectory(lmms)
+
 #include_directories(abs/include)
 #include_directories(abs/src)
 #include_directories(abs/rtosc/include)
@@ -57,7 +58,7 @@ file(GLOB zyn_SOURCES "*.cpp" "../UI/NSM/Client.C")
 # TODO: Client.C is actually a bug...
 file(GLOB zyn_HEADERS "*.h")
 file(GLOB zyn_FORMS "*.ui")
-file(GLOB zyn_RESOURCES "*.qrc")
+file(GLOB zyn_RESOURCES "../../*.qrc")
 
 #MESSAGE("SRC, HDR:")
 #MESSAGE("${zyn_SOURCES}")
@@ -86,6 +87,7 @@ MESSAGE("RES:")
 MESSAGE("${zyn_RESOURCES_RCC}")
 
 TARGET_LINK_LIBRARIES(zynaddsubfx_gui
+lmms_includes
 ${QT_LIBRARIES} 
 zynaddsubfx_core zynaddsubfx_nio ${NIO_LIBRARIES}
 ${AUDIO_LIBRARIES})
