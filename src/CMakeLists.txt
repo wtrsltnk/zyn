@@ -60,7 +60,12 @@ SET (LibloEnable ${LIBLO_FOUND} CACHE BOOL
 # on this
 
 # Add version information
-add_definitions(-DVERSION="${VERSION}")
+
+message(STATUS "Building on a '${CMAKE_SYSTEM_NAME}' System")
+
+if(NOT "Darwin" STREQUAL ${CMAKE_SYSTEM_NAME})
+    add_definitions(-DVERSION="${VERSION}")
+endif()
 
 # Add scheduler function existance info (OSX compatiability)
 add_definitions(-DHAVE_SCHEDULER=${HAVE_SCHEDULER})
