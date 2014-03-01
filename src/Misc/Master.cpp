@@ -57,6 +57,7 @@ static Ports localports = {
        bToU->raw_write(m-1);}},
     {"get-vu", rDoc("Grab VU Data"), 0, [](const char *, RtData &d) {
        Master *m = (Master*)d.obj;
+       printf("GOT IT!");
        bToU->write("/vu-meter", "bb", sizeof(m->vu), &m->vu, sizeof(float)*NUM_MIDI_PARTS, m->vuoutpeakpart);}},
     {"reset-vu", rDoc("Grab VU Data"), 0, [](const char *, RtData &d) {
        Master *m = (Master*)d.obj;
@@ -423,23 +424,30 @@ void Master::AudioOut(float *outl, float *outr)
         }
 
         //XXX yes, this is not realtime safe, but it is useful...
-        if(strcmp(msg, "/get-vu") && false) {
+	if(strcmp(msg, "/get-vu") && true) {
             fprintf(stdout, "%c[%d;%d;%dm", 0x1B, 0, 5 + 30, 0 + 40);
             fprintf(stdout, "backend: '%s'<%s>\n", msg,
-                    rtosc_argument_string(msg));
+		    rtosc_argument_string(msg));
             fprintf(stdout, "%c[%d;%d;%dm", 0x1B, 0, 7 + 30, 0 + 40);
-        }
+	    if(!strcmp(msg, "/noteOn"))
+	    {
+	    fprintf(stdout, "\n\n");
+		fprintf(stdout, "%s", msg+14);
+		fprintf(stdout, "%s", msg+15);
+		fprintf(stdout, "\n\n");
+	    }
+	}
         d.matches = 0;
         //fprintf(stdout, "address '%s'\n", uToB->peak());
         ports.dispatch(msg+1, d);
         events++;
-        if(!d.matches && false) {
+	if(!d.matches && true) {
             fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 1, 7 + 30, 0 + 40);
             fprintf(stderr, "Unknown address '%s'\n", uToB->peak());
             fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 0, 7 + 30, 0 + 40);
         }
     }
-    if(events>1 && false)
+    if(events>1 && true)
         fprintf(stderr, "backend: %d events per cycle\n",events);
         
 

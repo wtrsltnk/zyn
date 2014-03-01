@@ -20,6 +20,8 @@ ZynDial::ZynDial(QWidget *parent) :
 	// qDebug() << "scale not found!";
 
 	ui->label->setText(p.apropos("part0/kit0/adpars/")->metadata);
+
+	//QObject::connect(ui->dial, SIGNAL(sliderMoved(int), );
 }
 
 ZynDial::~ZynDial()

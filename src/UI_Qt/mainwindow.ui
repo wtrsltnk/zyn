@@ -19,6 +19,9 @@
      <widget class="QWidget" name="widget" native="true">
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
+        <widget class="VuMeter" name="widget_3" native="true"/>
+       </item>
+       <item>
         <widget class="ZynSpinBox" name="widget_2" native="true"/>
        </item>
       </layout>
@@ -35,7 +38,7 @@
      <x>0</x>
      <y>0</y>
      <width>1332</width>
-     <height>19</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -109,7 +112,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="../../ressources_qt.qrc">
      <normaloff>:/images/pixmaps/add.png</normaloff>:/images/pixmaps/add.png</iconset>
    </property>
    <property name="text">
@@ -121,7 +124,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="../../ressources_qt.qrc">
      <normaloff>:/images/pixmaps/piano.png</normaloff>:/images/pixmaps/piano.png</iconset>
    </property>
    <property name="text">
@@ -217,7 +220,15 @@
    <header>zynspinbox.h</header>
    <container>1</container>
   </customwidget>
+  <customwidget>
+   <class>VuMeter</class>
+   <extends>QWidget</extends>
+   <header>vumeter.h</header>
+   <container>1</container>
+  </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../../ressources_qt.qrc"/>
+ </resources>
  <connections/>
 </ui>

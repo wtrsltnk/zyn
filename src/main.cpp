@@ -67,12 +67,16 @@ int Pexitprogram = 0;     //if the UI set this to 1, the program will exit
 #if LASH
 #include "Misc/LASHClient.h"
 LASHClient *lash = NULL;
+#else
+void *lash;
 #endif
 
 #if USE_NSM
 #include "UI/NSM.H"
 
 NSM_Client *nsm = 0;
+#else
+void* nsm;
 #endif
 
 char *instance_name = 0;
@@ -435,6 +439,7 @@ int main(int argc, char *argv[])
 #endif
     }
 
+#ifdef USE_QT
     while(Pexitprogram == 0) {
 #if USE_NSM
         if(nsm) {
@@ -445,7 +450,7 @@ int main(int argc, char *argv[])
 #if LASH
         {
             string filename;
-            switch(lash->checkevents(filename)) {
+	    switch(lash->checkevents(filename)) {
                 case LASHClient::Save:
                     GUI::raiseUi(gui, "/save-master", "s", filename.c_str());
                     lash->confirmevent(LASHClient::Save);
@@ -468,6 +473,9 @@ done:
         GUI::tickUi(gui);
         middleware->tick();
     }
+#else
+	GUI::loopUi(middleware, lash, nsm);
+#endif
 
     exitprogram();
     return 0;

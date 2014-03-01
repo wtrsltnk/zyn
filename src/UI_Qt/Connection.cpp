@@ -151,7 +151,13 @@ void GUI::raiseUi(ui_handle_t gui, const char *dest, const char *args, ...)
 
 void GUI::tickUi(ui_handle_t)
 {
-	ui->a->processEvents(QEventLoop::AllEvents, 20);
+	ui->appli->processEvents(QEventLoop::AllEvents, 20);
+}
+
+void GUI::loopUi(MiddleWare* _middleware, LASHClient* _lash,
+	NSM_Client* _nsm)
+{
+	ui->run_loop(_middleware, _lash, _nsm);
 }
 
 

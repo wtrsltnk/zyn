@@ -10,10 +10,11 @@
 #include "vkwidget.h"
 
 // TODO: change name
-template<class T> void addMdiWindow(QtOscNode& osc, QMdiArea* mdiArea, QMdiSubWindow*& window, /*T* widget,*/ bool visible)
+template<class T> void addMdiWindow(T*& subWidget, const QtOscNode* root, const char* _loc, QMdiArea* mdiArea, QMdiSubWindow*& window, /*T* widget,*/ bool visible)
 {
+	if(!subWidget)
+		subWidget = new T(); // TODO: name
 	if(!window)  {
-		T* subWidget = new T(osc); // TODO: name
 		window = mdiArea->addSubWindow(subWidget);
 	}
 	window->setVisible(visible);
@@ -28,9 +29,6 @@ template<class T> void addMdiWindow(QtOscNode& osc, QMdiArea* mdiArea, QMdiSubWi
 MainWindow::MainWindow(Fl_Osc_Interface *osc, QWidget *parent) :
 	QMainWindow(parent),
 //	QtOscObject(NULL, "/", this),
-	QtOscNode(QtOscNode::makeRoot(osc)),
-	addSynthWindow(NULL),
-	treeDlg(NULL),
 	ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
@@ -57,6 +55,15 @@ while (it.hasNext()) {
 	/*if(!QFile::exists(":/icons/piano"))
 	 exit(99);
 */
+	toggleParameterTree(false);
+	toggleAddSynth(false);
+	togglePiano(false);
+
+	/*
+	 * Now that all widgets are created, this will init the root node
+	 * and then recurse on all widgets.
+	 */
+	makeRoot(this, osc);
 }
 
 MainWindow::~MainWindow()
@@ -72,18 +79,26 @@ void MainWindow::toggleAddSynth(bool visible)
 		addSynthWindow = ui->mdiArea->addSubWindow(addSynthWidget);
 	}
 	addSynthWindow->setVisible(visible);*/
-	addMdiWindow<AddSynthWidget>(makeChild("/part1/kit1/adpars/voice1"), ui->mdiArea, addSynthWindow, visible);
+	addMdiWindow<AddSynthWidget>(addSynth, this, "/part1/kit1/adpars/voice1/", ui->mdiArea, addSynthWindow, visible);
 }
 
 void MainWindow::togglePiano(bool visible)
 {
 	Q_UNUSED(visible);
-	addMdiWindow<VkWidget>(this, ui->mdiArea, vkWindow, visible);
+	addMdiWindow<VkWidget>(vkWidget, this, "", ui->mdiArea, vkWindow, visible);
 	/*if(!pianoWindow){
 		AddSynthWidget* addSynthWidget = new AddSynthWidget();
 		addSynthWindow = ui->mdiArea->addSubWindow(addSynthWidget);
 	}
 	addSynthWindow->setVisible(b);*/
+}
+
+void MainWindow::makeAllChildren(QtOscNode *dest, const char *_loc)
+{
+	makeChild(addSynth, "/part1/kit1/adpars/voice1/");
+	makeChild(treeWidget, "/");
+	makeChild(vkWidget, "/");
+	makeChild(ui->widget_3, "/");
 }
 
 void MainWindow::helpAbout()
@@ -107,5 +122,5 @@ void MainWindow::close()
 
 void MainWindow::toggleParameterTree(bool visible)
 {
-	addMdiWindow<TreeWidget>(makeChild(""), ui->mdiArea, treeDlg, visible);
+	addMdiWindow<TreeWidget>(treeWidget, this, "", ui->mdiArea, treeDlg, visible);
 }
