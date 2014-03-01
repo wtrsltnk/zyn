@@ -30,20 +30,15 @@
 
 	connect(dial, SIGNAL(valueChanged(int)), signalMapper, SLOT(map()));
 	signalMapper->setMapping(dial, loc); // TODO: loc is local, a problem?
-
-
 }*/
 
+#include "QDebug" // TODO
 
 LfoEnvWidget::LfoEnvWidget(QWidget *parent) :
-	QWidget(parent),
-	QtOscNode(::osc)
+	QtOscWidget(parent),
 	ui(new Ui::LfoEnvWidget)
 {
 	ui->setupUi(this);
-
-	//init(ui->dial, ui->label, "Pfreq");
-
 //	connect(signalMapper, SIGNAL(mapped(QString)), this, SIGNAL(clicked(QString)));
 
 }
@@ -51,4 +46,18 @@ LfoEnvWidget::LfoEnvWidget(QWidget *parent) :
 LfoEnvWidget::~LfoEnvWidget()
 {
 	delete ui;
+}
+
+void LfoEnvWidget::makeAllChildren(QtOscNode *dest, const char *_loc)
+{
+	//qDebug() << "this now: " << this;
+	init(ui->dial, ui->label, "Pintensity");
+/*	ui->label->setText("??");
+	qDebug() << ui->label->text();
+	setStyleSheet("background-color:green;");
+	show();
+	update();
+	ui->label->update();
+	ui->label->show();*/
+
 }

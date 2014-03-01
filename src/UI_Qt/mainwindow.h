@@ -4,11 +4,13 @@
 #include <QMainWindow>
 #include <QMdiArea>
 //#include "treedialog.h"
-#include "qtoscwidget.h" // TODO
+//#include "qtoscwidget.h" // TODO
 #include "qtoscnode.h"
 
-//class AddSynthWidget;
+class AddSynthWidget;
 class QMdiSubWindow;
+class TreeWidget;
+class VkWidget;
 
 namespace Ui {
 	class MainWindow;
@@ -18,8 +20,12 @@ class MainWindow : public QMainWindow, QtOscNode
 {
 	Q_OBJECT
 
-	QMdiSubWindow *addSynthWindow, *treeDlg, *vkWindow;
-
+	QMdiSubWindow *addSynthWindow = NULL,
+		*treeDlg = NULL,
+		*vkWindow = NULL;
+	AddSynthWidget* addSynth = NULL;
+	TreeWidget* treeWidget = NULL;
+	VkWidget* vkWidget = NULL;
 
 	void toggleWin(QWidget* content, bool visible);
 private slots:
@@ -33,6 +39,7 @@ private slots:
 	void toggleAddSynth(bool visible);
 	//inline void toggleAddSynth(bool v) { toggleWin(addSynthWindow, v); /*toggleWin(ui->mdiArea, addSynthWindow, v);*/ }
 	void togglePiano(bool visible);
+	void makeAllChildren(QtOscNode *dest, const char *_loc);
 
 public:
 	// template funcs are declared below

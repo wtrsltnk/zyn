@@ -13,7 +13,7 @@ namespace Ui {
 	class LfoEnvWidget;
 }
 
-class LfoEnvWidget : public QWidget, public QtOscNode
+class LfoEnvWidget : public QtOscWidget
 {
 	Q_OBJECT
 public:
@@ -21,6 +21,7 @@ public:
 	~LfoEnvWidget();
 	
 	//void init(QDial *dial, QLabel *label, const char *loc);
+	void makeAllChildren(QtOscNode *dest, const char *_loc);
 private:
 	Ui::LfoEnvWidget *ui;
 };
