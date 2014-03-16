@@ -50,6 +50,7 @@ class Fl_Osc_Widget
         //Extension
         std::string ext;
         Fl_Osc_Interface *osc;
+
     protected:
         Fl_Osc_Pane *fetch_osc_pane(Fl_Widget *w);
 };

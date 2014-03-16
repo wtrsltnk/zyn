@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include <QDebug> // TODO
-#include <UI/Fl_Osc_Interface.h> // TODO: not necessary
+#include <src/UI/Fl_Osc_Interface.h> // TODO: not necessary
 #include <rtosc/thread-link.h>
 
 class QDial;
@@ -12,15 +12,13 @@ class QSignalMapper;
 
 struct ThreadLinkInterface
 {
-	static rtosc::ThreadLink *uRecv;
-	static rtosc::ThreadLink *uSend;
+//	static rtosc::ThreadLink *uRecv;
+//	static rtosc::ThreadLink *uSend;
 
 	void writeRaw(const char* data) const {
-		uSend->raw_write(data); }
+		printf("SENDING: %s\n", data);
+		Fl_Osc_Interface::gToU->raw_write(data); }
 };
-
-rtosc::ThreadLink *ThreadLinkInterface::uRecv = new rtosc::ThreadLink(256,1024); // TODO: is the 256 correct here?
-rtosc::ThreadLink *ThreadLinkInterface::uSend = new rtosc::ThreadLink(256,1024);
 
 /*
  * Dial is a node

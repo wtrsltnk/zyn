@@ -28,8 +28,8 @@
 rtosc::ThreadLink *bToU = new rtosc::ThreadLink(4096*2,1024);
 rtosc::ThreadLink *uToB = new rtosc::ThreadLink(4096*2,1024);
 
-rtosc::ThreadLink *gToU = new rtosc::ThreadLink(256,1024); // TODO: is the 256 correct here?
-rtosc::ThreadLink *uToG = new rtosc::ThreadLink(256,1024);
+rtosc::ThreadLink *Fl_Osc_Interface::gToU = new rtosc::ThreadLink(256,1024); // TODO: is the 256 correct here?
+rtosc::ThreadLink *Fl_Osc_Interface::uToG = new rtosc::ThreadLink(256,1024);
 
 /**
  * General local static code/data
@@ -297,6 +297,8 @@ class DummyDataObj:public rtosc::RtData
 };
 
 
+class UI_Interface;
+
 /**
  * Forwarding logic
  * if(!dispatch(msg, data))
@@ -443,6 +445,7 @@ struct MiddleWareImpl
                 }
             }
         }
+	(reinterpret_cast<UI_Interface*>(osc)->*ui_interface_tick)();
     }
 
     bool handlePAD(string path, const char *msg, void *v)
@@ -602,6 +605,10 @@ struct MiddleWareImpl
 
     cb_t cb;
     void *ui;
+
+    //! function pointer to UI_Interfaces tick function
+    typedef  void (UI_Interface::*ui_callback_fn)(void);
+    ui_callback_fn ui_interface_tick;
 };
 
 /**
@@ -612,7 +619,9 @@ class UI_Interface:public Fl_Osc_Interface
     public:
         UI_Interface(MiddleWareImpl *impl_)
             :impl(impl_)
-        {}
+	{
+	    impl->ui_interface_tick = &UI_Interface::tick;
+	}
 
         void requestValue(string s) override
         {
@@ -785,8 +794,10 @@ class UI_Interface:public Fl_Osc_Interface
 	// by MiddleWareImpl::tick
 	void tick()
 	{
-	    while(gToU->hasNext()) {
-		writeRaw(gToU->read());
+	    while(Fl_Osc_Interface::gToU->hasNext()) {
+		const char* buf_ptr = Fl_Osc_Interface::gToU->read();
+		printf("RECEIVING: %s\n", buf_ptr);
+		writeRaw(buf_ptr);
 	    }
 	}
 };

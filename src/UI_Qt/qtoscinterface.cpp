@@ -12,6 +12,10 @@
 
 #include "qtoscinterface.h"
 
+// static members
+//rtosc::ThreadLink *ThreadLinkInterface::uRecv = new rtosc::ThreadLink(256,1024); // TODO: is the 256 correct here?
+//rtosc::ThreadLink *ThreadLinkInterface::uSend = new rtosc::ThreadLink(256,1024);
+
 rtosc::Port::MetaContainer get_metacontainer(const QString& str)
 {
 	rtosc::Ports& p = Master::ports;
