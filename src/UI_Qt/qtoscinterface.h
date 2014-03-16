@@ -4,10 +4,23 @@
 #include <QObject>
 #include <QDebug> // TODO
 #include <UI/Fl_Osc_Interface.h> // TODO: not necessary
+#include <rtosc/thread-link.h>
 
 class QDial;
 class QLabel;
 class QSignalMapper;
+
+struct ThreadLinkInterface
+{
+	static rtosc::ThreadLink *uRecv;
+	static rtosc::ThreadLink *uSend;
+
+	void writeRaw(const char* data) const {
+		uSend->raw_write(data); }
+};
+
+rtosc::ThreadLink *ThreadLinkInterface::uRecv = new rtosc::ThreadLink(256,1024); // TODO: is the 256 correct here?
+rtosc::ThreadLink *ThreadLinkInterface::uSend = new rtosc::ThreadLink(256,1024);
 
 /*
  * Dial is a node
@@ -44,17 +57,20 @@ private slots:
 	void sendMsg(const QString& str, const char *args, va_list arglist);
 	void testSlot() { int i = 0; qDebug() << "test: " << i; }
 public:
-	Fl_Osc_Interface* osc; // TODO (public)
+//	Fl_Osc_Interface* osc; // TODO (public)
+	ThreadLinkInterface *osc;
+
 
 	void requestValue(const char* _str) {
 		qDebug() << "requestValue: " << _str;
-		osc->requestValue(_str);
-		}
+	//	osc->requestValue(_str); // TODO...
+	}
+
 	void sendMsgFromHere(const QString &str, const char *args, ...);
 	inline const QString& getPath() { return path; }
 	void fromParent(QtOscInterface *parent);
 	void init(QDial *dial, QLabel *label, const char *_loc);
-	QtOscInterface(Fl_Osc_Interface* _osc, const QString& _path);
+	QtOscInterface(ThreadLinkInterface *_osc, const QString& _path);
 };
 
 #endif // QTOSCINTERFACE_H

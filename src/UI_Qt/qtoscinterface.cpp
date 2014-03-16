@@ -65,10 +65,10 @@ void QtOscInterface::init(QDial *dial, QLabel *label, const char *_loc)
 #endif
 }
 
-QtOscInterface::QtOscInterface(Fl_Osc_Interface *_osc, const QString &_path)
+QtOscInterface::QtOscInterface(ThreadLinkInterface *_osc, const QString &_path)
  : signalMapper(new QSignalMapper(this)),
- path(_path),
- osc(_osc)
+ path(_path)/*,
+ osc(_osc)*/
 {
 	qDebug() << "Initing from path: " << path;
 	connect(signalMapper, SIGNAL(mapped(QWidget*)),

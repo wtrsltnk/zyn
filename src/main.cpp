@@ -439,7 +439,7 @@ int main(int argc, char *argv[])
 #endif
     }
 
-#ifdef USE_QT
+#ifndef QT_GUI
     while(Pexitprogram == 0) {
 #if USE_NSM
         if(nsm) {

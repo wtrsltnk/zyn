@@ -26,7 +26,7 @@ template<class T> void addMdiWindow(T*& subWidget, const QtOscNode* root, const 
 #include <QDirIterator>
 
 #include <QFile>
-MainWindow::MainWindow(Fl_Osc_Interface *osc, QWidget *parent) :
+MainWindow::MainWindow(ThreadLinkInterface *osc, QWidget *parent) :
 	QMainWindow(parent),
 //	QtOscObject(NULL, "/", this),
 	ui(new Ui::MainWindow)

@@ -383,3 +383,5 @@ SOURCES += src/main.cpp \
            src/UI_Qt/lmms/Piano.cpp \
            src/UI_Qt/lmms/PianoView.cpp \
 RESOURCES += ressources_qt.qrc
+OTHER_FILES += CMakeLists.txt \
+	src/CMakeLists.txt

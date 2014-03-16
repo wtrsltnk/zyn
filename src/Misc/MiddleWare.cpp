@@ -28,6 +28,9 @@
 rtosc::ThreadLink *bToU = new rtosc::ThreadLink(4096*2,1024);
 rtosc::ThreadLink *uToB = new rtosc::ThreadLink(4096*2,1024);
 
+rtosc::ThreadLink *gToU = new rtosc::ThreadLink(256,1024); // TODO: is the 256 correct here?
+rtosc::ThreadLink *uToG = new rtosc::ThreadLink(256,1024);
+
 /**
  * General local static code/data
  */
@@ -777,6 +780,15 @@ class UI_Interface:public Fl_Osc_Interface
     private:
         std::multimap<string,Fl_Osc_Widget*> map;
         MiddleWareImpl *impl;
+
+	// this function must be called as a callback
+	// by MiddleWareImpl::tick
+	void tick()
+	{
+	    while(gToU->hasNext()) {
+		writeRaw(gToU->read());
+	    }
+	}
 };
 
 void MiddleWareImpl::warnMemoryLeaks(void)
