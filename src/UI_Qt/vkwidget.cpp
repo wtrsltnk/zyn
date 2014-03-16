@@ -35,12 +35,11 @@ void VkWidget::noteOn(unsigned char note,
 	unsigned char velocity,
 	int masterkeyshift)
 {
-	printf("NOTE ON: %d\n",(int)note);
+	// ZASF wants channel, note, velocity
 	osc->sendMsgFromHere("noteOn", "ccc", (char)0/*TODO*/, note, velocity);
 }
 
 void VkWidget::noteOff(unsigned char note)
 {
-	printf("NOTE OFF: %d\n",(int)note);
-	osc->sendMsgFromHere("noteOff", "ccc", note);
+	osc->sendMsgFromHere("noteOff", "ccc", char(0)/*TODO*/, note);
 }
