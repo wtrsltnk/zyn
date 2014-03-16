@@ -81,12 +81,7 @@ private slots:
 signals:
 	void keyPressed( int );
 	void baseNoteChanged();
-	// zynaddsubfx: added
-	/*virtual void processInEvent( const midiEvent & _me,
-					const midiTime & _time );
-	virtual void processOutEvent( const midiEvent & _me,
-						const midiTime & _time );
-*/
+
 } ;
 
 

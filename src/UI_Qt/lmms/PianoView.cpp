@@ -492,10 +492,10 @@ void PianoView::mousePressEvent( QMouseEvent * _me )
 				velocity = MidiMaxVelocity;
 			}
 			// set note on
-/*			m_piano->m_instrumentTrack->processInEvent(
+			m_piano->m_midiEvProc->processInEvent(
 					midiEvent( MidiNoteOn, 0, key_num,
 							velocity ),
-								midiTime() );*/
+								midiTime() );
 			// zynaddsubfx: outcommented
 			m_piano->m_pressedKeys[key_num] = true;
 			m_lastKey = key_num;
