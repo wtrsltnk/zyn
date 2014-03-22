@@ -45,7 +45,7 @@ public:
 	// template funcs are declared below
 	//template<class T> void toggleWin(QMdiArea* mdiArea, T* mdiSubWindow, bool visible);
 	void close();
-	explicit MainWindow(ThreadLinkInterface *osc, QWidget *parent = 0);
+    explicit MainWindow(Fl_Osc_Interface *osc, QWidget *parent = 0);
 	~MainWindow();
 	
 private:

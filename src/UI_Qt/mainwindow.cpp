@@ -27,7 +27,7 @@ template<class T> void addMdiWindow(T*& subWidget, const QtOscNode* root, const 
 #include <QDirIterator>
 
 #include <QFile>
-MainWindow::MainWindow(ThreadLinkInterface *osc, QWidget *parent) :
+MainWindow::MainWindow(Fl_Osc_Interface *osc, QWidget *parent) :
 	QMainWindow(parent),
 //	QtOscObject(NULL, "/", this),
 	ui(new Ui::MainWindow)
@@ -69,6 +69,8 @@ while (it.hasNext()) {
 	 * Now that all widgets are created, this will init the root node
 	 * and then recurse on all widgets.
 	 */
+    // TODO: mainWindow might be the only QtOscNode which
+    // has a nullpointer as Fl_Osc_Interface.
 	makeRoot(this, osc);
 }
 

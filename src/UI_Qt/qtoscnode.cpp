@@ -7,7 +7,7 @@
 {
 }*/
 
-void QtOscNode::set(ThreadLinkInterface *_osc, const QString &_path)
+void QtOscNode::set(Fl_Osc_Interface *_osc, const QString &_path)
 {
 	osc = new QtOscInterface(_osc, _path);
 }
@@ -20,7 +20,7 @@ void QtOscNode::makeChild(QtOscNode* dest, const char *_loc) const
 	dest->makeAllChildren(NULL, NULL);
 }
 
-void QtOscNode::makeRoot(QtOscNode* dest, ThreadLinkInterface *_osc)
+void QtOscNode::makeRoot(QtOscNode* dest, Fl_Osc_Interface *_osc)
 {
 	dest->set(_osc, "");
 	dest->makeAllChildren(NULL, NULL);

@@ -652,6 +652,12 @@ class UI_Interface:public Fl_Osc_Interface
             impl->write(s.c_str(), args, va);
         }
 
+        //! shall be called by the UI only.
+        void writeRawUi(const char* data) const override {
+            printf("SENDING: %s\n", data);
+            Fl_Osc_Interface::gToU->raw_write(data);
+        }
+
         void writeRaw(const char *msg) override
         {
             impl->handleMsg(msg);

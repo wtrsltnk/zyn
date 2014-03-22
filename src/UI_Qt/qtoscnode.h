@@ -26,7 +26,7 @@ class QtOscNode
 	QtOscInterface* osc; // TODO!
 private:
 	//QtOscNode(Fl_Osc_Interface* _osc, const QString &_path);
-	void set(ThreadLinkInterface *_osc, const QString &_path);
+    void set(Fl_Osc_Interface *_osc, const QString &_path);
 	void setInitialPath(const QString &_path);
 public:
 	//void complete(Fl_Osc_Interface _osc, )
@@ -34,7 +34,7 @@ public:
 	virtual void makeAllChildren(QtOscNode* dest, const char* _loc);
 
 	void makeChild(QtOscNode* dest, const char* _loc) const;
-	static void makeRoot(QtOscNode* dest, ThreadLinkInterface *_osc);
+    static void makeRoot(QtOscNode* dest, Fl_Osc_Interface *_osc);
 	void init(QDial *dial, QLabel *label, const char* _loc);
 
 	inline void sendMsgFromHere() {

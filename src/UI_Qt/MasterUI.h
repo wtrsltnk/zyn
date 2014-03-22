@@ -53,13 +53,14 @@ class nonGuiThreadT : public QThread
     #endif
 
     Fl_Osc_Interface* osc;
+    int* const exitprogram;
     //QTimer nonGuiTimer;
 
     void callback();
 public:
     void run() {
         //nonGuiTimer.start(20);
-        while(true) {
+        while(! *exitprogram) {
             callback();
             QThread::msleep(20);
         }
@@ -71,7 +72,9 @@ public:
         nsm = _nsm;
     }
 
-    nonGuiThreadT(Fl_Osc_Interface* osc) : osc(osc) {
+    nonGuiThreadT(Fl_Osc_Interface* osc, int* exitprogram) :
+        osc(osc),
+        exitprogram(exitprogram) {
         //connect(&nonGuiTimer, SIGNAL(timeout()), this, SLOT(callback()));
     }
 };
@@ -86,7 +89,7 @@ class MasterUI : public QObject
 
 	// TODO: deleta a and w?
 	MainWindow* w;
-	int* exitprogram;
+    int* const exitprogram;
 
 //	QTimer nonGuiTimer;
 	nonGuiThreadT nonGuiThread;

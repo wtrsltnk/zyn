@@ -44,6 +44,7 @@ class Fl_Osc_Interface
         virtual void write(string s) {write(s, "");};//{printf("write: '%s'\n", s.c_str());};
         virtual void write(string, const char *, ...) {};//{printf("write: '%s'\n", s.c_str());};
         virtual void writeRaw(const char *) {}
+        virtual void writeRawUi(const char* data) const {}
 
 	static rtosc::ThreadLink *gToU;
 	static rtosc::ThreadLink *uToG;

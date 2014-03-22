@@ -60,8 +60,8 @@ private slots:
 	void sendMsg(const QString& str, const char *args, va_list arglist);
 	void testSlot() { int i = 0; qDebug() << "test: " << i; }
 public:
-//	Fl_Osc_Interface* osc; // TODO (public)
-	ThreadLinkInterface *osc;
+    Fl_Osc_Interface* osc; // TODO (public)
+//	ThreadLinkInterface *osc;
 
 
 	void requestValue(const char* _str) {
@@ -73,7 +73,7 @@ public:
 	inline const QString& getPath() { return path; }
 	void fromParent(QtOscInterface *parent);
 	void init(QDial *dial, QLabel *label, const char *_loc);
-	QtOscInterface(ThreadLinkInterface *_osc, const QString& _path);
+    QtOscInterface(Fl_Osc_Interface *_osc, const QString& _path);
 };
 
 #endif // QTOSCINTERFACE_H
