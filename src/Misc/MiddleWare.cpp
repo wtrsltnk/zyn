@@ -421,7 +421,7 @@ struct MiddleWareImpl
         lo_server_recv_noblock(server, 0);
         while(bToU->hasNext()) {
             const char *rtmsg = bToU->read();
-            //printf("return: got a '%s'\n", rtmsg);
+            printf("return: got a '%s'\n", rtmsg);
             if(!strcmp(rtmsg, "/echo")
                     && !strcmp(rtosc_argument_string(rtmsg),"ss")
                     && !strcmp(rtosc_argument(rtmsg,0).s, "OSC_URL"))
@@ -445,7 +445,7 @@ struct MiddleWareImpl
                 }
             }
         }
-	(reinterpret_cast<UI_Interface*>(osc)->*ui_interface_tick)();
+    (reinterpret_cast<UI_Interface*>(osc)->*ui_interface_tick)();
     }
 
     bool handlePAD(string path, const char *msg, void *v)
@@ -568,11 +568,11 @@ struct MiddleWareImpl
 
     void write(const char *path, const char *args, va_list va)
     {
-	//printf("is that a '%s' I see there?\n", path);
+        printf("is that a '%s' I see there?\n", path);
         char *buffer = uToB->buffer();
         unsigned len = uToB->buffer_size();
         bool success = rtosc_vmessage(buffer, len, path, args, va);
-	//printf("working on '%s':'%s'\n",path, args);
+    //printf("working on '%s':'%s'\n",path, args);
 
         if(success)
             handleMsg(buffer);
@@ -611,6 +611,9 @@ struct MiddleWareImpl
     ui_callback_fn ui_interface_tick;
 };
 
+#define UI_SEPARATE_THREAD // TODO: correct here?
+// TODO -> #ifdef UI_QT
+
 /**
  * Interface to the middleware layer via osc packets
  */
@@ -619,19 +622,27 @@ class UI_Interface:public Fl_Osc_Interface
     public:
         UI_Interface(MiddleWareImpl *impl_)
             :impl(impl_)
-	{
-	    impl->ui_interface_tick = &UI_Interface::tick;
-	}
+        {
+            impl->ui_interface_tick = &UI_Interface::tick;
+        }
 
+        //! called by the UI
         void requestValue(string s) override
         {
+#ifdef UI_SEPARATE_THREAD
+            if(last_url != "GUI") {
+                Fl_Osc_Interface::gToU->write("/echo", "ss", "OSC_URL", "GUI");
+                last_url = "GUI";
+            }
+            Fl_Osc_Interface::gToU->write(s.c_str(),"");
+#else
             //Fl_Osc_Interface::requestValue(s);
             if(last_url != "GUI") {
                 impl->write("/echo", "ss", "OSC_URL", "GUI");
                 last_url = "GUI";
             }
-
             impl->write(s.c_str(),"");
+#endif
         }
 
         void write(string s, const char *args, ...) override
@@ -725,56 +736,22 @@ class UI_Interface:public Fl_Osc_Interface
             }
         }
 
+        //! called by MW to notify UI for a link
         void tryLink(const char *msg) override
         {
+#ifdef UI_SEPARATE_THREAD
+            Fl_Osc_Interface::uToG->raw_write(msg);
+#else
+            handleMsgFromMw(msg);
+#endif
+        }
 
-            //DEBUG
-            //if(strcmp(msg, "/vu-meter"))//Ignore repeated message
-            //    printf("trying the link for a '%s'<%s>\n", msg, rtosc_argument_string(msg));
-            const char *handle = rindex(msg,'/');
-            if(handle)
-                ++handle;
-
-            int found_count = 0;
-
-            for(auto pair:map) {
-                if(pair.first == msg) {
-                    found_count++;
-                    const char *arg_str = rtosc_argument_string(msg);
-
-                    //Always provide the raw message
-                    pair.second->OSC_raw(msg);
-
-                    if(!strcmp(arg_str, "b")) {
-                        pair.second->OSC_value(rtosc_argument(msg,0).b.len,
-                                rtosc_argument(msg,0).b.data,
-                                handle);
-                    } else if(!strcmp(arg_str, "c")) {
-                        pair.second->OSC_value((char)rtosc_argument(msg,0).i,
-                                handle);
-                    } else if(!strcmp(arg_str, "s")) {
-                        pair.second->OSC_value((const char*)rtosc_argument(msg,0).s,
-                                handle);
-                    } else if(!strcmp(arg_str, "i")) {
-                        pair.second->OSC_value((int)rtosc_argument(msg,0).i,
-                                handle);
-                    } else if(!strcmp(arg_str, "f")) {
-                        pair.second->OSC_value((float)rtosc_argument(msg,0).f,
-                                handle);
-                    } else if(!strcmp(arg_str, "T") || !strcmp(arg_str, "F")) {
-                        pair.second->OSC_value((bool)rtosc_argument(msg,0).T, handle);
-                    }
-                }
-            }
-
-            if(found_count == 0
-                    && strcmp(msg, "/vu-meter")
-                    && strcmp(msg, "undo_change")
-                    && !strstr(msg, "parameter")
-                    && !strstr(msg, "Prespoint")) {
-                //fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 1, 7 + 30, 0 + 40);
-                //fprintf(stderr, "Unknown widget '%s'\n", msg);
-                //fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 0, 7 + 30, 0 + 40);
+        //! called by UI to check for new tryLink() requests
+        void tryLinkUi()
+        {
+            while(Fl_Osc_Interface::uToG->hasNext())
+            {
+                handleMsgFromMw( Fl_Osc_Interface::uToG->read() );
             }
         };
 
@@ -790,16 +767,68 @@ class UI_Interface:public Fl_Osc_Interface
         std::multimap<string,Fl_Osc_Widget*> map;
         MiddleWareImpl *impl;
 
-	// this function must be called as a callback
-	// by MiddleWareImpl::tick
-	void tick()
-	{
-	    while(Fl_Osc_Interface::gToU->hasNext()) {
-		const char* buf_ptr = Fl_Osc_Interface::gToU->read();
-		printf("RECEIVING: %s\n", buf_ptr);
-		writeRaw(buf_ptr);
-	    }
-	}
+        void handleMsgFromMw(const char* msg)
+        {
+            //DEBUG
+            //if(strcmp(msg, "/vu-meter"))//Ignore repeated message
+            //    printf("trying the link for a '%s'<%s>\n", msg, rtosc_argument_string(msg));
+            const char *handle = rindex(msg,'/');
+            if(handle)
+            ++handle;
+
+            int found_count = 0;
+
+            for(auto pair:map) {
+            if(pair.first == msg) {
+                found_count++;
+                const char *arg_str = rtosc_argument_string(msg);
+
+                //Always provide the raw message
+                pair.second->OSC_raw(msg);
+
+                if(!strcmp(arg_str, "b")) {
+                pair.second->OSC_value(rtosc_argument(msg,0).b.len,
+                    rtosc_argument(msg,0).b.data,
+                    handle);
+                } else if(!strcmp(arg_str, "c")) {
+                pair.second->OSC_value((char)rtosc_argument(msg,0).i,
+                    handle);
+                } else if(!strcmp(arg_str, "s")) {
+                pair.second->OSC_value((const char*)rtosc_argument(msg,0).s,
+                    handle);
+                } else if(!strcmp(arg_str, "i")) {
+                pair.second->OSC_value((int)rtosc_argument(msg,0).i,
+                    handle);
+                } else if(!strcmp(arg_str, "f")) {
+                pair.second->OSC_value((float)rtosc_argument(msg,0).f,
+                    handle);
+                } else if(!strcmp(arg_str, "T") || !strcmp(arg_str, "F")) {
+                pair.second->OSC_value((bool)rtosc_argument(msg,0).T, handle);
+                }
+            }
+            }
+
+            if(found_count == 0
+                && strcmp(msg, "/vu-meter")
+                && strcmp(msg, "undo_change")
+                && !strstr(msg, "parameter")
+                && !strstr(msg, "Prespoint")) {
+            fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 1, 7 + 30, 0 + 40);
+            fprintf(stderr, "Unknown widget '%s'\n", msg);
+            fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 0, 7 + 30, 0 + 40);
+            }
+        }
+
+        // this function must be called as a callback
+        // by MiddleWareImpl::tick
+        void tick()
+        {
+            while(Fl_Osc_Interface::gToU->hasNext()) {
+                const char* buf_ptr = Fl_Osc_Interface::gToU->read();
+                printf("MW: RECEIVING: %s\n", buf_ptr);
+                writeRaw(buf_ptr);
+            }
+        }
 };
 
 void MiddleWareImpl::warnMemoryLeaks(void)

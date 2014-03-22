@@ -6,9 +6,13 @@
 // TODO: declare fwd?
 #include <rtosc/ports.h>
 
+#ifdef EMBEDDED_IN_LMMS
+#include "knob.h"
+#else
 namespace Ui {
 	class ZynDial;
 }
+#endif
 
 class ZynDial : public QWidget
 {
@@ -20,7 +24,11 @@ public:
 	~ZynDial();
 	
 private:
+#ifdef EMBEDDED_IN_LMMS
+	knob ui;
+#else
 	Ui::ZynDial *ui;
+#endif
 };
 
 #endif // ZYNDIAL_H

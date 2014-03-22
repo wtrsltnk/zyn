@@ -1,6 +1,6 @@
 #ifndef QTOSCOBJECT_H
 #define QTOSCOBJECT_H
-
+#if 0
 #include <QWidget>
 class QtOscObject;
 typedef QtOscObject Fl_Osc_Widget; // a bit hackish
@@ -66,5 +66,5 @@ public:
 };
 
 //typedef QtOscObject Fl_Osc_Widget; // a bit hackish
-
+#endif
 #endif // QTOSCOBJECT_H

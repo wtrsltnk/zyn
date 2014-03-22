@@ -42,8 +42,6 @@ set_module_parameters ( Fl_Widget *o )
 #endif
 }*/
 
-ThreadLinkInterface tli; // TODO: a better place for this?
-
 void GUI::initUi(int & argc, char ** argv)
 {
 	ui->init(argc, argv);
@@ -52,7 +50,7 @@ void GUI::initUi(int & argc, char ** argv)
 ui_handle_t GUI::createUi(Fl_Osc_Interface *osc, void *exit)
 {
 	::osc = osc;
-	return (void*)(ui = new MasterUI((int*)exit, &tli));
+    return (void*)(ui = new MasterUI((int*)exit, osc));
 /*
     ::osc = osc;
 
@@ -130,14 +128,14 @@ void GUI::raiseUi(ui_handle_t gui, const char *message)
 	(void)gui;
 	printf("got message for UI '%s'\n", message);
 	MasterUI *mui = (MasterUI*)gui;
-//	mui->osc->tryLink(message); // TODO: must we implement this?
+    mui->osc->tryLink(message); // TODO: must we implement this?
 	char buffer[1024];
 	memset(buffer, 0, sizeof(buffer));
 	rtosc::RtData d;
 	d.loc = buffer;
 	d.loc_size = 1024;
-	d.obj = gui;
-	ports.dispatch(message+1, d);
+    d.obj = gui;
+    ports.dispatch(message+1, d);
 }
 
 void GUI::raiseUi(ui_handle_t gui, const char *dest, const char *args, ...)

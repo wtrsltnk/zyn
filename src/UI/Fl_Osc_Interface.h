@@ -28,6 +28,8 @@ class Fl_Osc_Interface
 
         //and to be able to give them events
         virtual void tryLink(const char *){};
+        //! this fetches events from the UI side
+        virtual void tryLinkUi(){};
 
         //Damage the values of a collection of widgets
         virtual void damage(const char*){};

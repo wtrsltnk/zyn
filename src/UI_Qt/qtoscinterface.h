@@ -18,6 +18,11 @@ struct ThreadLinkInterface
 	void writeRaw(const char* data) const {
 		printf("SENDING: %s\n", data);
 		Fl_Osc_Interface::gToU->raw_write(data); }
+
+    //! this is only used to send data to ourself...
+/*    void tryLink(const char* data) const {
+        Fl_Osc_Interface::uToG->raw_write(data);
+    }*/
 };
 
 /*
@@ -61,7 +66,7 @@ public:
 
 	void requestValue(const char* _str) {
 		qDebug() << "requestValue: " << _str;
-	//	osc->requestValue(_str); // TODO...
+        osc->requestValue(_str); // TODO...
 	}
 
 	void sendMsgFromHere(const QString &str, const char *args, ...);

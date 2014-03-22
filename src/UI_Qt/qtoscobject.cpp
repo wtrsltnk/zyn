@@ -3,7 +3,7 @@
 #include <QString>
 #include "qtoscobject.h"
 #include "qtoscpane.h"
-
+#if 0
 class Fl_Widget : public QObject
 {
 };
@@ -116,5 +116,5 @@ void QtOscObject::oscMove(std::string new_ext)
 	ext = new_ext;
 	osc->requestValue(loc+ext);
 }
-
+#endif
 

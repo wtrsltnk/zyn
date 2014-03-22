@@ -5,6 +5,7 @@
 #include "qtoscobject.h"
 #include "qtoscpane.h"
 
+#if 0
 /**
  * @brief The QtOscWidget class
  * This class is useful because many of our widgets have QWidget as a base.
@@ -17,5 +18,6 @@ public:
 	//! Ctor for parent-less widgets
 	QtOscWidget(QtOscObject* treeBase, const QString& subPath);
 };
+#endif
 
 #endif // QTOSCWIDGET_H

@@ -8,6 +8,7 @@
 //#include "treedialog.h"
 #include "treewidget.h"
 #include "vkwidget.h"
+#include "ui_qt_config.h"
 
 // TODO: change name
 template<class T> void addMdiWindow(T*& subWidget, const QtOscNode* root, const char* _loc, QMdiArea* mdiArea, QMdiSubWindow*& window, /*T* widget,*/ bool visible)
@@ -58,6 +59,11 @@ while (it.hasNext()) {
 	toggleParameterTree(false);
 	toggleAddSynth(false);
 	togglePiano(false);
+
+#ifdef EMBEDDED_IN_LMMS
+	// LMMS brins its own piano below our GUI
+	ui->actionToggle_Piano->setVisible(false);
+#endif
 
 	/*
 	 * Now that all widgets are created, this will init the root node

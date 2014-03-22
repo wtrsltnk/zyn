@@ -133,11 +133,12 @@ static rtosc::Ports ports = {
     } END
 };
 
+//! to be called only by non GUI
 void GUI::raiseUi(ui_handle_t gui, const char *message)
 {
     MasterUI *mui = (MasterUI*)gui;
     mui->osc->tryLink(message);
-    //printf("got message for UI '%s'\n", message);
+    printf("got message for UI '%s'\n", message);
     char buffer[1024];
     memset(buffer, 0, sizeof(buffer));
     rtosc::RtData d;

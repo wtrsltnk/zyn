@@ -41,5 +41,5 @@ void VkWidget::noteOn(unsigned char note,
 
 void VkWidget::noteOff(unsigned char note)
 {
-	osc->sendMsgFromHere("noteOff", "ccc", char(0)/*TODO*/, note);
+	osc->sendMsgFromHere("noteOff", "cc", char(0)/*TODO*/, note);
 }

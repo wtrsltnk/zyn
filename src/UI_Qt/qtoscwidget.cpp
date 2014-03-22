@@ -1,5 +1,6 @@
 #include "qtoscwidget.h"
 
+#if 0
 QtOscWidget::QtOscWidget(QtOscWidget *treeBase, const QString &subPath)
 	: QWidget(treeBase),
 	QtOscObject(treeBase, subPath, this)
@@ -12,5 +13,5 @@ QtOscWidget::QtOscWidget(QtOscObject *treeBase, const QString &subPath)
 	QtOscObject(treeBase, subPath, NULL)
 {
 }
-
+#endif
 

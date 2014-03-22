@@ -19,6 +19,18 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 MESSAGE("This is the Makefile for ${MYPROJECT} (version ${VERSION}).")
 MESSAGE("Options: (-D...=..., cmake -L for details)")
 
+
+# Configuration
+SET(LMMS_INCLUDE_PATH "" CACHE STRING
+	"If embedded, path to LMMS' `include' directory.")
+option (EMBEDDED_IN_LMMS "Compile the UI for being embedded in lmms." ON)
+
+if(EMBEDDED_IN_LMMS)
+ MESSAGE("EMBEDDED")
+ELSE()
+ MESSAGE("NOT EMBEDDED")
+ENDIF()
+
 # Include abs branch
 
 
@@ -45,8 +57,8 @@ INCLUDE(DetectMachine)
 # special headers
 #
 
-#CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/zyn_version.h.in
-#${CMAKE_CURRENT_BINARY_DIR}/zyn_version.h)
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ui_qt_config.h.in
+	${CMAKE_CURRENT_BINARY_DIR}/ui_qt_config.h)
 
 #
 # Compile
@@ -82,9 +94,6 @@ ADD_LIBRARY(zynaddsubfx_gui STATIC ${zyn_SOURCES}
     ${zyn_HEADERS_MOC} 
     ${zyn_FORMS_HEADERS} 
     ${zyn_RESOURCES_RCC})
-
-MESSAGE("RES:")
-MESSAGE("${zyn_RESOURCES_RCC}")
 
 TARGET_LINK_LIBRARIES(zynaddsubfx_gui
 lmms_includes

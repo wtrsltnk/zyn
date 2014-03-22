@@ -32,6 +32,50 @@ typedef void NSM_Client;
 
 class ThreadLinkInterface;
 
+//! This class handles MiddleWare's ticks
+class nonGuiThreadT : public QThread
+{
+    Q_OBJECT
+
+    // TODO: use refs here if possible?
+    class MiddleWare* middleware;
+
+    #if LASH
+    LASHClient* lash;
+    #else
+    void* lash;
+    #endif
+
+    #if USE_NSM
+    NSM_Client *nsm = 0;
+    #else
+    void* nsm;
+    #endif
+
+    Fl_Osc_Interface* osc;
+    //QTimer nonGuiTimer;
+
+    void callback();
+public:
+    void run() {
+        //nonGuiTimer.start(20);
+        while(true) {
+            callback();
+            QThread::msleep(20);
+        }
+    }
+
+    void init(MiddleWare* _middleware, LASHClient *_lash, NSM_Client* _nsm) {
+        middleware = _middleware;
+        lash = _lash;
+        nsm = _nsm;
+    }
+
+    nonGuiThreadT(Fl_Osc_Interface* osc) : osc(osc) {
+        //connect(&nonGuiTimer, SIGNAL(timeout()), this, SLOT(callback()));
+    }
+};
+
 /**
  * @brief The MasterUI class
  * A dummy for Qt, I don't know what it actually needs.
@@ -40,54 +84,11 @@ class MasterUI : public QObject
 {
 	Q_OBJECT
 
-	class MiddleWare* middleware;
-
-	#if LASH
-	LASHClient* lash;
-	#else
-	void* lash;
-	#endif
-
-	#if USE_NSM
-	NSM_Client *nsm = 0;
-	#else
-	void* nsm;
-	#endif
-
 	// TODO: deleta a and w?
 	MainWindow* w;
 	int* exitprogram;
 
-	QTimer nonGuiTimer;
-
-	class nonGuiThreadT : public QThread
-	{
-		class MiddleWare* middleware;
-
-		#if LASH
-		LASHClient* lash;
-		#else
-		void* lash;
-		#endif
-
-		#if USE_NSM
-		NSM_Client *nsm = 0;
-		#else
-		void* nsm;
-		#endif
-
-
-		QTimer nonGuiTimer;
-		void callback();
-	public:
-		void run() {
-			nonGuiTimer.start(20);
-		}
-		nonGuiThreadT() {
-			connect(&nonGuiTimer, SIGNAL(timeout()), this, SLOT(do_non_gui_stuff()));
-		}
-	};
-
+//	QTimer nonGuiTimer;
 	nonGuiThreadT nonGuiThread;
 
 
@@ -95,7 +96,7 @@ class MasterUI : public QObject
 // TODO: remove unnecessary funcs
 private slots:
 	void request_exit();
-	void do_non_gui_stuff();
+//	void do_non_gui_stuff();
 public:
 // data
 	struct Fl_Button { void value(int){} void tooltip(const char*){} }; // TODO: replace
@@ -114,7 +115,7 @@ public:
 	Fl_Button *sm_indicator1, *sm_indicator2;
 	VuMasterMeter *mastervu, *simplemastervu;
 	Panellistitem *panellistitem[NUM_MIDI_PARTS];
-	/*class*/ ThreadLinkInterface *osc;
+    /*class*/ Fl_Osc_Interface *osc;
 
 	static QApplication* appli; // TODO: make private, processEvents func
 /*	void updatesendwindow();
@@ -122,7 +123,7 @@ public:
 	void setfilelabel(const char *filename);*/
 // required
 	void init(int & argc, char ** argv);
-	MasterUI(int *exitprogram_, ThreadLinkInterface *_osc);
+    MasterUI(int *exitprogram_, Fl_Osc_Interface *_osc);
 	~MasterUI();
 	void showUI();
 	void run_loop(MiddleWare* _middleware, LASHClient* _lash,
