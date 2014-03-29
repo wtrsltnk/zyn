@@ -123,6 +123,7 @@ static rtosc::Ports ports = {
     } END
 };
 
+//! is being called by the UI thread. deprecated.
 void GUI::raiseUi(ui_handle_t gui, const char *message)
 {
 	(void)gui;

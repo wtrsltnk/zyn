@@ -285,7 +285,7 @@ class DummyDataObj:public rtosc::RtData
             //DEBUG
             //printf("reply used for '%s'\n", msg);
             osc->tryLink(msg);
-            cb(ui, msg);
+        //    cb(ui, msg);
         }
         //virtual void broadcast(const char *path, const char *args, ...){(void)path;(void)args;};
         //virtual void broadcast(const char *msg){(void)msg;};
@@ -626,23 +626,8 @@ class UI_Interface:public Fl_Osc_Interface
             impl->ui_interface_tick = &UI_Interface::tick;
         }
 
-        //! called by the UI
-        void requestValue(string s) override
-        {
-#ifdef UI_SEPARATE_THREAD
-            if(last_url != "GUI") {
-                Fl_Osc_Interface::gToU->write("/echo", "ss", "OSC_URL", "GUI");
-                last_url = "GUI";
-            }
-            Fl_Osc_Interface::gToU->write(s.c_str(),"");
-#else
-            //Fl_Osc_Interface::requestValue(s);
-            if(last_url != "GUI") {
-                impl->write("/echo", "ss", "OSC_URL", "GUI");
-                last_url = "GUI";
-            }
-            impl->write(s.c_str(),"");
-#endif
+        void requestValue(string s) override {
+            requestValue(s.c_str());
         }
 
         void write(string s, const char *args, ...) override
@@ -660,7 +645,7 @@ class UI_Interface:public Fl_Osc_Interface
 
         void writeRaw(const char *msg) override
         {
-            impl->handleMsg(msg);
+              impl->handleMsg(msg);
         }
 
         void writeValue(string s, string ss) override
@@ -757,9 +742,10 @@ class UI_Interface:public Fl_Osc_Interface
         {
             while(Fl_Osc_Interface::uToG->hasNext())
             {
-                handleMsgFromMw( Fl_Osc_Interface::uToG->read() );
+                const char* buf = Fl_Osc_Interface::uToG->read();
+                handleMsgFromMw( buf );
             }
-        };
+        }
 
         void dumpLookupTable(void)
         {
@@ -788,7 +774,7 @@ class UI_Interface:public Fl_Osc_Interface
             if(pair.first == msg) {
                 found_count++;
                 const char *arg_str = rtosc_argument_string(msg);
-
+puts("found");
                 //Always provide the raw message
                 pair.second->OSC_raw(msg);
 
@@ -825,14 +811,41 @@ class UI_Interface:public Fl_Osc_Interface
             }
         }
 
+        // called by MW
+        void requestValue(const char* s)
+        {
+#if 0
+            if(last_url != "GUI") {
+                Fl_Osc_Interface::gToU->write("/echo", "ss", "OSC_URL", "GUI");
+                last_url = "GUI";
+            }
+            Fl_Osc_Interface::gToU->write(s.c_str(),"");
+#endif
+            //Fl_Osc_Interface::requestValue(s);
+            if(last_url != "GUI") {
+                impl->write("/echo", "ss", "OSC_URL", "GUI");
+                last_url = "GUI";
+            }
+            impl->write(s,"");
+        }
+
         // this function must be called as a callback
         // by MiddleWareImpl::tick
         void tick()
         {
             while(Fl_Osc_Interface::gToU->hasNext()) {
-                const char* buf_ptr = Fl_Osc_Interface::gToU->read();
+       /*         const char* buf_ptr = Fl_Osc_Interface::gToU->read();
                 printf("MW: RECEIVING: %s\n", buf_ptr);
-                writeRaw(buf_ptr);
+                writeRaw(buf_ptr);*/
+
+                const char* buf_ptr = Fl_Osc_Interface::gToU->read();
+                requestValue(buf_ptr);
+
+           /*     if(last_url != "GUI") {
+                    writeRaw("/echo", "ss", "OSC_URL", "GUI");
+                    last_url = "GUI";
+                }
+                writeRaw(s.c_str(),"");*/
             }
         }
 };

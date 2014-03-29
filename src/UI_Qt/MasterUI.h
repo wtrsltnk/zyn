@@ -105,6 +105,8 @@ public:
 	struct Fl_Button { void value(int){} void tooltip(const char*){} }; // TODO: replace
 	struct VuMasterMeter { void update(vuData* vu) {
 		printf("VU: %d\n",(int)(vu->outpeakl));
+        printf("VU: %d\n",(int)(vu->maxoutpeakl));
+        printf("VU: %d\n",(int)(vu->rmspeakl));
 	} }; // TODO: replace
 	struct Panellistitem {
 		struct VuPartMeter {
