@@ -7,12 +7,14 @@ Fl_Osc_Widget::Fl_Osc_Widget(void) //Deprecated
 
 Fl_Osc_Widget:: Fl_Osc_Widget(Fl_Widget *self)
 {
+#ifndef QT_GUI
     assert(fetch_osc_pane(self));
     if(auto *pane = fetch_osc_pane(self)) {
         osc = pane->osc;
         loc = pane->loc();
     }
     assert(osc);
+#endif
 }
 
 Fl_Osc_Widget::~Fl_Osc_Widget(void)
@@ -80,6 +82,7 @@ void Fl_Osc_Widget::update(void)
     osc->requestValue(loc+ext);
 }
 
+#ifndef QT_GUI
 Fl_Osc_Pane *Fl_Osc_Widget::fetch_osc_pane(Fl_Widget *w)
 {
     if(!w)
@@ -90,7 +93,7 @@ Fl_Osc_Pane *Fl_Osc_Widget::fetch_osc_pane(Fl_Widget *w)
         return pane;
     return fetch_osc_pane(w->parent());
 }
-
+#endif
 
 void Fl_Osc_Widget::rebase(std::string new_base)
 {

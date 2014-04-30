@@ -93,12 +93,14 @@ class MasterUI : public QObject
 
 //	QTimer nonGuiTimer;
 	nonGuiThreadT nonGuiThread;
+	QTimer linkFetchTimer;
 
 
 	//QThread nonGuiThread;
 // TODO: remove unnecessary funcs
 private slots:
 	void request_exit();
+	void linkFetch() { osc->tryLinkUi(); }
 //	void do_non_gui_stuff();
 public:
 // data

@@ -24,7 +24,9 @@ public:
 	}
 	
 private:
+	static float limit(float x);
 	Ui::VuMeter *ui;
+	void OSC_raw(const char *m);
 };
 
 #endif // VUMETER_H

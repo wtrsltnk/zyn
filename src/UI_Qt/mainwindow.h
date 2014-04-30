@@ -16,16 +16,22 @@ namespace Ui {
 	class MainWindow;
 }
 
+class PseudoVuMeter : public QtOscWidget
+{
+
+};
+
 class MainWindow : public QMainWindow, QtOscNode
 {
 	Q_OBJECT
 
-	QMdiSubWindow *addSynthWindow = NULL,
-		*treeDlg = NULL,
-		*vkWindow = NULL;
-	AddSynthWidget* addSynth = NULL;
-	TreeWidget* treeWidget = NULL;
-	VkWidget* vkWidget = NULL;
+	QMdiSubWindow *addSynthWindow = nullptr,
+	*treeDlg = nullptr,
+	*vkWindow = nullptr;
+	AddSynthWidget* addSynth = nullptr;
+	TreeWidget* treeWidget = nullptr;
+	VkWidget* vkWidget = nullptr;
+	PseudoVuMeter pseudoVu;
 
 	void toggleWin(QWidget* content, bool visible);
 private slots:
@@ -45,11 +51,12 @@ public:
 	// template funcs are declared below
 	//template<class T> void toggleWin(QMdiArea* mdiArea, T* mdiSubWindow, bool visible);
 	void close();
-    explicit MainWindow(Fl_Osc_Interface *osc, QWidget *parent = 0);
+	explicit MainWindow(Fl_Osc_Interface *osc, QWidget *parent = 0);
 	~MainWindow();
 	
 private:
 	Ui::MainWindow *ui;
+	void OSC_raw(const char *msg);
 };
 
 /*template<class T> void MainWindow::toggleWin(QMdiArea* mdiArea, T* mdiSubWindow, bool visible)

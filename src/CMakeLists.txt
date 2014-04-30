@@ -233,10 +233,10 @@ endif(NTK_FOUND)
 
 if(QtGui)
 	set(GUI_LIBRARIES ${QT_LIBRARIES} zynaddsubfx_gui)
-	add_subdirectory(UI_Qt)
-	add_definitions(-DQT_GUI)
-	
+	add_definitions(-DQT_GUI=1)
 	message(STATUS "Will build Qt gui")
+
+	add_subdirectory(UI_Qt)
 endif()
 
 if(FltkGui)

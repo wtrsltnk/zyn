@@ -51,7 +51,7 @@ LfoEnvWidget::~LfoEnvWidget()
 void LfoEnvWidget::makeAllChildren(QtOscNode *dest, const char *_loc)
 {
 	//qDebug() << "this now: " << this;
-	init(ui->dial, ui->label, "Pintensity");
+	initDial(ui->dial, ui->label, "Pintensity"); // TODO: is this correct here? or makeChild()?
 /*	ui->label->setText("??");
 	qDebug() << ui->label->text();
 	setStyleSheet("background-color:green;");

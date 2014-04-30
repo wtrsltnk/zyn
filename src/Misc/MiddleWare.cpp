@@ -421,7 +421,7 @@ struct MiddleWareImpl
         lo_server_recv_noblock(server, 0);
         while(bToU->hasNext()) {
             const char *rtmsg = bToU->read();
-            printf("return: got a '%s'\n", rtmsg);
+	  //  printf("return: got a '%s'\n", rtmsg);
             if(!strcmp(rtmsg, "/echo")
                     && !strcmp(rtosc_argument_string(rtmsg),"ss")
                     && !strcmp(rtosc_argument(rtmsg,0).s, "OSC_URL"))
@@ -626,9 +626,23 @@ class UI_Interface:public Fl_Osc_Interface
             impl->ui_interface_tick = &UI_Interface::tick;
         }
 
-        void requestValue(string s) override {
+/*        void requestValue(string s) override {
             requestValue(s.c_str());
-        }
+        }*/
+
+	// TODO: probably not correct?!?!?!
+	void requestValue(string s) override
+	{
+		// TODO: creating a new string for this is actually bad style...
+		writeRawUi(s.c_str());
+/*	//Fl_Osc_Interface::requestValue(s);
+		if(last_url != "GUI") {
+			impl->write("/echo", "ss", "OSC_URL", "GUI");
+			last_url = "GUI";
+		}
+		impl->write(s.c_str(),"");*/
+
+	}
 
         void write(string s, const char *args, ...) override
         {
@@ -639,7 +653,6 @@ class UI_Interface:public Fl_Osc_Interface
 
         //! shall be called by the UI only.
         void writeRawUi(const char* data) const override {
-            printf("SENDING: %s\n", data);
             Fl_Osc_Interface::gToU->raw_write(data);
         }
 
@@ -675,6 +688,7 @@ class UI_Interface:public Fl_Osc_Interface
         void createLink(string s, class Fl_Osc_Widget*w) override
         {
             assert(s.length() != 0);
+	    printf("MiddleWare creating link: %s\n",s.c_str());
             Fl_Osc_Interface::createLink(s,w);
             map.insert(std::pair<string,Fl_Osc_Widget*>(s,w));
         }
@@ -770,11 +784,13 @@ class UI_Interface:public Fl_Osc_Interface
 
             int found_count = 0;
 
+//            printf("msg length: %d\n", rtosc_message_length(msg, 1024));
+
             for(auto pair:map) {
             if(pair.first == msg) {
                 found_count++;
                 const char *arg_str = rtosc_argument_string(msg);
-puts("found");
+
                 //Always provide the raw message
                 pair.second->OSC_raw(msg);
 
@@ -809,24 +825,8 @@ puts("found");
             fprintf(stderr, "Unknown widget '%s'\n", msg);
             fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 0, 7 + 30, 0 + 40);
             }
-        }
 
-        // called by MW
-        void requestValue(const char* s)
-        {
-#if 0
-            if(last_url != "GUI") {
-                Fl_Osc_Interface::gToU->write("/echo", "ss", "OSC_URL", "GUI");
-                last_url = "GUI";
-            }
-            Fl_Osc_Interface::gToU->write(s.c_str(),"");
-#endif
-            //Fl_Osc_Interface::requestValue(s);
-            if(last_url != "GUI") {
-                impl->write("/echo", "ss", "OSC_URL", "GUI");
-                last_url = "GUI";
-            }
-            impl->write(s,"");
+            // TODO: call dispatch callback?
         }
 
         // this function must be called as a callback
@@ -834,19 +834,12 @@ puts("found");
         void tick()
         {
             while(Fl_Osc_Interface::gToU->hasNext()) {
-       /*         const char* buf_ptr = Fl_Osc_Interface::gToU->read();
-                printf("MW: RECEIVING: %s\n", buf_ptr);
-                writeRaw(buf_ptr);*/
-
-                const char* buf_ptr = Fl_Osc_Interface::gToU->read();
-                requestValue(buf_ptr);
-
-           /*     if(last_url != "GUI") {
-                    writeRaw("/echo", "ss", "OSC_URL", "GUI");
+                if(last_url != "GUI") {
+                    impl->write("/echo", "ss", "OSC_URL", "GUI");
                     last_url = "GUI";
                 }
-                writeRaw(s.c_str(),"");*/
-            }
+                writeRaw(Fl_Osc_Interface::gToU->read());
+             }
         }
 };
 

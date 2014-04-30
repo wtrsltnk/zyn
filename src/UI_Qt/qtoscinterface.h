@@ -16,8 +16,8 @@ struct ThreadLinkInterface
 //	static rtosc::ThreadLink *uSend;
 
 	void writeRaw(const char* data) const {
-		printf("SENDING: %s\n", data);
-		Fl_Osc_Interface::gToU->raw_write(data); }
+		Fl_Osc_Interface::gToU->raw_write(data);
+	}
 
     //! this is only used to send data to ourself...
 /*    void tryLink(const char* data) const {
@@ -48,7 +48,7 @@ class QtOscInterface : public QObject
 {
 	Q_OBJECT
 	QSignalMapper *signalMapper;
-	QString path;
+//	QString mainPath;
 	void sendMsg(const QString& str, const char *args, ...);
 private slots:
 	inline void sendMsg(QWidget* obj) {
@@ -65,15 +65,16 @@ public:
 
 
 	void requestValue(const char* _str) {
-		qDebug() << "requestValue: " << _str;
+		if(strcmp(_str, "/get-vu"))
+		 qDebug() << "requestValue: " << _str;
         osc->requestValue(_str); // TODO...
 	}
 
 	void sendMsgFromHere(const QString &str, const char *args, ...);
-	inline const QString& getPath() { return path; }
+//	inline const QString& getPath() { return mainPath; }
 	void fromParent(QtOscInterface *parent);
-	void init(QDial *dial, QLabel *label, const char *_loc);
-    QtOscInterface(Fl_Osc_Interface *_osc, const QString& _path);
+	void init(QDial *dial);
+	QtOscInterface(Fl_Osc_Interface *_osc, const QString& _path);
 };
 
 #endif // QTOSCINTERFACE_H

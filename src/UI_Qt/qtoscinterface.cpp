@@ -1,14 +1,9 @@
 #include <QString>
 #include <QSignalMapper>
-#include <QLabel>
 #include <QDial>
 
 #include <cassert>
 #include <QDebug> // TODO
-#include <QMessageBox>
-
-#include <rtosc/ports.h>
-#include "../Misc/Master.h"
 
 #include "qtoscinterface.h"
 
@@ -16,51 +11,10 @@
 //rtosc::ThreadLink *ThreadLinkInterface::uRecv = new rtosc::ThreadLink(256,1024); // TODO: is the 256 correct here?
 //rtosc::ThreadLink *ThreadLinkInterface::uSend = new rtosc::ThreadLink(256,1024);
 
-rtosc::Port::MetaContainer get_metacontainer(const QString& str)
+void QtOscInterface::init(QDial *dial)
 {
-	rtosc::Ports& p = Master::ports;
-	const rtosc::Port* port = p.apropos(str.toAscii().data());
-	if(!port) {
-		QMessageBox::critical(NULL, "Error setting up path!", str);
-	}
-	return port ?  rtosc::Port::MetaContainer(port->metadata) : rtosc::Port::MetaContainer("");
-}
-
-void QtOscInterface::init(QDial *dial, QLabel *label, const char *_loc)
-{
-	rtosc::Ports& p = Master::ports;
-	/*QString loc = path + _loc;
-	qDebug()<< loc;
-	qDebug() << p.apropos(path.toAscii().data()	)->name;
-	qDebug() << p.apropos(loc.toAscii().data())->name;
-	qDebug() << p.apropos(loc.toAscii().data())->metadata;*/
-
-	qDebug() << path;
-
-	rtosc::Port::MetaContainer meta = get_metacontainer(path + _loc);
-	for(const auto x : meta)
-	 qDebug() << " ... contains property " << x.title;
-
-	//dial->setMinimum(atof(meta["min"]));
-	//dial->setMaximum(atof(meta["max"]));
-	assert(meta["min"] != NULL);
-	qDebug() << "min" << meta["min"];
-	qDebug() << "max" << meta["max"];
-	qDebug() << "doc" << meta["documentation"];
-
-	QString labelText = meta["documentation"];
-	labelText += "\n[";
-	labelText += meta["min"];
-	labelText += "..";
-	labelText += meta["max"];
-	labelText += "]";
-	label->setText(labelText);
-
 	connect(dial, SIGNAL(valueChanged(int)), signalMapper, SLOT(map()));
-	QString subPath = path + _loc;
 	signalMapper->setMapping(dial, dial);
-//	QObject::connect(ui->dial, SIGNAL(sliderMoved(int), );
-	dial->setObjectName(subPath);
 	QObject::connect(dial, SIGNAL(valueChanged(int)), this, SLOT(testSlot()));
 
 #ifdef WIDGETS_NEED_UPDATE
@@ -71,10 +25,10 @@ void QtOscInterface::init(QDial *dial, QLabel *label, const char *_loc)
 
 QtOscInterface::QtOscInterface(Fl_Osc_Interface *_osc, const QString &_path)
  : signalMapper(new QSignalMapper(this)),
- path(_path),
+ //mainPath(_path),
  osc(_osc)
 {
-	qDebug() << "Initing from path: " << path;
+//	qDebug() << "Initing from path: " << mainPath;
 	connect(signalMapper, SIGNAL(mapped(QWidget*)),
 		this, SLOT(sendMsg(QWidget*)));
 }
@@ -120,9 +74,10 @@ void QtOscInterface::sendMsg(const QString &str, const char *args, ...)
 void QtOscInterface::sendMsgFromHere(const QString &str,
 	const char *args, ...)
 {
+	QString mainPath = ""; // TODO: why is the path needed here???
 	va_list l;
 	va_start(l, args);
-	sendMsg(path + str, args, l);
+	sendMsg(mainPath + str, args, l);
 	va_end(l);
 }
 

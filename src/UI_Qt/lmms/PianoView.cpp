@@ -943,7 +943,7 @@ void PianoView::paintEvent( QPaintEvent * )
 								*s_blackKeyPm );
 		}
 	}
-qDebug() << "draw!";
+
 	// now draw all black keys...
 	for( int x = 0; x < width(); )
 	{

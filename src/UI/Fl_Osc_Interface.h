@@ -14,17 +14,17 @@ class Fl_Osc_Interface
         virtual ~Fl_Osc_Interface(void){};
         //It is assumed that you want to have a registry for all of these
         //elements
-#ifdef QT_GUI
+//#ifdef QT_GUI
         virtual void createLink(string, class Fl_Osc_Widget *) {};
         virtual void renameLink(string,string,class Fl_Osc_Widget*){};
         virtual void removeLink(string,class Fl_Osc_Widget*){};
         virtual void removeLink(class Fl_Osc_Widget*){};
-#else
+/*#else
 	virtual void createLink(string, class QtOscObject *) {};
 	virtual void renameLink(string,string,class QtOscObject*){};
 	virtual void removeLink(string,class QtOscObject*){};
 	virtual void removeLink(class QtOscObject*){};
-#endif
+#endif*/
 
         //and to be able to give them events
         virtual void tryLink(const char *){};

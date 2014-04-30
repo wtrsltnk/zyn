@@ -10,6 +10,13 @@
 #include "vkwidget.h"
 #include "ui_qt_config.h"
 
+void MainWindow::OSC_raw(const char *msg)
+{
+    if(!strcmp(msg, "/show"))
+	show();
+}
+
+
 // TODO: change name
 template<class T> void addMdiWindow(T*& subWidget, const QtOscNode* root, const char* _loc, QMdiArea* mdiArea, QMdiSubWindow*& window, /*T* widget,*/ bool visible)
 {
@@ -103,10 +110,12 @@ void MainWindow::togglePiano(bool visible)
 
 void MainWindow::makeAllChildren(QtOscNode *dest, const char *_loc)
 {
-	makeChild(addSynth, "/part1/kit1/adpars/voice1/");
-	makeChild(treeWidget, "/");
-	makeChild(vkWidget, "/");
-	makeChild(ui->widget_3, "/");
+	makeChild(this, "show");
+	makeChild(addSynth, "part1/kit1/adpars/voice1/");
+	makeChild(treeWidget, "");
+	makeChild(vkWidget, "");
+	makeChild(ui->widget_3, "vu-meter");
+	//makeChild(&pseudoVu, "vu-meter");
 }
 
 void MainWindow::helpAbout()

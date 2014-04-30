@@ -127,16 +127,17 @@ static rtosc::Ports ports = {
 void GUI::raiseUi(ui_handle_t gui, const char *message)
 {
 	(void)gui;
-	printf("got message for UI '%s'\n", message);
+//	printf("got message for UI '%s'\n", message);
 	MasterUI *mui = (MasterUI*)gui;
-    mui->osc->tryLink(message); // TODO: must we implement this?
-	char buffer[1024];
+    mui->osc->tryLink(message);
+    // this is not allowed anymore - the UI must dispatch if wanted
+/*    char buffer[1024];
 	memset(buffer, 0, sizeof(buffer));
 	rtosc::RtData d;
 	d.loc = buffer;
 	d.loc_size = 1024;
     d.obj = gui;
-    ports.dispatch(message+1, d);
+    ports.dispatch(message+1, d);*/
 }
 
 void GUI::raiseUi(ui_handle_t gui, const char *dest, const char *args, ...)

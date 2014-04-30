@@ -54,7 +54,7 @@ void nonGuiThreadT::callback()
     done:
     #endif
         middleware->tick();
-        osc->tryLinkUi();
+//        osc->tryLinkUi(); -> UI Threads task!!
 
 }
 
@@ -73,6 +73,7 @@ MasterUI::MasterUI(int *exitprogram_, Fl_Osc_Interface *_osc) :
 
     w = new MainWindow(_osc);
 //    connect(&nonGuiTimer, SIGNAL(timeout()), this, SLOT(do_non_gui_stuff()));
+    connect(&linkFetchTimer, SIGNAL(timeout()), this, SLOT(linkFetch()));
     simplerefresh(); // this behaviour is suggested
 }
 
@@ -147,6 +148,7 @@ void MasterUI::run_loop(MiddleWare* _middleware, LASHClient *_lash, NSM_Client* 
 //    lash = _lash;
 //    nsm = _nsm;
     //nonGuiTimer.start(20);
+    linkFetchTimer.start(20);
 
     nonGuiThread.init(_middleware, _lash, _nsm);
     nonGuiThread.start();
