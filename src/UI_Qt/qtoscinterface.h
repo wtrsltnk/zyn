@@ -52,7 +52,6 @@ class QtOscInterface : public QObject
 	void sendMsg(const QString& str, const char *args, ...);
 private slots:
 	inline void sendMsg(QWidget* obj) {
-		qDebug() << "got message!";
 		sendMsg((const QWidget*)obj);
 	}
 

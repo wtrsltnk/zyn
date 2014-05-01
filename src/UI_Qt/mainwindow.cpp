@@ -111,7 +111,7 @@ void MainWindow::togglePiano(bool visible)
 void MainWindow::makeAllChildren(QtOscNode *dest, const char *_loc)
 {
 	makeChild(this, "show");
-	makeChild(addSynth, "part1/kit1/adpars/voice1/");
+	makeChild(addSynth, "part0/kit0/adpars/global/");
 	makeChild(treeWidget, "");
 	makeChild(vkWidget, "");
 	makeChild(ui->widget_3, "vu-meter");

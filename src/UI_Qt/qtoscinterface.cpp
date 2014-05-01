@@ -51,14 +51,14 @@ void QtOscInterface::sendMsg(const QString &str, const char *args, va_list argli
 	 puts("Dangerous Event ommision");*/
 
 
-	//qDebug() << "Sending msg to rtosc: " << str
-	//	<< " [argtypes: ]" << args
-	//	<< " [arglist: ](how should I display this?:))";
+	qDebug() << "Sending msg to rtosc: " << str
+		<< " [argtypes: ]" << args
+		<< " [arglist: ](how should I display this?:))";
 	//qDebug() << va_arg(arglist, int) << ", " << va_arg(arglist, int) << ", " << va_arg(arglist, int);
 	if(
 	rtosc_vmessage(buffer, 1024, str.toAscii().data(), args, arglist))
 	//rtosc_message(buffer, 1024, "/noteOn", "ccc", 0, 64, 127))
-	 osc->writeRaw(buffer);
+	 osc->writeRawUi(buffer);
 	else
 		puts("Dangerous Event ommision");
 }

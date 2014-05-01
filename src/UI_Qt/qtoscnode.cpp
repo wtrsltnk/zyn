@@ -129,5 +129,7 @@ void QtOscNode::initLabel(QDial *dial, QLabel *label, const char *_loc)
 
 	QString subPath = mainPath + _loc;
 	dial->setObjectName(subPath);
+
+	osc->init(dial);
 }
 

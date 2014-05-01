@@ -653,6 +653,8 @@ class UI_Interface:public Fl_Osc_Interface
 
         //! shall be called by the UI only.
         void writeRawUi(const char* data) const override {
+	    if(strcmp(data, "/get-vu"))
+	     printf("UI -> MiddleWare: %s\n", data);
             Fl_Osc_Interface::gToU->raw_write(data);
         }
 

@@ -423,7 +423,7 @@ void Master::AudioOut(float *outl, float *outr)
         }
 
         //XXX yes, this is not realtime safe, but it is useful...
-	if(strcmp(msg, "/get-vu") && false) {
+	if(strcmp(msg, "/get-vu") && true) {
             fprintf(stdout, "%c[%d;%d;%dm", 0x1B, 0, 5 + 30, 0 + 40);
             fprintf(stdout, "backend: '%s'<%s>\n", msg,
 		    rtosc_argument_string(msg));
@@ -440,7 +440,7 @@ void Master::AudioOut(float *outl, float *outr)
         //fprintf(stdout, "address '%s'\n", uToB->peak());
         ports.dispatch(msg+1, d);
         events++;
-	if(!d.matches && false) {
+	if(!d.matches && true) {
             fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 1, 7 + 30, 0 + 40);
             fprintf(stderr, "Unknown address '%s'\n", uToB->peak());
             fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 0, 7 + 30, 0 + 40);
