@@ -1,3 +1,6 @@
+// TODO: license...
+// TODO: some headers should be removed...
+
 #include "../UI/Connection.h"
 typedef int FL_Widget;
 #include "../UI/Fl_Osc_Interface.h"
@@ -9,8 +12,6 @@ typedef int FL_Widget;
 
 #include <rtosc/include/rtosc/ports.h>
 
-//#include <FL/Fl.H>
-//#include "Fl_Osc_Tree.H"
 #include "../src/Misc/Master.h"
 #include "../UI/common.H"
 #include "MasterUI.h"
@@ -26,22 +27,6 @@ Fl_Osc_Interface *osc;//TODO: the scope of this should be narrowed
 static Fl_Tiled_Image *	;
 #endif
 
-/*void
-set_module_parameters ( Fl_Widget *o )
-{
-#ifdef NTK_GUI
-    o->box( FL_DOWN_FRAME );
-    o->align( o->align() | FL_ALIGN_IMAGE_BACKDROP );
-    o->color( FL_BLACK );
-    o->image( module_backdrop );
-    o->labeltype( FL_SHADOW_LABEL );
-#else
-    o->box( FL_PLASTIC_UP_BOX );
-    o->color( FL_CYAN );
-    o->labeltype( FL_EMBOSSED_LABEL );
-#endif
-}*/
-
 void GUI::initUi(int & argc, char ** argv)
 {
 	ui->init(argc, argv);
@@ -51,18 +36,6 @@ ui_handle_t GUI::createUi(Fl_Osc_Interface *osc, void *exit)
 {
 	::osc = osc;
     return (void*)(ui = new MasterUI((int*)exit, osc));
-/*
-    ::osc = osc;
-
-    Fl_Window *midi_win = new Fl_Double_Window(400, 400, "Midi connections");
-    Fl_Osc_Tree *tree   = new Fl_Osc_Tree(0,0,400,400);
-    midi_win->resizable(tree);
-    tree->root_ports    = &Master::ports;
-    tree->osc           = osc;
-    midi_win->show();
-
-    return (void*) (ui = new MasterUI((Master*)master, (int*)exit, osc));
-    */
 }
 
 void GUI::destroyUi(ui_handle_t _ui)
@@ -72,7 +45,7 @@ void GUI::destroyUi(ui_handle_t _ui)
 	delete ui;
 }
 
-
+// TODO: can be removed?
 #define BEGIN(x) {x,"",NULL,[](const char *m, rtosc::RtData d){ \
     MasterUI *ui   = static_cast<MasterUI*>(d.obj); \
     rtosc_arg_t a0 = rtosc_argument(m,0);
@@ -81,6 +54,8 @@ void GUI::destroyUi(ui_handle_t _ui)
     //rtosc_arg_t a3 = rtosc_argument(m,3);*/
 #define END }},
 
+// these should not be called anymore:
+#if 0
 #include <QMessageBox>
 inline void fl_alert(const char* text) {
 	QMessageBox::warning(NULL, "Alert!", text);
@@ -122,6 +97,7 @@ static rtosc::Ports ports = {
 	}
     } END
 };
+#endif
 
 //! is being called by the UI thread. deprecated.
 void GUI::raiseUi(ui_handle_t gui, const char *message)
@@ -129,7 +105,7 @@ void GUI::raiseUi(ui_handle_t gui, const char *message)
 	(void)gui;
 //	printf("got message for UI '%s'\n", message);
 	MasterUI *mui = (MasterUI*)gui;
-    mui->osc->tryLink(message);
+    mui->osc->tryLink(message); // redirect
     // this is not allowed anymore - the UI must dispatch if wanted
 /*    char buffer[1024];
 	memset(buffer, 0, sizeof(buffer));

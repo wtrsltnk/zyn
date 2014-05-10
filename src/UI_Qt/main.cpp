@@ -1,3 +1,6 @@
+// TODO: this can be removed with high probability
+
+#if 0
 #include <QApplication>
 #include "mainwindow.h"
 
@@ -10,4 +13,5 @@ int main(int argc, char *argv[])
 	
 	return a.exec();
 }
+#endif
 #endif

@@ -16,11 +16,6 @@ namespace Ui {
 	class MainWindow;
 }
 
-class PseudoVuMeter : public QtOscWidget
-{
-
-};
-
 class MainWindow : public QMainWindow, QtOscNode
 {
 	Q_OBJECT
@@ -31,7 +26,6 @@ class MainWindow : public QMainWindow, QtOscNode
 	AddSynthWidget* addSynth = nullptr;
 	TreeWidget* treeWidget = nullptr;
 	VkWidget* vkWidget = nullptr;
-	PseudoVuMeter pseudoVu;
 
 	void toggleWin(QWidget* content, bool visible);
 private slots:

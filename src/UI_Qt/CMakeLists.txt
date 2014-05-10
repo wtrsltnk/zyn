@@ -68,7 +68,7 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ui_qt_config.h.in
 add_definitions(-std=c++11)
 file(GLOB zyn_SOURCES "*.cpp" "../UI/NSM/Client.C" "../UI/Fl_Osc_Widget.cpp")
 # TODO: Client.C is actually a bug...
-file(GLOB zyn_HEADERS "*.h")
+file(GLOB zyn_HEADERS "*.h" )
 file(GLOB zyn_FORMS "*.ui")
 file(GLOB zyn_RESOURCES "../../*.qrc")
 

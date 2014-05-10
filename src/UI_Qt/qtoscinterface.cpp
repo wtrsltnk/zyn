@@ -7,10 +7,6 @@
 
 #include "qtoscinterface.h"
 
-// static members
-//rtosc::ThreadLink *ThreadLinkInterface::uRecv = new rtosc::ThreadLink(256,1024); // TODO: is the 256 correct here?
-//rtosc::ThreadLink *ThreadLinkInterface::uSend = new rtosc::ThreadLink(256,1024);
-
 void QtOscInterface::init(QDial *dial)
 {
 	connect(dial, SIGNAL(valueChanged(int)), signalMapper, SLOT(map()));
@@ -38,11 +34,6 @@ void QtOscInterface::sendMsg(const QString &str, const char *args, va_list argli
 {
 	char buffer[1024];
 
-
-	//puts("writing OSC");
-	//printf("Path = '%s'\n", path.c_str());
-
-
 	// TODO: va version of this function
 
 /*	if(rtosc_vmessage(buffer, 1024, str.toAscii().data(), args, va))
@@ -57,7 +48,6 @@ void QtOscInterface::sendMsg(const QString &str, const char *args, va_list argli
 	//qDebug() << va_arg(arglist, int) << ", " << va_arg(arglist, int) << ", " << va_arg(arglist, int);
 	if(
 	rtosc_vmessage(buffer, 1024, str.toAscii().data(), args, arglist))
-	//rtosc_message(buffer, 1024, "/noteOn", "ccc", 0, 64, 127))
 	 osc->writeRawUi(buffer);
 	else
 		puts("Dangerous Event ommision");
@@ -71,7 +61,7 @@ void QtOscInterface::sendMsg(const QString &str, const char *args, ...)
 	va_end(va);
 }
 
-void QtOscInterface::sendMsgFromHere(const QString &str,
+/*void QtOscInterface::sendMsgFromHere(const QString &str,
 	const char *args, ...)
 {
 	QString mainPath = ""; // TODO: why is the path needed here???
@@ -79,18 +69,12 @@ void QtOscInterface::sendMsgFromHere(const QString &str,
 	va_start(l, args);
 	sendMsg(mainPath + str, args, l);
 	va_end(l);
-}
-
-
-void QtOscInterface::fromParent(QtOscInterface* _parent)
-{ // TODO: remove me
-//	setParent(_parent);
-
-}
+}*/
 
 
 void QtOscInterface::sendMsg(const QWidget *obj)
 {
+	// TODO: use one double var for all?
 	//double value;
 	// maybe this is not the best way, but it is the only way...
 	// templates might have been cooler, but Qt will forbid that.

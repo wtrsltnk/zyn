@@ -12,9 +12,6 @@ class QSignalMapper;
 
 struct ThreadLinkInterface
 {
-//	static rtosc::ThreadLink *uRecv;
-//	static rtosc::ThreadLink *uSend;
-
 	void writeRaw(const char* data) const {
 		Fl_Osc_Interface::gToU->raw_write(data);
 	}
@@ -48,8 +45,8 @@ class QtOscInterface : public QObject
 {
 	Q_OBJECT
 	QSignalMapper *signalMapper;
+
 //	QString mainPath;
-	void sendMsg(const QString& str, const char *args, ...);
 private slots:
 	inline void sendMsg(QWidget* obj) {
 		sendMsg((const QWidget*)obj);
@@ -57,11 +54,10 @@ private slots:
 
 	void sendMsg(const QWidget* obj);
 	void sendMsg(const QString& str, const char *args, va_list arglist);
-	void testSlot() { int i = 0; qDebug() << "test: " << i; }
+	//void testSlot() { int i = 0; qDebug() << "test: " << i; }
 public:
+	void sendMsg(const QString& str, const char *args, ...);
     Fl_Osc_Interface* osc; // TODO (public)
-//	ThreadLinkInterface *osc;
-
 
 	void requestValue(const char* _str) {
 		if(strcmp(_str, "/get-vu"))
@@ -69,9 +65,8 @@ public:
         osc->requestValue(_str); // TODO...
 	}
 
-	void sendMsgFromHere(const QString &str, const char *args, ...);
+//	void sendMsgFromHere(const QString &str, const char *args, ...);
 //	inline const QString& getPath() { return mainPath; }
-	void fromParent(QtOscInterface *parent);
 	void init(QDial *dial);
 	QtOscInterface(Fl_Osc_Interface *_osc, const QString& _path);
 };

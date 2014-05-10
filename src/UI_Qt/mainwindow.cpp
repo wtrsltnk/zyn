@@ -5,7 +5,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "addsynthwidget.h"
-//#include "treedialog.h"
 #include "treewidget.h"
 #include "vkwidget.h"
 #include "ui_qt_config.h"
@@ -16,9 +15,8 @@ void MainWindow::OSC_raw(const char *msg)
 	show();
 }
 
-
 // TODO: change name
-template<class T> void addMdiWindow(T*& subWidget, const QtOscNode* root, const char* _loc, QMdiArea* mdiArea, QMdiSubWindow*& window, /*T* widget,*/ bool visible)
+template<class T> void toggleMdiWindow(T*& subWidget, const QtOscNode* root, const char* _loc, QMdiArea* mdiArea, QMdiSubWindow*& window, /*T* widget,*/ bool visible)
 {
 	if(!subWidget)
 		subWidget = new T(); // TODO: name
@@ -28,15 +26,10 @@ template<class T> void addMdiWindow(T*& subWidget, const QtOscNode* root, const 
 	window->setVisible(visible);
 }
 
-/*template<class T> T* new_if_null(T*& ptr) {
-	return T ? T : new T();
-}*/
 #include <QDirIterator>
 
-#include <QFile>
 MainWindow::MainWindow(Fl_Osc_Interface *osc, QWidget *parent) :
 	QMainWindow(parent),
-//	QtOscObject(NULL, "/", this),
 	ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
@@ -49,20 +42,16 @@ MainWindow::MainWindow(Fl_Osc_Interface *osc, QWidget *parent) :
 	connect(ui->actionShow_Parameter_Tree, SIGNAL(triggered(bool)), this, SLOT(toggleParameterTree(bool)));
 	connect(ui->actionExit, SIGNAL(triggered()), this, SLOT(exit()));
 
-//	qDebug() << QString::fromUtf8(":/icons/piano");
-
-
-	 QDirIterator it(":", QDirIterator::Subdirectories);
+// use this code if you miss files from qt, like ":/icons/piano"
+/*	 QDirIterator it(":", QDirIterator::Subdirectories);
 while (it.hasNext()) {
     qDebug() << it.next();
-}
+}*/
 
 	// this is a dumb fix for a current bug ... (TODO)
 	ui->mdiArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 	ui->mdiArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-	/*if(!QFile::exists(":/icons/piano"))
-	 exit(99);
-*/
+
 	toggleParameterTree(false);
 	toggleAddSynth(false);
 	togglePiano(false);
@@ -89,23 +78,13 @@ MainWindow::~MainWindow()
 
 void MainWindow::toggleAddSynth(bool visible)
 {
-/*	if(!addSynthWindow){
-		AddSynthWidget* addSynthWidget = new AddSynthWidget();
-		addSynthWindow = ui->mdiArea->addSubWindow(addSynthWidget);
-	}
-	addSynthWindow->setVisible(visible);*/
-	addMdiWindow<AddSynthWidget>(addSynth, this, "/part1/kit1/adpars/voice1/", ui->mdiArea, addSynthWindow, visible);
+	toggleMdiWindow<AddSynthWidget>(addSynth, this, "/part1/kit1/adpars/voice1/", ui->mdiArea, addSynthWindow, visible);
 }
 
 void MainWindow::togglePiano(bool visible)
 {
 	Q_UNUSED(visible);
-	addMdiWindow<VkWidget>(vkWidget, this, "", ui->mdiArea, vkWindow, visible);
-	/*if(!pianoWindow){
-		AddSynthWidget* addSynthWidget = new AddSynthWidget();
-		addSynthWindow = ui->mdiArea->addSubWindow(addSynthWidget);
-	}
-	addSynthWindow->setVisible(b);*/
+	toggleMdiWindow<VkWidget>(vkWidget, this, "", ui->mdiArea, vkWindow, visible);
 }
 
 void MainWindow::makeAllChildren(QtOscNode *dest, const char *_loc)
@@ -115,7 +94,6 @@ void MainWindow::makeAllChildren(QtOscNode *dest, const char *_loc)
 	makeChild(treeWidget, "");
 	makeChild(vkWidget, "");
 	makeChild(ui->widget_3, "vu-meter");
-	//makeChild(&pseudoVu, "vu-meter");
 }
 
 void MainWindow::helpAbout()
@@ -139,5 +117,5 @@ void MainWindow::close()
 
 void MainWindow::toggleParameterTree(bool visible)
 {
-	addMdiWindow<TreeWidget>(treeWidget, this, "", ui->mdiArea, treeDlg, visible);
+	toggleMdiWindow<TreeWidget>(treeWidget, this, "", ui->mdiArea, treeDlg, visible);
 }
