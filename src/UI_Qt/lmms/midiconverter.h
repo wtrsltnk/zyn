@@ -15,8 +15,7 @@ public:
 	// to be implemented by inheriting classes
 	virtual void processInEvent(const midiEvent & event,
 						const midiTime & _time );
-	virtual void processOutEvent( const midiEvent & _me,
-						const midiTime & _time );
+	virtual void processOutEvent(const midiEvent &, const midiTime &);
 
 signals:
 	void noteOff(unsigned char note);

@@ -20,8 +20,7 @@ public:
 	explicit LfoEnvWidget(QWidget *parent = 0);
 	~LfoEnvWidget();
 	
-	//void init(QDial *dial, QLabel *label, const char *loc);
-	void makeAllChildren(QtOscNode *dest, const char *_loc);
+	void makeAllChildren();
 private:
 	Ui::LfoEnvWidget *ui;
 };

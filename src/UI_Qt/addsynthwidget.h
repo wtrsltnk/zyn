@@ -14,7 +14,7 @@ class AddSynthWidget : public QtOscWidget
 public:
 	explicit AddSynthWidget(QtOscWidget *parent = 0);
 	~AddSynthWidget();
-	void makeAllChildren(QtOscNode *dest, const char *_loc);
+	void makeAllChildren();
 	
 private:
 	Ui::AddSynthWidget *ui;

@@ -19,7 +19,7 @@ void QtOscInterface::init(QDial *dial)
 #endif
 }
 
-QtOscInterface::QtOscInterface(Fl_Osc_Interface *_osc, const QString &_path)
+QtOscInterface::QtOscInterface(Fl_Osc_Interface *_osc)
  : signalMapper(new QSignalMapper(this)),
  //mainPath(_path),
  osc(_osc)
@@ -60,17 +60,6 @@ void QtOscInterface::sendMsg(const QString &str, const char *args, ...)
 	sendMsg(str, args, va);
 	va_end(va);
 }
-
-/*void QtOscInterface::sendMsgFromHere(const QString &str,
-	const char *args, ...)
-{
-	QString mainPath = ""; // TODO: why is the path needed here???
-	va_list l;
-	va_start(l, args);
-	sendMsg(mainPath + str, args, l);
-	va_end(l);
-}*/
-
 
 void QtOscInterface::sendMsg(const QWidget *obj)
 {

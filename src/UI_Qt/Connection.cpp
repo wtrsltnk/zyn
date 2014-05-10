@@ -102,10 +102,9 @@ static rtosc::Ports ports = {
 //! is being called by the UI thread. deprecated.
 void GUI::raiseUi(ui_handle_t gui, const char *message)
 {
-	(void)gui;
 //	printf("got message for UI '%s'\n", message);
 	MasterUI *mui = (MasterUI*)gui;
-    mui->osc->tryLink(message); // redirect
+    mui->raise(message); // redirect
     // this is not allowed anymore - the UI must dispatch if wanted
 /*    char buffer[1024];
 	memset(buffer, 0, sizeof(buffer));
@@ -129,7 +128,8 @@ void GUI::raiseUi(ui_handle_t gui, const char *dest, const char *args, ...)
 
 void GUI::tickUi(ui_handle_t)
 {
-	ui->appli->processEvents(QEventLoop::AllEvents, 20);
+	// unused for Qt GUI - we use multiple threads
+	//ui->appli->processEvents(QEventLoop::AllEvents, 20);
 }
 
 void GUI::loopUi(MiddleWare* _middleware, LASHClient* _lash,

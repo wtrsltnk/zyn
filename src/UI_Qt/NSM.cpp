@@ -106,14 +106,17 @@ NSM_Client::command_open(const char *name,
     return r;
 }
 
+// suppress not used warning
+#if 0
 static void save_callback(Fl_Widget *, void *v)
 {
 	MasterUI *ui = static_cast<MasterUI*>(v);
 	ui->do_save_master();
 }
+#endif
 
 void
-NSM_Client::command_active(bool active)
+NSM_Client::command_active(bool )
 {
 	// TODO: do some GUI stuff with the menus, etc.
  /*   if(active) {

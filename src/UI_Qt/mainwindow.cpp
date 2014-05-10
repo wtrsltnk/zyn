@@ -16,7 +16,7 @@ void MainWindow::OSC_raw(const char *msg)
 }
 
 // TODO: change name
-template<class T> void toggleMdiWindow(T*& subWidget, const QtOscNode* root, const char* _loc, QMdiArea* mdiArea, QMdiSubWindow*& window, /*T* widget,*/ bool visible)
+template<class T> void toggleMdiWindow(T*& subWidget, QMdiArea* mdiArea, QMdiSubWindow*& window, bool visible)
 {
 	if(!subWidget)
 		subWidget = new T(); // TODO: name
@@ -78,16 +78,16 @@ MainWindow::~MainWindow()
 
 void MainWindow::toggleAddSynth(bool visible)
 {
-	toggleMdiWindow<AddSynthWidget>(addSynth, this, "/part1/kit1/adpars/voice1/", ui->mdiArea, addSynthWindow, visible);
+	toggleMdiWindow<AddSynthWidget>(addSynth, ui->mdiArea, addSynthWindow, visible);
 }
 
 void MainWindow::togglePiano(bool visible)
 {
 	Q_UNUSED(visible);
-	toggleMdiWindow<VkWidget>(vkWidget, this, "", ui->mdiArea, vkWindow, visible);
+	toggleMdiWindow<VkWidget>(vkWidget, ui->mdiArea, vkWindow, visible);
 }
 
-void MainWindow::makeAllChildren(QtOscNode *dest, const char *_loc)
+void MainWindow::makeAllChildren()
 {
 	makeChild(this, "show");
 	makeChild(addSynth, "part0/kit0/adpars/global/");
@@ -117,5 +117,5 @@ void MainWindow::close()
 
 void MainWindow::toggleParameterTree(bool visible)
 {
-	toggleMdiWindow<TreeWidget>(treeWidget, this, "", ui->mdiArea, treeDlg, visible);
+	toggleMdiWindow<TreeWidget>(treeWidget, ui->mdiArea, treeDlg, visible);
 }

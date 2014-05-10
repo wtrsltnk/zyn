@@ -26,27 +26,14 @@ struct ThreadLinkInterface
  * Dial is a node
  * node has signalling struct: non ptr, Qobject
  * Signalling struct has ptr to Fl Osc
- *
- *
- *
- *
  */
 
-template<class T>
-class QtWidgetAndPath : public QObject
-{
-	const QString path;
-	const T widget;
-	QtWidgetAndPath(const QString& _path, const T& _widget)
-	 : path(_path), widget(_widget) {}
-};
-
+//! Wrapper for Fl_Osc_Interface. can send and receive messages
 class QtOscInterface : public QObject
 {
 	Q_OBJECT
 	QSignalMapper *signalMapper;
 
-//	QString mainPath;
 private slots:
 	inline void sendMsg(QWidget* obj) {
 		sendMsg((const QWidget*)obj);
@@ -54,7 +41,6 @@ private slots:
 
 	void sendMsg(const QWidget* obj);
 	void sendMsg(const QString& str, const char *args, va_list arglist);
-	//void testSlot() { int i = 0; qDebug() << "test: " << i; }
 public:
 	void sendMsg(const QString& str, const char *args, ...);
     Fl_Osc_Interface* osc; // TODO (public)
@@ -65,10 +51,8 @@ public:
         osc->requestValue(_str); // TODO...
 	}
 
-//	void sendMsgFromHere(const QString &str, const char *args, ...);
-//	inline const QString& getPath() { return mainPath; }
 	void init(QDial *dial);
-	QtOscInterface(Fl_Osc_Interface *_osc, const QString& _path);
+	QtOscInterface(Fl_Osc_Interface *_osc);
 };
 
 #endif // QTOSCINTERFACE_H

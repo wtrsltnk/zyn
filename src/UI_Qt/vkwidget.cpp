@@ -5,7 +5,7 @@
 #include "lmms/midiconverter.h"
 
 #include "../Misc/Master.h"
-//#include <rtosc/ports.h>
+#include "qtoscinterface.h"
 
 VkWidget::VkWidget(QtOscWidget *parent) :
 	QtOscWidget(parent),
@@ -29,11 +29,9 @@ VkWidget::~VkWidget()
 	delete ui;
 }
 
-//#include <QDebug> // TODO
-
 void VkWidget::noteOn(unsigned char note,
 	unsigned char velocity,
-	int masterkeyshift)
+	int /*masterkeyshift*/ /*TODO*/)
 {
 	// ZASF wants channel, note, velocity
 	osc->sendMsg("/noteOn", "ccc", (char)0/*TODO*/, note, velocity);

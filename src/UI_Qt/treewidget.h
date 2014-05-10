@@ -20,6 +20,7 @@ class TreeWidget : public QtOscWidget
 public:
 	explicit TreeWidget(QtOscWidget* parent = 0);
 	~TreeWidget();
+	void makeAllChildren() {}
 	
 private:
 	Ui::TreeWidget *ui;

@@ -2,45 +2,32 @@
 #define QTOSCNODE_H
 
 #include <QWidget>
+#include <QStringList>
+
 class Fl_Osc_Interface;
 class QString;
-#include <QStringList>
-#include "qtoscinterface.h" // TODO
+class QtOscInterface;
+class QDial;
+class QLabel;
 
 #include "../UI/Fl_Osc_Widget.H"
 
-/*class QtOscNode : public QObject
-{
-	QString path;
-	QtOscInterface* osc;
-private:
-	//QtOscNode(Fl_Osc_Interface* _osc, const QString &_path);
-	void set(Fl_Osc_Interface* _osc, const QString &_path);
-public:
-	//inline QtOscNode() {}
-	void makeChild(QtOscNode* dest, const char* _loc) const;
-	static void makeRoot(QtOscNode* dest, Fl_Osc_Interface* _osc);
-	void init(QDial *dial, QLabel *label, const char* _loc);
-};*/
-
-// shall only keep a pointer, nothing else
+//! keeps the QtOscInterface and all paths
+//! receives OSC messages directly via Fl_Osc_Widget
 class QtOscNode : public Fl_Osc_Widget
-{ public:
+{
 	//! note that we can not inherit,
 	//! since diamond inheritance from QObject won't work.
+protected:
 	QtOscInterface* osc = nullptr; // TODO!
 	QString mainPath;
 	QStringList aliasPaths;
 private:
-	//QtOscNode(Fl_Osc_Interface* _osc, const QString &_path);
 	void set(Fl_Osc_Interface *_osc, const QString &_path);
-	void setInitialPath(const QString &_path);
 	void addAliasPath(const QString &_path);
 	void createLink(const QString &_path);
-public:
-	//void complete(Fl_Osc_Interface _osc, )
-	//inline QtOscNode() {}
-	virtual void makeAllChildren(QtOscNode* dest, const char* _loc);
+protected:
+	virtual void makeAllChildren() = 0;
 
 	void makeChild(QtOscNode* dest, const char* _loc) const;
 	static void makeRoot(QtOscNode* dest, Fl_Osc_Interface *_osc);

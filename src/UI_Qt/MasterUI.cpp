@@ -59,14 +59,8 @@ QApplication* MasterUI::appli = NULL;
 MasterUI::MasterUI(int *exitprogram_, Fl_Osc_Interface *_osc) :
     exitprogram(exitprogram_),
     nonGuiThread(_osc, exitprogram),
-    sm_indicator1(new Fl_Button),
-    sm_indicator2(new Fl_Button),
-    mastervu(new VuMasterMeter),
-    simplemastervu(new VuMasterMeter),
     osc(_osc)
 {
-    for (int i=0;i<NUM_MIDI_PARTS;i++){ panellistitem[i]=new Panellistitem; panellistitem[i]->init(i,NULL); }
-
     w = new MainWindow(_osc);
     connect(&linkFetchTimer, SIGNAL(timeout()), this, SLOT(linkFetch()));
     simplerefresh(); // this behaviour is suggested

@@ -159,13 +159,10 @@ HEADERS += src/globals.h \
            src/UI_Qt/lfowidget.h \
            src/UI_Qt/mainwindow.h \
            src/UI_Qt/MasterUI.h \
-           src/UI_Qt/models.h \
            src/UI_Qt/NSM.h \
            src/UI_Qt/qtoscinterface.h \
            src/UI_Qt/qtoscnode.h \
-           src/UI_Qt/qtoscobject.h \
            src/UI_Qt/qtoscpane.h \
-           src/UI_Qt/qtoscwidget.h \
            src/UI_Qt/treewidget.h \
            src/UI_Qt/vkwidget.h \
            src/UI_Qt/vumeter.h \
@@ -340,15 +337,12 @@ SOURCES += src/main.cpp \
            src/UI_Qt/funcwidget.cpp \
            src/UI_Qt/lfoenvwidget.cpp \
            src/UI_Qt/lfowidget.cpp \
-           src/UI_Qt/main.cpp \
            src/UI_Qt/mainwindow.cpp \
            src/UI_Qt/MasterUI.cpp \
            src/UI_Qt/NSM.cpp \
            src/UI_Qt/qtoscinterface.cpp \
            src/UI_Qt/qtoscnode.cpp \
-           src/UI_Qt/qtoscobject.cpp \
            src/UI_Qt/qtoscpane.cpp \
-           src/UI_Qt/qtoscwidget.cpp \
            src/UI_Qt/treewidget.cpp \
            src/UI_Qt/vkwidget.cpp \
            src/UI_Qt/vumeter.cpp \

@@ -50,7 +50,7 @@ public:
 
 protected:
 	virtual void modelChanged();
-	virtual void contextMenuEvent( QContextMenuEvent * _me );
+	virtual void contextMenuEvent(QContextMenuEvent *);
 	virtual void paintEvent( QPaintEvent * );
 	virtual void mousePressEvent( QMouseEvent * me );
 	virtual void mouseReleaseEvent( QMouseEvent * me );

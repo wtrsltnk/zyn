@@ -1,9 +1,9 @@
 #ifndef VUMETER_H
 #define VUMETER_H
 
-#include <QWidget>
 #include <QTimer>
 #include "qtoscnode.h"
+#include "qtoscinterface.h"
 
 namespace Ui {
 	class VuMeter;
@@ -19,7 +19,7 @@ private slots:
 public:
 	explicit VuMeter(QWidget *parent = 0);
 	~VuMeter();
-	void makeAllChildren(QtOscNode *, const char *) {
+	void makeAllChildren() {
 		requestTimer.start(requestInterval);
 	}
 	

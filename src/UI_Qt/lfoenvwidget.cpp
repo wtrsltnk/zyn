@@ -15,7 +15,7 @@ LfoEnvWidget::~LfoEnvWidget()
 	delete ui;
 }
 
-void LfoEnvWidget::makeAllChildren(QtOscNode *dest, const char *_loc)
+void LfoEnvWidget::makeAllChildren()
 {
 	initDial(ui->dial, ui->label, "Pintensity"); // TODO: is this correct here? or makeChild()?
 }

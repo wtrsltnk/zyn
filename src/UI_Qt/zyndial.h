@@ -2,8 +2,6 @@
 #define ZYNDIAL_H
 
 #include <QWidget>
-
-// TODO: declare fwd?
 #include <rtosc/ports.h>
 
 #ifdef EMBEDDED_IN_LMMS

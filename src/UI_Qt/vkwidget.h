@@ -23,13 +23,13 @@ class VkWidget : public QtOscWidget
 public:
 	explicit VkWidget(QtOscWidget* parent = 0);
 	~VkWidget();
+	void makeAllChildren() {}
 	
 private:
 	Ui::VkWidget *ui;
 private slots:
 	void noteOn(unsigned char note,
-		unsigned char velocity,
-		int masterkeyshift);
+		unsigned char velocity, int);
 	void noteOff(unsigned char note);
 };
 

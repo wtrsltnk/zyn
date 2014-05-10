@@ -429,7 +429,7 @@ void PianoView::pianoScrolled( int _new_pos )
  *  \param _me the ContextMenuEvent to handle.
  *  \todo Is this right, or does this create the context menu?
  */
-void PianoView::contextMenuEvent( QContextMenuEvent * _me )
+void PianoView::contextMenuEvent( QContextMenuEvent * /*_me*/ )
 {
 /*	if( _me->pos().y() > PIANO_BASE || m_piano == NULL )
 	{

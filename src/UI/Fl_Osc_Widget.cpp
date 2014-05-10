@@ -7,7 +7,9 @@ Fl_Osc_Widget::Fl_Osc_Widget(void) //Deprecated
 
 Fl_Osc_Widget:: Fl_Osc_Widget(Fl_Widget *self)
 {
-#ifndef QT_GUI
+#ifdef QT_GUI
+    (void) self;
+#else
     assert(fetch_osc_pane(self));
     if(auto *pane = fetch_osc_pane(self)) {
         osc = pane->osc;

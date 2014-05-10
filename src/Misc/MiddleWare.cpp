@@ -151,7 +151,7 @@ void deallocate(const char *str, void *v)
  * - Fetches liblo messages and forward them to the backend
  * - Grabs backend messages and distributes them to the frontends
  */
-void osc_check(cb_t cb, void *ui)
+void osc_check(cb_t , void *)
 {
 }
 

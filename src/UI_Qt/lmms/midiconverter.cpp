@@ -19,7 +19,7 @@ void MidiConverter::processInEvent(const midiEvent &event, const midiTime &_time
 	}
 }
 
-void MidiConverter::processOutEvent(const midiEvent &event, const midiTime &_time)
+void MidiConverter::processOutEvent(const midiEvent &, const midiTime &)
 {
 	// nothing to do
 }

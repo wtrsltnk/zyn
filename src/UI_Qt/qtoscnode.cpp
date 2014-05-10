@@ -3,17 +3,12 @@
 #include <QLabel>
 #include <QDial>
 #include <QMessageBox>
+#include <QDebug>
 
 #include "qtoscnode.h"
-#include <iostream> // TODO
+#include "qtoscinterface.h"
 #include <rtosc/ports.h>
 #include "../Misc/Master.h"
-
-
-/*QtOscNode::QtOscNode(Fl_Osc_Interface *_osc, const QString& _path)
-	: osc(new QtOscInterface(_osc)), path(_path)
-{
-}*/
 
 void QtOscNode::addAliasPath(const QString& _path)
 {
@@ -32,11 +27,11 @@ void QtOscNode::set(Fl_Osc_Interface *_osc, const QString &_path)
 	// TODO: better: don't depend on the order the user calls makeChild()?
 	if(osc) {
 		addAliasPath(_path);
-		std::cout << "Appending alias: " << _path.toAscii().data() << std::endl;
+		qDebug() << "Appending alias: " << _path.toAscii().data();
 	}
 	else
 	{
-		osc = new QtOscInterface(_osc, _path);
+		osc = new QtOscInterface(_osc);
 		setMainPath(_path);
 	}
 }
@@ -48,21 +43,19 @@ void QtOscNode::createLink(const QString& _path)
 
 void QtOscNode::makeChild(QtOscNode* dest, const char *_loc) const
 {
-	std::cout << "Making child:" << (mainPath + _loc).toAscii().data() << std::endl;
+	qDebug() << "Making child:" << (mainPath + _loc).toAscii().data();
 
-	//dest->osc->setParent(osc);
 	dest->set(osc->osc, mainPath + _loc);
-//	dest->osc->fromParent(osc);
 	if(dest != this) {
-		std::cout << dest << ", " << this << std::endl;
-		dest->makeAllChildren(NULL, NULL);
+		qDebug() << dest << ", " << this;
+		dest->makeAllChildren();
 	}
 }
 
 void QtOscNode::makeRoot(QtOscNode* dest, Fl_Osc_Interface *_osc)
 {
 	dest->set(_osc, "/");
-	dest->makeAllChildren(NULL, NULL);
+	dest->makeAllChildren();
 }
 
 void QtOscNode::initDial(QDial *dial, QLabel *label, const char *_loc)
@@ -73,17 +66,6 @@ void QtOscNode::initDial(QDial *dial, QLabel *label, const char *_loc)
 
 QtOscWidget::QtOscWidget(QWidget *parent)
  : QWidget(parent)
-{
-}
-
-
-void QtOscNode::setInitialPath(const QString &_path)
-{
-	osc = new QtOscInterface(NULL, _path);
-}
-
-// TODO: set this virtual function = 0 ?
-void QtOscNode::makeAllChildren(QtOscNode *dest, const char *_loc)
 {
 }
 
@@ -99,7 +81,6 @@ rtosc::Port::MetaContainer get_metacontainer(const QString& str)
 
 void QtOscNode::initLabel(QDial *dial, QLabel *label, const char *_loc)
 {
-	rtosc::Ports& p = Master::ports;
 	/*QString loc = path + _loc;
 	qDebug()<< loc;
 	qDebug() << p.apropos(path.toAscii().data()	)->name;

@@ -21,7 +21,7 @@ AddSynthWidget::~AddSynthWidget()
 	delete ui;
 }
 
-void AddSynthWidget::makeAllChildren(QtOscNode *dest, const char *_loc)
+void AddSynthWidget::makeAllChildren()
 {
 	makeChild(ui->widget->ui->widget_4, "FreqLfo/");
 }
