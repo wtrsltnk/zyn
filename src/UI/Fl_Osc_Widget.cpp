@@ -1,22 +1,22 @@
 #include "Fl_Osc_Widget.H"
 #include <rtosc/rtosc.h>
 
+#ifdef QT_GUI
+#include <QWidget>
+#endif
+
 Fl_Osc_Widget::Fl_Osc_Widget(void) //Deprecated
 :loc(), osc(NULL)
 {}
 
-Fl_Osc_Widget:: Fl_Osc_Widget(Fl_Widget *self)
+Fl_Osc_Widget::Fl_Osc_Widget(Fl_Widget *self)
 {
-#ifdef QT_GUI
-    (void) self;
-#else
     assert(fetch_osc_pane(self));
     if(auto *pane = fetch_osc_pane(self)) {
         osc = pane->osc;
         loc = pane->loc();
     }
     assert(osc);
-#endif
 }
 
 Fl_Osc_Widget::~Fl_Osc_Widget(void)
@@ -84,18 +84,24 @@ void Fl_Osc_Widget::update(void)
     osc->requestValue(loc+ext);
 }
 
-#ifndef QT_GUI
 Fl_Osc_Pane *Fl_Osc_Widget::fetch_osc_pane(Fl_Widget *w)
 {
     if(!w)
         return NULL;
 
+#ifdef QT_GUI
+    Fl_Osc_Pane *pane = dynamic_cast<Fl_Osc_Pane*>(w->parentWidget());
+#else
     Fl_Osc_Pane *pane = dynamic_cast<Fl_Osc_Pane*>(w->parent());
+#endif
     if(pane)
         return pane;
+#ifdef QT_GUI
+    return fetch_osc_pane(w->parentWidget());
+#else
     return fetch_osc_pane(w->parent());
-}
 #endif
+}
 
 void Fl_Osc_Widget::rebase(std::string new_base)
 {

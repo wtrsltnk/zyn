@@ -4,8 +4,10 @@
 #include <cassert>
 #include <cmath>
 #include "Fl_Osc_Interface.h"
-#ifndef QT_GUI
 #include "Fl_Osc_Pane.H"
+#ifdef QT_GUI
+class QWidget;
+#else
 #include <FL/Fl_Group.H>
 #endif
 
@@ -14,7 +16,7 @@ class Fl_Osc_Widget
     public:
         Fl_Osc_Widget(void); //Deprecated
 #ifdef QT_GUI
-	using Fl_Widget = void;
+	using Fl_Widget = QWidget;
 #endif
 	Fl_Osc_Widget(Fl_Widget *self);
 
@@ -58,7 +60,5 @@ class Fl_Osc_Widget
         Fl_Osc_Interface *osc;
 
     protected:
-#ifndef QT_GUI
         Fl_Osc_Pane *fetch_osc_pane(Fl_Widget *w);
-#endif
 };
