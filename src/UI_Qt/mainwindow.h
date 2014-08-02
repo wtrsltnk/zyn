@@ -2,8 +2,11 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QTabWidget>
 #include "qtoscnode.h"
+#include "qtoscpane.h"
 
+class QOscMdiSubWindow;
 class AddSynthWidget;
 class QMdiSubWindow;
 class TreeWidget;
@@ -17,7 +20,7 @@ class MainWindow : public QMainWindow, QtOscNode
 {
 	Q_OBJECT
 
-	QMdiSubWindow *addSynthWindow = nullptr,
+	QOscDefaultPane<QTabWidget> *addSynthWindow = nullptr,
 		*treeDlg = nullptr,
 		*vkWindow = nullptr;
 	AddSynthWidget* addSynth = nullptr;

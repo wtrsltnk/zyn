@@ -1,4 +1,5 @@
-#include <QMdiSubWindow>
+//#include <QMdiSubWindow>
+#include "qtoscnode.h"
 #include <QMessageBox>
 #include <QDebug> // TODO
 
@@ -16,12 +17,15 @@ void MainWindow::OSC_raw(const char *msg)
 }
 
 // TODO: change name
-template<class T> void toggleMdiWindow(T*& subWidget, QMdiArea* mdiArea, QMdiSubWindow*& window, bool visible)
+template<class T, class QtClass> void toggleMdiWindow(T*& subWidget, QTabWidget* tabWidget, QtClass*& window, bool visible)
 {
 	if(!subWidget)
 		subWidget = new T(); // TODO: name
 	if(!window)  {
-		window = mdiArea->addSubWindow(subWidget);
+	//	window = mdiArea->addSubWindow(
+	//		subWidget);
+		window = new QtClass;
+		tabWidget->addTab(subWidget, "Tab");
 	}
 	window->setVisible(visible);
 }
@@ -49,8 +53,8 @@ while (it.hasNext()) {
 }*/
 
 	// this is a dumb fix for a current bug ... (TODO)
-	ui->mdiArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-	ui->mdiArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+//	ui->mdiArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+//	ui->mdiArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
 	toggleParameterTree(false);
 	toggleAddSynth(false);
@@ -78,13 +82,13 @@ MainWindow::~MainWindow()
 
 void MainWindow::toggleAddSynth(bool visible)
 {
-	toggleMdiWindow<AddSynthWidget>(addSynth, ui->mdiArea, addSynthWindow, visible);
+	toggleMdiWindow<AddSynthWidget>(addSynth, ui->tabWidget, addSynthWindow, visible);
 }
 
 void MainWindow::togglePiano(bool visible)
 {
 	Q_UNUSED(visible);
-	toggleMdiWindow<VkWidget>(vkWidget, ui->mdiArea, vkWindow, visible);
+	toggleMdiWindow<VkWidget>(vkWidget, ui->tabWidget, vkWindow, visible);
 }
 
 void MainWindow::makeAllChildren()
@@ -117,5 +121,5 @@ void MainWindow::close()
 
 void MainWindow::toggleParameterTree(bool visible)
 {
-	toggleMdiWindow<TreeWidget>(treeWidget, ui->mdiArea, treeDlg, visible);
+	toggleMdiWindow<TreeWidget>(treeWidget, ui->tabWidget, treeDlg, visible);
 }

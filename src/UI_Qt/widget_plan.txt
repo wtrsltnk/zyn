@@ -1,0 +1,54 @@
+FreqLfo : OscGroup ("FreqLfo"), QWidget
+{
+	(Dials etc.)
+}
+
+Frequency : QTabWidget (no OscGroup)
+{
+	// 2 Tabs
+	FreqLfo
+	FreqEnvelope
+}
+
+Voice : OscGroup("voice#"), QTabWidget
+{
+	// 4 Tabs
+	Amplitude
+	Filter
+	Frequency
+	More
+}
+
+AdSynth : OscGroup("adpars"), QTabWidget
+{
+	VoiceSpinBox
+	// 2 Tabs
+	Voice (rebased by VoiceSpinBox)
+	Global
+	...
+}
+
+Kit : OscGroup("kit#"), QTabWidget
+{
+	// 3 Tabs:
+	Adsynth
+	Subsynth
+	Padsynth
+}
+
+Instrument : OscGroup("part#"), QTableWidget
+{
+	kit overview (single/multi/drum mode etc)
+	// Table:
+	16 Kits : rebased by clicking "edit"-Buttons (one per kit -> 16 edit buttons)
+}
+
+MainWindow : QWidget
+{
+	// Widgets next to each other
+	FX
+	Midi
+	...
+	PartSpinbox
+	Instrument (rebased by PartSpinbox) // big window
+}

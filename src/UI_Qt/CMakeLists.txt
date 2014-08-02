@@ -23,7 +23,7 @@ MESSAGE("Options: (-D...=..., cmake -L for details)")
 # Configuration
 SET(LMMS_INCLUDE_PATH "" CACHE STRING
 	"If embedded, path to LMMS' `include' directory.")
-option (EMBEDDED_IN_LMMS "Compile the UI for being embedded in lmms." ON)
+option (EMBEDDED_IN_LMMS "Compile the UI for being embedded in lmms." OFF)
 
 if(EMBEDDED_IN_LMMS)
  MESSAGE("EMBEDDED")
@@ -65,7 +65,7 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ui_qt_config.h.in
 #
 
 # FLAGS
-add_definitions(-std=c++11)
+add_definitions(-std=c++11 -Werror)
 file(GLOB zyn_SOURCES "*.cpp" "../UI/NSM/Client.C" "../UI/Fl_Osc_Widget.cpp" "../UI/Fl_Osc_Pane.cpp")
 # TODO: Client.C is actually a bug...
 file(GLOB zyn_HEADERS "*.h" "../UI_Fl_Osc_Widget.H" "../UI/Fl_Osc_Pane.H")

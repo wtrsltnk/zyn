@@ -1,19 +1,43 @@
 #ifndef QTOSCPANE_H
 #define QTOSCPANE_H
 
-#include <string> // (TODO: forward)
+#include <QTabWidget>
+#include <QMdiSubWindow>
+#include "../UI/Fl_Osc_Pane.H"
 
-// TODO: this will probably not be used
-#if 0
-class QtOscPane
+class QWidget;
+
+//! @file Contains classes the inherit from Fl_Osc_Pane
+
+template<class QtClass>
+class QOscDefaultPane : public Fl_Osc_Pane, public QtClass
 {
-public:
-	QtOscPane();
-	class Fl_Osc_Interface *osc;
-	std::string base;
-	virtual std::string loc(void) const = 0;
-	//! rebase is used when e.g. the voice is changed, but the gui remains
-	virtual void rebase(std::string new_base) = 0;
+    public:
+	QOscDefaultPane() {}
+	void init(Fl_Osc_Interface *osc_, std::string loc_) {
+		osc   = osc_;
+		base = loc_;
+	}
+
+	virtual std::string loc(void) const { return base; }
+	virtual void rebase(std::string new_base) {
+		nested_rebase(
+		static_cast<QtClass*>(this), new_base);
+	}
+
+};
+
+using QOscTab = QOscDefaultPane<QTabWidget>;
+
+#if 0
+class QOscMdiSubWindow : public Fl_Osc_Pane, public QWidget
+{
+    public:
+	QOscMdiSubWindow(QWidget *parent = nullptr);
+	void init(Fl_Osc_Interface *osc_, std::string loc_);
+	virtual std::string loc(void) const { return base; }
+	virtual void rebase(std::string new_base);
+
 };
 #endif
 
