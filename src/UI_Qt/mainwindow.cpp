@@ -72,6 +72,10 @@ while (it.hasNext()) {
     // TODO: mainWindow might be the only QtOscNode which
     // has a nullpointer as Fl_Osc_Interface.
 	makeRoot(this, osc);
+
+	addSynth = new AddSynthWidget(ui->centerWidget);
+	vkWidget = new VkWidget(ui->bottomWidget);
+	treeWidget = new TreeWidget;
 }
 
 MainWindow::~MainWindow()
@@ -82,13 +86,13 @@ MainWindow::~MainWindow()
 
 void MainWindow::toggleAddSynth(bool visible)
 {
-	toggleMdiWindow<AddSynthWidget>(addSynth, ui->tabWidget, addSynthWindow, visible);
+//	toggleMdiWindow<AddSynthWidget>(addSynth, ui->tabWidget, addSynthWindow, visible);
 }
 
 void MainWindow::togglePiano(bool visible)
 {
-	Q_UNUSED(visible);
-	toggleMdiWindow<VkWidget>(vkWidget, ui->tabWidget, vkWindow, visible);
+//	Q_UNUSED(visible);
+//	toggleMdiWindow<VkWidget>(vkWidget, ui->tabWidget, vkWindow, visible);
 }
 
 void MainWindow::makeAllChildren()
@@ -121,5 +125,5 @@ void MainWindow::close()
 
 void MainWindow::toggleParameterTree(bool visible)
 {
-	toggleMdiWindow<TreeWidget>(treeWidget, ui->tabWidget, treeDlg, visible);
+//	toggleMdiWindow<TreeWidget>(treeWidget, ui->tabWidget, treeDlg, visible);
 }
