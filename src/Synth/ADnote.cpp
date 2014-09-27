@@ -281,6 +281,8 @@ ADnote::ADnote(ADnoteParameters *pars, SynthParams &spars)
             pars->VoicePar[vc].OscilSmp->get(NoteVoicePar[nvoice].OscilSmp,
                                              getvoicebasefreq(nvoice),
                                              pars->VoicePar[nvoice].Presonance);
+	NoteVoicePar[nvoice]._base_func =
+	    getBaseFunction(/*pars->VoicePar[vc].OscilSmp->Pcurrentbasefunc*/3); // TODO
 
         //I store the first elments to the last position for speedups
         for(int i = 0; i < OSCIL_SMP_EXTRA_SAMPLES; ++i)
@@ -331,6 +333,9 @@ ADnote::ADnote(ADnoteParameters *pars, SynthParams &spars)
                 NoteVoicePar[nvoice].FMEnabled = FREQ_MOD;
                 break;
             case 5:
+                NoteVoicePar[nvoice].FMEnabled = WAVE_MOD;
+                break;
+            case 6:
                 NoteVoicePar[nvoice].FMEnabled = PITCH_MOD;
                 break;
             default:
@@ -491,6 +496,8 @@ void ADnote::legatonote(LegatoParams lpars)
         pars->VoicePar[vc].OscilSmp->get(NoteVoicePar[nvoice].OscilSmp,
                                          getvoicebasefreq(nvoice),
                                          pars->VoicePar[nvoice].Presonance); //(gf)Modif of the above line.
+	NoteVoicePar[nvoice]._base_func =
+	   getBaseFunction(pars->VoicePar[vc].OscilSmp->Pcurrentbasefunc);
 
         //I store the first elments to the last position for speedups
         for(int i = 0; i < OSCIL_SMP_EXTRA_SAMPLES; ++i)
@@ -1275,6 +1282,9 @@ inline void ADnote::ComputeVoiceOscillatorRingModulation(int nvoice)
                                             FMnewamplitude[nvoice],
                                             i,
                                             synth->buffersize);
+		// tw is filled in initparameters
+		// in FreqMod and PulseMod, it is overwritten
+		// Why is tw not reset on every computecurrentparameters?
                 tw[i] *= (NoteVoicePar[nvoice].FMSmp[poshiFM] * (1.0f - posloFM)
                           + NoteVoicePar[nvoice].FMSmp[poshiFM
                                                        + 1] * posloFM) * amp
@@ -1421,6 +1431,95 @@ inline void ADnote::ComputeVoiceOscillatorFrequencyModulation(int nvoice,
 }
 
 
+/*
+ * Computes the Oscillator (WaveTable Modulation)
+ */
+inline void ADnote::ComputeVoiceOscillatorWaveTableModulation(int nvoice)
+{
+    for(int k = 0; k < unison_size[nvoice]; ++k) {
+	int    poshi  = oscposhi[nvoice][k];
+	int    poslo  = oscposlo[nvoice][k] * (1<<24);
+	int    freqhi = oscfreqhi[nvoice][k];
+	int    freqlo = oscfreqlo[nvoice][k] * (1<<24);
+	//float *smps   = NoteVoicePar[nvoice].OscilSmp;
+	base_func func = NoteVoicePar[nvoice]._base_func;
+	assert(func);
+
+	float *tw     = tmpwave_unison[k];
+	float par = 1.0f; // TODO
+	assert(oscfreqlo[nvoice][k] < 1.0f);
+	//float ratio = synth->buffersize_f / synth->oscilsize_f;
+	float one_f = 1.0f / synth->oscilsize_f;
+	float mult = 1.0f / synth->oscilsize_f;
+
+	for(int i = 0; i < synth->buffersize; ++i) {
+	    float oscil_pos = (float)poshi * mult;
+	    //((float)i) / synth->buffersize_f;
+	    tw[i]  = (func(oscil_pos, par) * ((1<<24) - poslo) + func(oscil_pos + mult, par) * poslo)/(1.0f*(1<<24));
+	    poslo += freqlo;
+	    poshi += freqhi + (poslo>>24);
+	    poslo &= 0xffffff;
+	    poshi &= synth->oscilsize - 1;
+	}
+	oscposhi[nvoice][k] = poshi;
+	oscposlo[nvoice][k] = poslo/(1.0f*(1<<24));
+    }
+
+
+/*    int   i;
+    float amp;
+    ComputeVoiceOscillator_LinearInterpolation(nvoice);
+    if(FMnewamplitude[nvoice] > 1.0f)
+        FMnewamplitude[nvoice] = 1.0f;
+    if(FMoldamplitude[nvoice] > 1.0f)
+        FMoldamplitude[nvoice] = 1.0f;
+    if(NoteVoicePar[nvoice].FMVoice >= 0)
+        // if I use VoiceOut[] as modullator
+        for(int k = 0; k < unison_size[nvoice]; ++k) {
+            float *tw = tmpwave_unison[k];
+            for(i = 0; i < synth->buffersize; ++i) {
+                amp = INTERPOLATE_AMPLITUDE(FMoldamplitude[nvoice],
+                                            FMnewamplitude[nvoice],
+                                            i,
+                                            synth->buffersize);
+                int FMVoice = NoteVoicePar[nvoice].FMVoice;
+                tw[i] *= (1.0f - amp) + amp * NoteVoicePar[FMVoice].VoiceOut[i];
+            }
+        }
+    else
+        for(int k = 0; k < unison_size[nvoice]; ++k) {
+            int    poshiFM  = oscposhiFM[nvoice][k];
+            float  posloFM  = oscposloFM[nvoice][k];
+            int    freqhiFM = oscfreqhiFM[nvoice][k];
+            float  freqloFM = oscfreqloFM[nvoice][k];
+            float *tw = tmpwave_unison[k];
+
+            for(i = 0; i < synth->buffersize; ++i) {
+                amp = INTERPOLATE_AMPLITUDE(FMoldamplitude[nvoice],
+                                            FMnewamplitude[nvoice],
+                                            i,
+                                            synth->buffersize);
+		// tw is filled in initparameters
+		// in FreqMod and PulseMod, it is overwritten
+		// Why is tw not reset on every computecurrentparameters?
+                tw[i] *= (NoteVoicePar[nvoice].FMSmp[poshiFM] * (1.0f - posloFM)
+                          + NoteVoicePar[nvoice].FMSmp[poshiFM
+                                                       + 1] * posloFM) * amp
+                         + (1.0f - amp);
+                posloFM += freqloFM;
+                if(posloFM >= 1.0f) {
+                    posloFM -= 1.0f;
+                    poshiFM++;
+                }
+                poshiFM += freqhiFM;
+                poshiFM &= synth->oscilsize - 1;
+            }
+            oscposhiFM[nvoice][k] = poshiFM;
+            oscposloFM[nvoice][k] = posloFM;
+	}*/
+}
+
+
 /*Calculeaza Oscilatorul cu PITCH MODULATION*/
 inline void ADnote::ComputeVoiceOscillatorPitchModulation(int /*nvoice*/)
 {
@@ -1474,6 +1573,9 @@ int ADnote::noteout(float *outl, float *outr)
                     break;
                 case FREQ_MOD:
                     ComputeVoiceOscillatorFrequencyModulation(nvoice, 1);
+                    break;
+                case WAVE_MOD:
+                    ComputeVoiceOscillatorWaveTableModulation(nvoice);
                     break;
                 //case PITCH_MOD:ComputeVoiceOscillatorPitchModulation(nvoice);break;
                 default:
