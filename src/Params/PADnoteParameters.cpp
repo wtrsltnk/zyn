@@ -21,6 +21,11 @@
 */
 #include <cmath>
 #include "PADnoteParameters.h"
+#include "FilterParams.h"
+#include "EnvelopeParams.h"
+#include "LFOParams.h"
+#include "../Synth/Resonance.h"
+#include "../Synth/OscilGen.h"
 #include "../Misc/WavFile.h"
 #include <cstdio>
 
@@ -137,7 +142,7 @@ static rtosc::Ports localPorts =
             d.reply(d.loc, "i", realbw);
             delete[] tmp;}},
     {"sample#64:ifb", rDoc("Nothing to see here"), 0,
-        [](const char *m, rtosc::RtData d)
+        [](const char *m, rtosc::RtData &d)
         {
             PADnoteParameters *p = (PADnoteParameters*)d.obj;
             const char *mm = m;
@@ -582,9 +587,9 @@ void PADnoteParameters::generatespectrum_bandwidthMode(float *spectrum,
                                                        int profilesize,
                                                        float bwadjust)
 {
-    float harmonics[synth->oscilsize / 2];
+    float harmonics[synth->oscilsize];
     memset(spectrum, 0, sizeof(float) * size);
-    memset(harmonics, 0, sizeof(float) * (synth->oscilsize / 2));
+    memset(harmonics, 0, sizeof(float) * synth->oscilsize);
 
     //get the harmonic structure from the oscillator (I am using the frequency amplitudes, only)
     oscilgen->get(harmonics, basefreq, false);
@@ -656,9 +661,9 @@ void PADnoteParameters::generatespectrum_otherModes(float *spectrum,
                                                     int size,
                                                     float basefreq)
 {
-    float harmonics[synth->oscilsize / 2];
+    float harmonics[synth->oscilsize];
     memset(spectrum,  0, sizeof(float) * size);
-    memset(harmonics, 0, sizeof(float) * (synth->oscilsize / 2));
+    memset(harmonics, 0, sizeof(float) * synth->oscilsize);
 
     //get the harmonic structure from the oscillator (I am using the frequency amplitudes, only)
     oscilgen->get(harmonics, basefreq, false);
@@ -796,7 +801,7 @@ void PADnoteParameters::sampleGenerator(PADnoteParameters::callback cb,
 
         newsample.smp[0] = 0.0f;
         for(int i = 1; i < spectrumsize; ++i) //randomize the phases
-            fftfreqs[i] = std::polar(spectrum[i], (float)RND * 2 * PI);
+            fftfreqs[i] = FFTpolar(spectrum[i], (float)RND * 2 * PI);
         //that's all; here is the only ifft for the whole sample;
         //no windows are used ;-)
         fft->freqs2smps(fftfreqs, newsample.smp);

@@ -235,12 +235,12 @@ delete (formantparswindow);} {}
       }
       Fl_Button {} {
         label C
-        callback {/*presetsui->copyArray(pars);*/}
+        callback {presetsui->copyArray(filterui->loc());}
         xywh {186 5 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 55
       }
       Fl_Button {} {
         label P
-        callback {/*presetsui->pasteArray(pars,this);*/}
+        callback {presetsui->pasteArray(filterui->loc(),this);}
         xywh {203 5 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 55
       }
     }
@@ -254,7 +254,7 @@ delete (formantparswindow);} {}
     } {
       Fl_Button {} {
         label P
-        callback {/*presetsui->paste(pars,this,nvowel);*/}
+        callback {presetsui->paste(loc(),this,nvowel);}
         xywh {665 25 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 7
         code0 {formantparswindow->osc = osc;}
         code1 {formantparswindow->base = loc();}
@@ -266,7 +266,7 @@ delete (formantparswindow);} {}
         Fl_Counter {} {
           label {Formant }
           callback {nformant=(int) o->value();
-          formantparsgroup->rebase(loc()+"Pvowels"+to_s(nvowel)+"/Pformants"+to_s(nformant)+"/");
+          formantparsgroup->reext("Pvowels"+to_s(nvowel)+"/Pformants"+to_s(nformant)+"/");
 update_formant_window();
 formantfiltergraph->redraw();}
           xywh {545 80 40 15} type Simple labelfont 1 labelsize 10 align 4 minimum 0 maximum 127 step 1 textsize 10
@@ -276,7 +276,7 @@ formantfiltergraph->redraw();}
         Fl_Counter {} {
           label {Vowel no.}
           callback {nvowel=(int) o->value();
-          formantparsgroup->rebase(loc()+"Pvowels"+to_s(nvowel)+"/Pformants"+to_s(nformant)+"/");
+          formantparsgroup->reext("Pvowels"+to_s(nvowel)+"/Pformants"+to_s(nformant)+"/");
 update_formant_window();
 formantfiltergraph->redraw();}
           xywh {545 55 40 20} type Simple labelfont 1 labelsize 10 align 4 minimum 0 maximum 127 step 1 textfont 1 textsize 11
@@ -294,8 +294,7 @@ formantfiltergraph->redraw();}
           }
           Fl_Dial formant_freq_dial {
             label freq
-            callback {//pars->Pvowels[nvowel].formants[nformant].freq=(int) o->value();
-                formantfiltergraph->update();}
+            callback {formantfiltergraph->update();}
             tooltip {Formant frequency} xywh {495 115 25 25} box ROUND_UP_BOX labelsize 10 maximum 127 step 1
             code0 {//TODO get widget renaming working here!!!}
             code1 {o->init("freq");}
@@ -303,16 +302,14 @@ formantfiltergraph->redraw();}
           }
           Fl_Dial formant_q_dial {
             label Q
-            callback {//pars->Pvowels[nvowel].formants[nformant].q=(int) o->value();
-formantfiltergraph->update();}
+            callback {formantfiltergraph->update();}
             tooltip {Formant's Q} xywh {525 115 24 25} box ROUND_UP_BOX labelsize 10 maximum 127 step 1
             code0 {o->init("q");}
             class Fl_Osc_Dial
           }
           Fl_Dial formant_amp_dial {
             label amp
-            callback {//pars->Pvowels[nvowel].formants[nformant].amp=(int) o->value();
-formantfiltergraph->update();}
+            callback {formantfiltergraph->update();}
             tooltip {Formant amplitude} xywh {555 115 24 25} box ROUND_UP_BOX labelsize 10 maximum 127 step 1
             code0 {o->init("amp");}
             class Fl_Osc_Dial
@@ -340,7 +337,7 @@ formantfiltergraph->update();}
         }
         Fl_Counter vowel_counter {
           label Vowel
-          callback {//pars->Psequence[nseqpos].nvowel=(int) o->value(); pars->changed=true;}
+          callback {(void)o;//pars->Psequence[nseqpos].nvowel=(int) o->value(); pars->changed=true;}
           xywh {640 97 40 15} type Simple labelsize 10 align 1 minimum 0 maximum 127 step 1 textsize 10
           code0 {o->bounds(0,FF_MAX_VOWELS-1);}
         }
@@ -416,7 +413,7 @@ formantfiltergraph->redraw();}
       }
       Fl_Button {} {
         label C
-        callback {/*presetsui->copy(pars,nvowel);*/}
+        callback {presetsui->copy(formantparsgroup->loc(),nvowel);}
         xywh {635 25 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
       }
       Fl_Box {} {
@@ -473,10 +470,7 @@ filterparamswindow->redraw();} {}
   Function {rebase(std::string new_base)} {open
   } {
     code {
-    printf("\\n\\n\\n\\nRABBIT HORSE\\n\\n\\n\\n");
-    printf("\\nNEW BASE: '%s'\\n", (new_base+ext).c_str());
     Fl_Osc_Group::rebase(new_base);
-    formantparswindow->rebase(new_base+ext);
   } {}
   }
   Function {init(std::string alt_root_, Fl_Osc_Interface *osc_, std::string base_, std::string ext_)} {} {
@@ -504,6 +498,7 @@ update_formant_window();} {}
   } {
     code {
     //TODO update Pgain & filter type on switch Pgain=64;
+    (void) newcat;
 refresh();} {}
   }
   Function {use_for_dynamic_filter()} {open

@@ -1,7 +1,7 @@
 #include "BankView.h"
 #include "../Misc/Util.h"
 #include <FL/Fl.H>
-#include <FL/Fl_Light_Button.H>
+#include <FL/Fl_Check_Button.H>
 #include <FL/fl_ask.H>
 #include <rtosc/rtosc.h>
 #include <cstdio>
@@ -21,16 +21,21 @@ void BankList::init(std::string path)
 
 void BankList::OSC_raw(const char *msg)
 {
-    if(strcmp(msg, "/bank-list"))
-        return;
+    if(!strcmp(msg, "/bank-list")) {
 
-    const int   pos  = rtosc_argument(msg, 0).i;
-    const char *path = rtosc_argument(msg, 1).s;
+        const int   pos  = rtosc_argument(msg, 0).i;
+        const char *path = rtosc_argument(msg, 1).s;
 
-    if(pos == 0)
-        this->clear();
+        value(0);
+        if(pos == 0)
+            this->clear();
 
-    this->add(path);
+        this->add(path);
+        osc->write("/loadbank");
+    }
+    if(!strcmp(msg, "/loadbank")) {
+        value(rtosc_argument(msg, 0).i);
+    }
 }
 
 BankSlot::BankSlot(int x,int y, int w, int h, const char *label)
@@ -78,7 +83,10 @@ void BankSlot::update(const char *name__, const char *fname__)
     filename_ = fname__;
     snprintf(labelstr, 127, "%d. %s", nslot, name_.c_str());
     label(labelstr);
-   
+    
+    if(name_.empty())
+        label("");
+
     color(empty() ? 46 : 51);
 #ifdef NTK_GUI
     redraw();
@@ -123,13 +131,13 @@ highlight=0;
    void BankSlot::refresh() {
    if (bank->emptyslot(nslot))
    color(46);
-   else if (bank->isPADsynth_used(nslot)) 
+   else if (bank->isPADsynth_used(nslot))
    color(26);
-   else 
+   else
    color(51);
 
 
-   if (*nselected==nslot) 
+   if (*nselected==nslot)
    color(6);
 
 
@@ -149,11 +157,10 @@ static int modeCb(const char *label)
     return -1;
 }
 
-static void control_widget_cb(Fl_Light_Button *button, void *bvc_)
+static void modeButtonCb(Fl_Widget *w, void *v)
 {
-    BankViewControls *bvc = (BankViewControls*)bvc_;
-    bvc->mode(modeCb(button->label()));
-    //TODO removeselection?
+    BankViewControls *bvc = (BankViewControls*)v;
+    bvc->mode(modeCb(w->label()));
 }
 
 BankViewControls::BankViewControls(int x, int y, int w, int h, const char *label)
@@ -164,10 +171,18 @@ BankViewControls::BankViewControls(int x, int y, int w, int h, const char *label
     //Width per elm
     const float W = w/4;
 
-    read  = new Fl_Light_Button(x+m+0*W, y+m, W-2*m, h-2*m, "Read");
-    write = new Fl_Light_Button(x+m+1*W, y+m, W-2*m, h-2*m, "Write");
-    clear = new Fl_Light_Button(x+m+2*W, y+m, W-2*m, h-2*m, "Clear");
-    swap  = new Fl_Light_Button(x+m+3*W, y+m, W-2*m, h-2*m, "Swap");
+    read  = new Fl_Check_Button(x+m+0*W, y+m, W-2*m, h-2*m, "Read");
+    write = new Fl_Check_Button(x+m+1*W, y+m, W-2*m, h-2*m, "Write");
+    clear = new Fl_Check_Button(x+m+2*W, y+m, W-2*m, h-2*m, "Clear");
+    swap  = new Fl_Check_Button(x+m+3*W, y+m, W-2*m, h-2*m, "Swap");
+    read->box(FL_BORDER_BOX);
+    write->box(FL_BORDER_BOX);
+    clear->box(FL_BORDER_BOX);
+    swap->box(FL_BORDER_BOX);
+    read->callback(modeButtonCb, this);
+    write->callback(modeButtonCb, this);
+    clear->callback(modeButtonCb, this);
+    swap->callback(modeButtonCb, this);
     mode(1);
 }
 
@@ -183,13 +198,14 @@ void BankViewControls::mode(int m)
     assert(0 <= M && M <= 3);
     Fl_Button *buttons[4]{read, write, clear, swap};
 
-    for(int i=0; i<3; ++i)
+    for(int i=0; i<4; ++i)
         buttons[i]->value(i==M);
 }
 
 
 BankView::BankView(int x,int y, int w, int h, const char *label)
-    :Fl_Group(x,y,w,h,label)
+    :Fl_Group(x,y,w,h,label), bvc(NULL), slots{0}, osc(0),
+    loc(""), nselected(-1), npart(0), cbwig_(0)
 {}
 
 
@@ -248,22 +264,25 @@ void BankView::init(Fl_Osc_Interface *osc_, BankViewControls *bvc_, int *npart_)
  */
 void BankView::react(int event, int nslot)
 {
-    printf("reacting...\n");
     BankSlot &slot = *slots[nslot];
     const bool isempty = slot.empty();
     const int  mode    = bvc->mode();
-    printf("mode = %d\n", mode);
 
     //Rename slot
-    if (event==2 && !isempty && mode!=4)
-        if(const char *name=fl_input("Slot (instrument) name:", slot.name()))
+    if (event==2 && !isempty && mode!=4) {
+        if(const char *name=fl_input("Slot (instrument) name:", slot.name())) {
             osc->write("/bank-rename", "is", nslot, name);
+            osc->write("/refresh_bank", "i", nslot);
+        }
+    }
 
     //Reads from slot
     if ((event==1)&&(mode==1)&&(!slot.empty())){
         printf("Loading a part #%d with file '%s'\n", nslot, slot.filename());
         osc->write("/load-part", "is", *npart, slot.filename());
         osc->writeValue("/part"+to_s(*npart)+"/name", slot.name());
+        if(cbwig_)
+            cbwig_->do_callback();
     }
 
     //save(write) to slot
@@ -271,24 +290,30 @@ void BankView::react(int event, int nslot)
         if(!isempty && !fl_choice("Overwrite the slot no. %d ?","No","Yes",NULL,nslot+1))
             return;
 
-        osc->write("/save-bank-part", "i", npart);
+        osc->write("/save-bank-part", "ii", *npart, nslot);
+        osc->write("/refresh_bank", "i", nslot);
         //pthread_mutex_lock(&master->part[*npart]->load_mutex);
         //bank->savetoslot(slot,master->part[*npart]);
         //pthread_mutex_unlock(&master->part[*npart]->load_mutex);
 
-        bvc->mode(1);//readbutton->value(1);writebutton->value(0);
+        bvc->mode(1);
     }
 
 
     //Clears the slot
-    if(event==1 && mode==3 && !isempty)
-        if (fl_choice("Clear the slot no. %d ?","No","Yes",NULL, nslot+1))
+    if(event==1 && mode==3 && !isempty) {
+        if (fl_choice("Clear the slot no. %d ?","No","Yes",NULL, nslot+1)) {
             osc->write("/clear-bank-slot", "i", nslot);
+            osc->write("/refresh_bank", "i", nslot);
+        }
+    }
 
     //Swap
     if(mode==4) {
         if(event==1 && nselected>=0){
             osc->write("/swap-bank-slots", "ii", nselected, nslot);
+            osc->write("/refresh_bank", "i", nslot);
+            osc->write("/refresh_bank", "i", nselected);
             //bank->swapslot(nselected,slot);
             nselected=-1;
         } else if(nselected<0 || event==2) {
@@ -309,9 +334,19 @@ void BankView::OSC_raw(const char *msg)
     if(0 <= nslot && nslot < 160)
         slots[nslot]->update(name, fname);
 }
+        
+void BankView::cbwig(Fl_Widget *w)
+{
+    cbwig_ = w;
+}
 
 void BankView::refresh(void)
 {
+    assert(osc);
+    //Odd case during initialization
+    if(!osc)
+        return;
+
     for(int i=0; i<160; ++i)
         osc->write("/refresh_bank", "i", i);
 }

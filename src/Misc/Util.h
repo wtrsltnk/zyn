@@ -26,8 +26,12 @@
 #include <string>
 #include <sstream>
 #include <stdint.h>
+#include <algorithm>
 #include "Config.h"
 #include "../globals.h"
+
+using std::min;
+using std::max;
 
 //Velocity Sensing function
 extern float VelF(float velocity, unsigned char scaling);
@@ -148,8 +152,12 @@ float cinterpolate(const float *data, size_t len, float pos);
 ///trims a path in recursions
 const char *message_snip(const char *m);
 
+template<class T>
+static inline void nullify(T &t) {delete t; t = NULL; }
+template<class T>
+static inline void arrayNullify(T &t) {delete [] t; t = NULL; }
 #define rParamZyn(name, ...) \
-  {STRINGIFY(name) "::i",  rProp(parameter) rMap(min, 0) rMap(max, 127) DOC(__VA_ARGS__), NULL, rParamCb(name)}
+  {STRINGIFY(name) "::i",  rProp(parameter) rMap(min, 0) rMap(max, 127) DOC(__VA_ARGS__), NULL, rParamICb(name)}
 
 ///floating point parameter - with lookup code
 #define PARAMF(type, var, name, scale, _min, _max, desc) \
@@ -190,7 +198,7 @@ const char *message_snip(const char *m);
 #define RECURP(type, cast, name, var, desc) \
 {#name"/", ":recursion\0:documentation\0=" desc"\0", &cast::ports, [](const char *m, rtosc::RtData &d){\
     d.obj = (((type*)d.obj)->var); \
-    cast::ports.dispatch(message_snip(m), d);}}
+    if(d.obj) cast::ports.dispatch(message_snip(m), d);}}
 
 ///Recurs - perform a ranged recursion (on pointer array member)
 #define RECURSP(type, cast, name, var, length, desc) \
@@ -200,5 +208,18 @@ const char *message_snip(const char *m);
         while(!isdigit(*mm))++mm; \
         d.obj = (((type*)d.obj)->var)[atoi(mm)]; \
         cast::ports.dispatch(message_snip(m), d);}}
+
+#define rSelf(type) \
+{"self", rProp(internal) rMap(class, type) rDoc("port metadata"), 0, \
+    [](const char *, rtosc::RtData &d){ \
+        d.reply(d.loc, "b", sizeof(d.obj), &d.obj);}}\
+
+#define rPaste() \
+{"paste:b", rProp(internal) rDoc("paste port"), 0, \
+    [](const char *m, rtosc::RtData &d){ \
+        printf("rPaste...\n"); \
+        rObject &paste = **(rObject **)rtosc_argument(m,0).b.data; \
+        rObject &o = *(rObject*)d.obj;\
+        o.paste(paste);}}
 
 #endif

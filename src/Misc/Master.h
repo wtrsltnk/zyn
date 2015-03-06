@@ -23,8 +23,6 @@
 
 #ifndef MASTER_H
 #define MASTER_H
-#include <pthread.h>
-
 #include "../globals.h"
 #include "Microtonal.h"
 #include <rtosc/miditable.h>
@@ -32,7 +30,6 @@
 #include "Bank.h"
 #include "Recorder.h"
 #include "Dump.h"
-#include "XMLwrapper.h"
 
 #include "../Params/Controller.h"
 
@@ -168,6 +165,7 @@ class Master
 
         bool   frozenState;//read-only parameters for threadsafe actions
         Allocator *memory;
+        bool pendingMemory;
     private:
         float  sysefxvol[NUM_SYS_EFX][NUM_MIDI_PARTS];
         float  sysefxsend[NUM_SYS_EFX][NUM_SYS_EFX];

@@ -29,13 +29,16 @@
 #include "../Params/ADnoteParameters.h"
 #include "../Params/SUBnoteParameters.h"
 #include "../Params/PADnoteParameters.h"
+#include "../Synth/Resonance.h"
+#include "../Synth/SynthNote.h"
 #include "../Synth/ADnote.h"
 #include "../Synth/SUBnote.h"
 #include "../Synth/PADnote.h"
 #include "../DSP/FFTwrapper.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include "../Misc/Util.h"
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
 #include <cassert>
 
 #include <rtosc/ports.h>
@@ -64,7 +67,7 @@ static Ports partPorts = {
     rParamZyn(Pveloffs,  "Velocity offset"),
     rToggle(Pnoteon,  "If the channel accepts note on events"),
     //TODO FIXME Change to 0=OFF 1=MULTI 2=SINGLE
-    rToggle(Pkitmode, "Kit mode enable"),
+    rParamI(Pkitmode, "Kit mode enable"),
     rToggle(Pdrummode, "Drum mode enable"),
     rToggle(Ppolymode,  "Polyphoney mode"),
     rToggle(Plegatomode, "Legato enable"),
@@ -138,7 +141,25 @@ static Ports kitPorts = {
     rToggle(Ppadenabled, "PADsynth enable"),
     rParamZyn(Psendtoparteffect, "Effect Levels"),
     rString(Pname, PART_MAX_NAME_LEN, "Kit User Specified Label"),
-    //{"padpars:b", "::", 0
+    {"padpars-data:b", rProp(internal), 0, 
+        [](const char *msg, RtData &d) {
+            rObject &o = *(rObject*)d.obj;
+            assert(o.padpars == NULL);
+            o.padpars = *(decltype(o.padpars)*)rtosc_argument(msg, 0).b.data;
+        }},
+    {"adpars-data:b", rProp(internal), 0, 
+        [](const char *msg, RtData &d) {
+            rObject &o = *(rObject*)d.obj;
+            assert(o.adpars == NULL);
+            o.adpars = *(decltype(o.adpars)*)rtosc_argument(msg, 0).b.data;
+        }},
+    {"subpars-data:b", rProp(internal), 0, 
+        [](const char *msg, RtData &d) {
+            rObject &o = *(rObject*)d.obj;
+            assert(o.subpars == NULL);
+            o.subpars = *(decltype(o.subpars)*)rtosc_argument(msg, 0).b.data;
+        }},
+
     //    [](
 };
 
@@ -152,6 +173,8 @@ Part::Part(Allocator &alloc, Microtonal *microtonal_, FFTwrapper *fft_)
     fft      = fft_;
     partoutl = new float [synth->buffersize];
     partoutr = new float [synth->buffersize];
+
+    monomemClear();
 
     for(int n = 0; n < NUM_KIT_ITEMS; ++n) {
         kit[n].Pname   = new char [PART_MAX_NAME_LEN];
@@ -173,7 +196,7 @@ Part::Part(Allocator &alloc, Microtonal *microtonal_, FFTwrapper *fft_)
         partfxinputr[n] = new float [synth->buffersize];
     }
 
-    killallnotes = 0;
+    killallnotes = false;
     oldfreq      = -1.0f;
 
 
@@ -328,37 +351,31 @@ void Part::NoteOn(unsigned char note,
                   unsigned char velocity,
                   int masterkeyshift)
 {
-    int pos;
-
     // Legato and MonoMem used vars:
     int  posb = POLIPHONY - 1; // Just a dummy initial value.
     bool legatomodevalid = false; //true when legato mode is determined applicable.
     bool doinglegato     = false; // true when we determined we do a legato note.
     bool ismonofirstnote = false; /*(In Mono/Legato) true when we determined
-                  no other notes are held down or sustained.*/
+                                    no other notes are held down or sustained.*/
     int lastnotecopy     = lastnote; //Useful after lastnote has been changed.
 
     if(!Pnoteon || !inRange(note, Pminkey, Pmaxkey))
         return;
 
     // MonoMem stuff:
-    if(Ppolymode == 0) { // If Poly is off
-        monomemnotes.push_back(note); // Add note to the list.
+    if(!Ppolymode) { // If Poly is off
+        monomemPush(note); // Add note to the list.
         monomem[note].velocity  = velocity; // Store this note's velocity.
-        monomem[note].mkeyshift = masterkeyshift; /* Store masterkeyshift too,
-                         I'm not sure why though... */
+        monomem[note].mkeyshift = masterkeyshift; /* Store masterkeyshift too*/
         if((partnote[lastpos].status != KEY_PLAYING)
            && (partnote[lastpos].status != KEY_RELASED_AND_SUSTAINED))
             ismonofirstnote = true;  // No other keys are held or sustained.
-    }
-    else
-    // Poly mode is On so just make sure the list is empty.
-    if(not monomemnotes.empty())
-        monomemnotes.clear();
+    } else if(!monomemEmpty())
+        monomemClear();
 
     lastnote = note;
 
-    pos = -1;
+    int pos = -1;
     for(int i = 0; i < POLIPHONY; ++i)
         if(partnote[i].status == KEY_OFF) {
             pos = i;
@@ -521,7 +538,7 @@ void Part::NoteOn(unsigned char note,
                 }
                 if(ci == 0) {
                     // No legato were performed at all, so pretend nothing happened:
-                    monomemnotes.pop_back(); // Remove last note from the list.
+                    monomemPop(monomemBack()); // Remove last note from the list.
                     lastnote = lastnotecopy; // Set lastnote back to previous value.
                 }
             }
@@ -632,13 +649,13 @@ void Part::NoteOn(unsigned char note,
 void Part::NoteOff(unsigned char note) //relase the key
 {
     // This note is released, so we remove it from the list.
-    if(!monomemnotes.empty())
-        monomemnotes.remove(note);
+    if(!monomemEmpty())
+        monomemPop(note);
 
     for(int i = POLIPHONY - 1; i >= 0; i--) //first note in, is first out if there are same note multiple times
         if((partnote[i].status == KEY_PLAYING) && (partnote[i].note == note)) {
             if(!ctl.sustain.sustain) { //the sustain pedal is not pushed
-                if(!Ppolymode && !monomemnotes.empty())
+                if(!Ppolymode && !monomemEmpty())
                     MonoMemRenote();//Play most recent still active note
                 else
                     RelaseNotePos(i);
@@ -791,8 +808,8 @@ void Part::SetController(unsigned int type, int par)
 void Part::RelaseSustainedKeys()
 {
     // Let's call MonoMemRenote() on some conditions:
-    if((Ppolymode == 0) && (not monomemnotes.empty()))
-        if(monomemnotes.back() != lastnote) // Sustain controller manipulation would cause repeated same note respawn without this check.
+    if(Ppolymode == 0 && !monomemEmpty())
+        if(monomemBack() != lastnote) // Sustain controller manipulation would cause repeated same note respawn without this check.
             MonoMemRenote();  // To play most recent still held note.
 
     for(int i = 0; i < POLIPHONY; ++i)
@@ -816,8 +833,8 @@ void Part::RelaseAllKeys()
 // (Made for Mono/Legato).
 void Part::MonoMemRenote()
 {
-    unsigned char mmrtempnote = monomemnotes.back(); // Last list element.
-    monomemnotes.pop_back(); // We remove it, will be added again in NoteOn(...).
+    unsigned char mmrtempnote = monomemBack(); // Last list element.
+    monomemPop(mmrtempnote); // We remove it, will be added again in NoteOn(...).
     if(Pnoteon == 0)
         RelaseNotePos(lastpos);
     else
@@ -903,7 +920,7 @@ void Part::setkeylimit(unsigned char Pkeylimit)
  */
 void Part::AllNotesOff()
 {
-    killallnotes = 1;
+    killallnotes = true;
 }
 
 void Part::RunNote(unsigned int k)
@@ -986,8 +1003,7 @@ void Part::ComputePartSmps()
         partoutr[i] = partfxinputr[NUM_PART_EFX][i];
     }
 
-    //Kill All Notes if killallnotes!=0
-    if(killallnotes != 0) {
+    if(killallnotes) {
         for(int i = 0; i < synth->buffersize; ++i) {
             float tmp = (synth->buffersize_f - i) / synth->buffersize_f;
             partoutl[i] *= tmp;
@@ -995,7 +1011,7 @@ void Part::ComputePartSmps()
         }
         for(int k = 0; k < POLIPHONY; ++k)
             KillNotePos(k);
-        killallnotes = 0;
+        killallnotes = false;
         for(int nefx = 0; nefx < NUM_PART_EFX; ++nefx)
             partefx[nefx]->cleanup();
     }
@@ -1018,9 +1034,6 @@ void Part::setPpanning(char Ppanning_)
     panning  = limit(Ppanning / 127.0f + ctl.panning.pan, 0.0f, 1.0f);
 }
 
-template<class T>
-static inline void nullify(T &t) {delete t; t = NULL; }
-
 /*
  * Enable or disable a kit item
  */
@@ -1038,9 +1051,9 @@ void Part::setkititemstatus(unsigned kititem, bool Penabled_)
     kkit.Penabled = Penabled_;
 
     if(!Penabled_) {
-        memory.dealloc(kkit.adpars);
-        memory.dealloc(kkit.subpars);
-        memory.dealloc(kkit.padpars);
+        delete kkit.adpars;
+        delete kkit.subpars;
+        delete kkit.padpars;
         kkit.Pname[0] = '\0';
 
         //Reset notes s.t. stale buffers will not get read
@@ -1197,6 +1210,54 @@ void Part::initialize_rt(void)
 {
     for(int i=0; i<NUM_PART_EFX; ++i)
         partefx[i]->init();
+}
+
+void Part::kill_rt(void)
+{
+    for(int i=0; i<NUM_PART_EFX; ++i)
+        partefx[i]->kill();
+    for(int k = 0; k < POLIPHONY; ++k)
+        KillNotePos(k);
+}
+
+void Part::monomemPush(char note)
+{
+    for(int i=0; i<256; ++i)
+        if(monomemnotes[i]==note)
+            return;
+
+    for(int i=254;i>=0; --i)
+        monomemnotes[i+1] = monomemnotes[i];
+    monomemnotes[0] = note;
+}
+
+void Part::monomemPop(char note)
+{
+    int note_pos=-1;
+    for(int i=0; i<256; ++i)
+        if(monomemnotes[i]==note)
+            note_pos = i;
+    if(note_pos != -1) {
+        for(int i=note_pos; i<256; ++i)
+            monomemnotes[i] = monomemnotes[i+1];
+        monomemnotes[255] = -1;
+    }
+}
+
+char Part::monomemBack(void) const
+{
+    return monomemnotes[0];
+}
+
+bool Part::monomemEmpty(void) const
+{
+    return monomemnotes[0] == -1;
+}
+
+void Part::monomemClear(void)
+{
+    for(int i=0; i<256; ++i)
+        monomemnotes[i] = -1;
 }
 
 void Part::getfromXMLinstrument(XMLwrapper *xml)

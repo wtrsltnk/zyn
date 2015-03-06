@@ -24,6 +24,8 @@
 #include "../Misc/Allocator.h"
 #include "Alienwah.h"
 
+using std::complex;
+
 Alienwah::Alienwah(EffectParams pars)
     :Effect(pars),
       lfo(pars.srate, pars.bufsize),
@@ -38,8 +40,8 @@ Alienwah::Alienwah(EffectParams pars)
 
 Alienwah::~Alienwah()
 {
-    delete [] oldl;
-    delete [] oldr;
+    memory.devalloc(oldl);
+    memory.devalloc(oldr);
 }
 
 

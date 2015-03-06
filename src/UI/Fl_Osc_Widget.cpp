@@ -53,6 +53,8 @@ void Fl_Osc_Widget::oscWrite(std::string path, const char *args, ...)
         osc->writeRaw(buffer);
     else
         puts("Dangerous Event ommision");
+
+    va_end(va);
     ////Try to pretty print basic events
     //if(!strcmp(args, "c") || !strcmp(args, "i"))
     //    printf("Args = ['%d']\n", rtosc_argument(buffer, 0).i);
@@ -77,7 +79,8 @@ void Fl_Osc_Widget::oscRegister(const char *path)
 
 void Fl_Osc_Widget::update(void)
 {
-    osc->requestValue(loc+ext);
+    if(*((loc+ext).rbegin()) != '/')
+        osc->requestValue(loc+ext);
 }
 
 Fl_Osc_Pane *Fl_Osc_Widget::fetch_osc_pane(Fl_Widget *w)

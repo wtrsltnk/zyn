@@ -23,12 +23,13 @@
 #ifndef LFO_PARAMS_H
 #define LFO_PARAMS_H
 
-#include "../Misc/XMLwrapper.h"
 #include "Presets.h"
+class XMLwrapper;
 
-class LFOParams:public Presets
+class LFOParams
 {
     public:
+        LFOParams();
         LFOParams(char Pfreq_,
                   char Pintensity_,
                   char Pstartphase_,
@@ -43,6 +44,7 @@ class LFOParams:public Presets
         void defaults();
         /**Loads the LFO from the xml*/
         void getfromXML(XMLwrapper *xml);
+        void paste(LFOParams &);
 
         /*  MIDI Parameters*/
         float Pfreq;      /**<frequency*/

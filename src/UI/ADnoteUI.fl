@@ -10,10 +10,6 @@ decl {//License: GNU GPL version 2 or later} {private local
 
 decl {\#include "../Params/ADnoteParameters.h"} {public local
 } 
-
-decl {\#include "../Misc/Util.h"} {public local
-} 
-
 decl {\#include "ResonanceUI.h"} {public local
 } 
 
@@ -26,16 +22,16 @@ decl {\#include <FL/Fl_Box.H>} {public local
 decl {\#include <FL/Fl_Group.H>} {public local
 } 
 
-decl {\#include <math.h>} {private local
+decl {\#include <cmath>} {private local
 } 
 
-decl {\#include <stdio.h>} {private local
+decl {\#include <cstdio>} {private local
 } 
 
-decl {\#include <stdlib.h>} {private local
+decl {\#include <cstdlib>} {private local
 } 
 
-decl {\#include <string.h>} {private local
+decl {\#include <cstring>} {private local
 } 
 
 decl {\#include "Fl_Osc_Pane.H"} {public local
@@ -118,9 +114,9 @@ class ADvoicelistitem {open : {public Fl_Osc_Group}
           class Fl_Osc_Group
         } {}
         Fl_Value_Output detunevalueoutput {
-          callback {/*o->value(getdetune((pars->VoicePar[nvoice].PDetuneType==0)?(pars->GlobalPar.PDetuneType) : (pars->VoicePar[nvoice].PDetuneType),0,pars->VoicePar[nvoice].PDetune)*pars->getBandwidthDetuneMultiplier());*/}
           xywh {265 5 45 20} labelsize 10 align 5 minimum -5000 maximum 5000 step 0.01 textfont 1 textsize 10
-          code0 {/*o->value(getdetune(pars->VoicePar[nvoice].PDetuneType,0,pars->VoicePar[nvoice].PDetune)*pars->getBandwidthDetuneMultiplier());*/}
+          code0 {o->init("detunevalue");}
+          class Fl_Osc_Output
         }
         Fl_Slider voicedetune {
           callback {//detunevalueoutput->do_callback();}
@@ -264,7 +260,6 @@ o->redraw();}
               }
               Fl_Value_Output fmdetunevalueoutput {
                 label Detune
-                callback {//o->value(getdetune((pars->VoicePar[nvoice].PFMDetuneType==0)?(pars->GlobalPar.PDetuneType) : (pars->VoicePar[nvoice].PFMDetuneType),0,pars->VoicePar[nvoice].PFMDetune));}
                 xywh {540 245 45 18} labelsize 8 align 5 minimum -5000 maximum 5000 step 0.01 textfont 1 textsize 8
                 code0 {o->init("FMdetunevalue");}
                 class Fl_Osc_Output
@@ -337,13 +332,13 @@ o->redraw();}
                 callback {if (oscedit!=NULL)
     delete(oscedit);
 
-int nv=nvoice;
-if (extFMoscil->value()>=0)
-    nv=extFMoscil->value();
+//int nv=nvoice;
+//if (extFMoscil->value()>=0)
+//    nv=extFMoscil->value();
 
 oscedit=new OscilEditor(true, loc+"mod-oscil/", osc_i);}
                 xywh {700 380 55 15} box THIN_UP_BOX labelfont 1 labelsize 11
-                code0 {/*if (extFMoscil->value()>=0) o->labelcolor(FL_BLUE);*/}
+                code0 {(void)o;/*if (extFMoscil->value()>=0) o->labelcolor(FL_BLUE);*/}
               }
               Fl_Slider {} {
                 label Phase
@@ -482,8 +477,9 @@ o->redraw();}
             }
             Fl_Value_Output detunevalueoutput {
               label Detune
-              callback {//o->value(getdetune((pars->VoicePar[nvoice].PDetuneType==0)?(pars->GlobalPar.PDetuneType) : (pars->VoicePar[nvoice].PDetuneType),0,pars->VoicePar[nvoice].PDetune)*pars->getBandwidthDetuneMultiplier());}
+              code0 {o->init("detunevalue");}
               xywh {10 287 45 15} labelsize 10 align 5 minimum -5000 maximum 5000 step 0.01 textfont 1 textsize 10
+              class Fl_Osc_Output
             }
             Fl_Check_Button {} {
               label 440Hz
@@ -519,13 +515,12 @@ o->redraw();}
           Fl_Button changevoiceoscilbutton {
             label Change
             callback {delete oscedit;
-                int nv=nvoice;
-                if(extoscil->value()>=0)
-                    nv=extoscil->value();
+                //if(extoscil->value()>=0)
+                //    nv=extoscil->value();
 
                 oscedit=new OscilEditor(true,loc+"oscil/", osc_i);}
             xywh {5 490 65 20} box THIN_UP_BOX labelfont 1 labelsize 11
-            code0 {/*if (extoscil->value()>=0) o->labelcolor(FL_BLUE);*/}
+            code0 {(void)o;/*if (extoscil->value()>=0) o->labelcolor(FL_BLUE);*/}
           }
           Fl_Box {} {
             label {Voice Oscillator}
@@ -574,10 +569,9 @@ voiceonbutton->redraw();} open
             }
             Fl_Choice {} {
               label Unison
-              callback {//pars->set_unison_size_index(nvoice,(int) o->value());} open
               tooltip {Unison size} xywh {10 560 75 20} down_box BORDER_BOX labelfont 1 align 5 textfont 1 textsize 10
               code0 {o->add("OFF");char tmp[100];for (int i=1;ADnote_unison_sizes[i];i++){snprintf(tmp,100,"size %d",ADnote_unison_sizes[i]);o->add(tmp);};}
-              code1 {o->init("Unison_size");//pars->get_unison_size_index(nvoice));}
+              code1 {o->init("Unison_size");}
               class Fl_Osc_Choice
             } {}
             Fl_Dial {} {
@@ -595,7 +589,7 @@ voiceonbutton->redraw();} open
             } {}
             Fl_Slider {} {
               label {Frequency Spread}
-              callback {//unisonspreadoutput->do_callback();}
+              callback {unisonspreadoutput->update();}
               tooltip {Frequency Spread of the Unison} xywh {95 562 125 13} type {Horz Knob} box NO_BOX labelsize 12 align 1 maximum 127 step 1 value 64
               code0 {o->init("Unison_frequency_spread", 'i');}
               class Fl_Osc_Slider
@@ -614,10 +608,9 @@ voiceonbutton->redraw();} open
             }
             Fl_Dial {} {
               label {Ph.rand}
-              callback {/*pars->VoicePar[nvoice].Unison_phase_randomness=(int)o->value();*/}
               tooltip {Phase randomness} xywh {280 555 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
-              code0 {/*o->value(pars->VoicePar[nvoice].Unison_phase_randomness);*/}
-              class WidgetPDial
+              code0 {o->init("Unison_phase_randomness");}
+              class Fl_Osc_Dial
             }
           }
         }
@@ -723,7 +716,7 @@ o->redraw();}
             class Fl_Osc_Check
           }
         }
-        Fl_Group {} {
+        Fl_Group activeVoiceID {
           label 01
           xywh {5 5 55 35} box THIN_UP_BOX labeltype EMBOSSED_LABEL labelfont 1 labelsize 22 align 16
           code0 {char tmp[10];snprintf(tmp,10,"%d",nvoice+1);o->label(strdup(tmp));}
@@ -812,6 +805,9 @@ delete(oscedit);
   Function {change_voice(int nvoice_)} {open
   } {
     code {nvoice = nvoice_;
+    loc = base+"voice"+to_s(nvoice)+"/";
+    char tmp[10];snprintf(tmp,10,"%d",nvoice+1);
+    activeVoiceID->label(strdup(tmp));
 ADnoteVoiceParameters->rebase(base+"voice"+to_s(nvoice)+"/");} {selected
     }
   }
@@ -1024,12 +1020,12 @@ resui->resonancewindow->show();}
       }
       Fl_Button {} {
         label C
-        callback {/*presetsui->copyArray(pars);*/}
+        callback {presetsui->copyArray(loc);}
         xywh {405 405 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
       }
       Fl_Button {} {
         label P
-        callback {/*presetsui->pasteArray(pars,this);*/}
+        callback {presetsui->pasteArray(loc,this);}
         xywh {435 405 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
       }
     }
@@ -1063,12 +1059,12 @@ advoice->change_voice(nvoice);}
       }
       Fl_Button {} {
         label C
-        callback {/*presetsui->copy(pars,nvoice);*/}
+        callback {presetsui->copy(ADnoteVoice->loc(),nvoice);}
         xywh {705 609 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
       }
       Fl_Button {} {
         label P
-        callback {/*presetsui->paste(pars,this,nvoice);*/}
+        callback {presetsui->paste(ADnoteVoice->loc(),this,nvoice);}
         xywh {735 609 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
       }
     }

@@ -48,14 +48,66 @@ using namespace std;
 using namespace rtosc;
 #define rObject Master
 
+static Ports sysefxPort =
+{
+    {"part#" STRINGIFY(NUM_MIDI_PARTS) "::i", 0, 0, [](const char *m, RtData&d)
+        {
+            //ok, this is going to be an ugly workaround
+            //we know that if we are here the message previously MUST have
+            //matched Psysefxvol#/
+            //and the number is one or two digits at most
+            const char *index_1 = m;
+            index_1 -=2;
+            assert(isdigit(*index_1));
+            if(isdigit(index_1[-1]))
+                index_1--;
+            int ind1 = atoi(index_1);
+
+            //Now get the second index like normal
+            while(!isdigit(*m)) m++;
+            int ind2 = atoi(m);
+            Master &mast = *(Master*)d.obj;
+
+            if(rtosc_narguments(m))
+                mast.setPsysefxvol(ind2, ind1, rtosc_argument(m,0).i);
+            else
+                d.reply(d.loc, "i", mast.Psysefxvol[ind2][ind1]);
+        }}
+};
+
+static Ports sysefsendto = 
+{
+    {"to#" STRINGIFY(NUM_SYS_EFX) "::i", 0, 0, [](const char *m, RtData&d)
+        {
+            //same ugly workaround as before
+            const char *index_1 = m;
+            index_1 -=2;
+            assert(isdigit(*index_1));
+            if(isdigit(index_1[-1]))
+                index_1--;
+            int ind1 = atoi(index_1);
+
+            //Now get the second index like normal
+            while(!isdigit(*m)) m++;
+            int ind2 = atoi(m);
+            Master &master = *(Master*)d.obj;
+
+            if(rtosc_narguments(m))
+                master.setPsysefxsend(ind1, ind2, rtosc_argument(m,0).i);
+            else
+                d.reply(d.loc, "i", master.Psysefxsend[ind1][ind2]);
+        }}
+};
+
 static Ports localports = {
     rRecursp(part, 16, "Part"),//NUM_MIDI_PARTS
     rRecursp(sysefx, 4, "System Effect"),//NUM_SYS_EFX
     rRecursp(insefx, 8, "Insertion Effect"),//NUM_INS_EFX
     rRecur(microtonal, "Micrtonal Mapping Functionality"),
+    rRecur(ctl, "Controller"),
     rParamZyn(Pkeyshift,  "Global Key Shift"),
-    rParams(Pinsparts, NUM_INS_EFX, "Part to insert part onto"),
-    {"echo", "=documentation\0:Hidden port to echo messages\0", 0, [](const char *m, RtData&) {
+    rArrayI(Pinsparts, NUM_INS_EFX, "Part to insert part onto"),
+    {"echo", rDoc("Hidden port to echo messages"), 0, [](const char *m, RtData&) {
        bToU->raw_write(m-1);}},
     {"get-vu", rDoc("Grab VU Data"), 0, [](const char *, RtData &d) {
        Master *m = (Master*)d.obj;
@@ -68,27 +120,40 @@ static Ports localports = {
        Part   *p = *(Part**)rtosc_argument(msg, 1).b.data;
        int     i = rtosc_argument(msg, 0).i;
        m->part[i]->cloneTraits(*p);
+       m->part[i]->kill_rt();
        d.reply("/free", "sb", "Part", sizeof(void*), &m->part[i]);
        m->part[i] = p;
-       printf("part %d is now pointer %p\n", i, p);}},
+       p->initialize_rt();
+       //printf("part %d is now pointer %p\n", i, p);
+                                                                                                          }},
     {"Pvolume::i", rDoc("Master Volume"), 0,
         [](const char *m, rtosc::RtData &d) {
         if(rtosc_narguments(m)==0) {
-            d.reply(d.loc, "c", ((Master*)d.obj)->Pvolume);
-        } else if(rtosc_narguments(m)==1 && rtosc_type(m,0)=='c') {
+            d.reply(d.loc, "i", ((Master*)d.obj)->Pvolume);
+        } else if(rtosc_narguments(m)==1 && rtosc_type(m,0)=='i') {
             ((Master*)d.obj)->setPvolume(limit<char>(rtosc_argument(m,0).i,0,127));
-            d.broadcast(d.loc, "c", ((Master*)d.obj)->Pvolume);}}},
+            d.broadcast(d.loc, "i", ((Master*)d.obj)->Pvolume);}}},
     {"volume::i", rDoc("Master Volume"), 0,
         [](const char *m, rtosc::RtData &d) {
         if(rtosc_narguments(m)==0) {
-            d.reply(d.loc, "c", ((Master*)d.obj)->Pvolume);
-        } else if(rtosc_narguments(m)==1 && rtosc_type(m,0)=='c') {
-            printf("looking at value %d\n", rtosc_argument(m,0).i);
-            printf("limited value is %d\n", limit<char>(
-                        rtosc_argument(m,0).i, 0,127));
+            d.reply(d.loc, "i", ((Master*)d.obj)->Pvolume);
+        } else if(rtosc_narguments(m)==1 && rtosc_type(m,0)=='i') {
+            //printf("looking at value %d\n", rtosc_argument(m,0).i);
+            //printf("limited value is %d\n", limit<char>(
+            //            rtosc_argument(m,0).i, 0,127));
             ((Master*)d.obj)->setPvolume(limit<char>(rtosc_argument(m,0).i,0,127));
-            printf("sets volume to value %d\n", ((Master*)d.obj)->Pvolume);
-            d.broadcast(d.loc, "c", ((Master*)d.obj)->Pvolume);}}},
+            //printf("sets volume to value %d\n", ((Master*)d.obj)->Pvolume);
+            d.broadcast(d.loc, "i", ((Master*)d.obj)->Pvolume);}}},
+    {"Psysefxvol#" STRINGIFY(NUM_SYS_EFX) "/::i", 0, &sysefxPort,
+        [](const char *msg, rtosc::RtData &d) {
+            SNIP;
+            sysefxPort.dispatch(msg, d);
+        }},
+    {"sysefxfrom#" STRINGIFY(NUM_SYS_EFX) "/", rDoc("Routing Between System Effects"), &sysefsendto,
+        [](const char *msg, RtData&d) {
+            SNIP;
+            sysefsendto.dispatch(msg, d);
+        }},
 
     {"noteOn:iii", rDoc("Noteon Event"), 0,
         [](const char *m,RtData &d){
@@ -104,6 +169,11 @@ static Ports localports = {
         [](const char *m,RtData &d){
             Master *M =  (Master*)d.obj;
             M->setController(rtosc_argument(m,0).i,rtosc_argument(m,1).i,rtosc_argument(m,2).i);}},
+    {"Panic:", rDoc("Stop All Sound"), 0,
+        [](const char *, RtData &d) {
+            Master &M =  *(Master*)d.obj;
+            M.ShutUp();
+        }},
     {"freeze_state:", rDoc("Internal Read-only Mode"), 0,
         [](const char *,RtData &d) {
             Master *M =  (Master*)d.obj;
@@ -124,8 +194,23 @@ static Ports localports = {
             printf("learning '%s'\n", rtosc_argument(m,0).s);
             M->midi.learn(rtosc_argument(m,0).s);}},
     {"close-ui", rDoc("Request to close any connection named \"GUI\""), 0, [](const char *, RtData &) {
-       bToU->write("/close-ui", "");}},  
+       bToU->write("/close-ui", "");}},
+    {"add-rt-memory:bi", rProp(internal) rDoc("Add Additional Memory To RT MemPool"), 0,
+        [](const char *msg, RtData &d)
+        {
+            Master &m = *(Master*)d.obj;
+            char   *mem = *(char**)rtosc_argument(msg, 0).b.data;
+            int     i = rtosc_argument(msg, 1).i;
+            m.memory->addMemory(mem, i);
+            m.pendingMemory = false;
+        }},
+    {"undo_pause",0,0,[](const char *, rtosc::RtData &d)
+        {d.reply("/undo_pause", "");}},
+    {"undo_resume",0,0,[](const char *, rtosc::RtData &d)
+        {d.reply("/undo_resume", "");}},
 };
+
+
 
 Ports &Master::ports = localports;
 Master *the_master;
@@ -135,7 +220,7 @@ class DataObj:public rtosc::RtData
     public:
         DataObj(char *loc_, size_t loc_size_, void *obj_, rtosc::ThreadLink *bToU_)
         {
-            memset(loc_, 0, sizeof(loc_size_));
+            memset(loc_, 0, loc_size_);
             loc      = loc_;
             loc_size = loc_size_;
             obj      = obj_;
@@ -149,6 +234,7 @@ class DataObj:public rtosc::RtData
             char *buffer = bToU->buffer();
             rtosc_vmessage(buffer,bToU->buffer_size(),path,args,va);
             reply(buffer);
+            va_end(va);
         }
         virtual void reply(const char *msg)
         {
@@ -160,7 +246,9 @@ class DataObj:public rtosc::RtData
             reply("/broadcast");
             char *buffer = bToU->buffer();
             rtosc_vmessage(buffer,bToU->buffer_size(),path,args,va);
-            reply(buffer);}
+            reply(buffer);
+            va_end(va);
+        }
         virtual void broadcast(const char *msg) override
         {
             reply("/broadcast");
@@ -176,7 +264,7 @@ vuData::vuData(void)
 {}
 
 Master::Master()
-:midi(Master::ports), frozenState(false)
+:midi(Master::ports), frozenState(false), pendingMemory(false)
 {
     memory = new Allocator();
     the_master = this;
@@ -213,7 +301,7 @@ Master::Master()
         char loc_buf[1024];
         DataObj d{loc_buf, 1024, the_master, bToU};
         memset(loc_buf, sizeof(loc_buf), 0);
-        printf("sending an event to the owner of '%s'\n", m);
+        //printf("sending an event to the owner of '%s'\n", m);
         Master::ports.dispatch(m+1, d);
     };
 
@@ -337,9 +425,9 @@ void Master::setController(char chan, int type, int par)
     }
     else
     if(type == C_bankselectmsb) {      // Change current bank
-        if(((unsigned int)par < bank.banks.size())
-           && (bank.banks[par].dir != bank.bankfiletitle))
-            bank.loadbank(bank.banks[par].dir);
+        //if(((unsigned int)par < bank.banks.size())
+        //   && (bank.banks[par].dir != bank.bankfiletitle))
+        //    bank.loadbank(bank.banks[par].dir);
     }
     else {  //other controllers
         for(int npart = 0; npart < NUM_MIDI_PARTS; ++npart) //Send the controller to all part assigned to the channel
@@ -416,7 +504,6 @@ void Master::partonoff(int npart, int what)
         for(int nefx = 0; nefx < NUM_INS_EFX; ++nefx) {
             if(Pinsparts[nefx] == npart)
                 insefx[nefx]->cleanup();
-            ;
         }
     }
     else {  //enabled
@@ -425,6 +512,7 @@ void Master::partonoff(int npart, int what)
     }
 }
 
+#if 0
 template <class T>
 struct def_skip
 {
@@ -437,7 +525,7 @@ struct str_skip
 	static void skip(const char*& argptr) { while(argptr++); /*TODO: 4 padding */ }
 };
 
-template<class T, class Display = T, template<class T> class SkipsizeFunc = def_skip>
+template<class T, class Display = T, template<class TMP> class SkipsizeFunc = def_skip>
 void _dump_prim_arg(const char*& argptr, std::ostream& os)
 {
 	os << ' ' << (Display)*(const T*)argptr;
@@ -476,12 +564,23 @@ void dump_msg(const char* ptr, std::ostream& os = std::cerr)
 	}
 
 }
+#endif
+int msg_id=0;
 
 /*
  * Master audio out (the final sound)
  */
 void Master::AudioOut(float *outl, float *outr)
 {
+    //Danger Limits
+    if(memory->lowMemory(2,1024*1024))
+        printf("LOW MEMORY OHOH NOONONONONOOOOOOOO!!\n");
+    //Normal Limits
+    if(!pendingMemory && memory->lowMemory(4,1024*1024)) {
+        printf("Requesting more memory\n");
+        bToU->write("/request-memory", "");
+        pendingMemory = true;
+    }
     //Handle user events TODO move me to a proper location
     char loc_buf[1024];
     DataObj d{loc_buf, 1024, this, bToU};
@@ -502,23 +601,25 @@ void Master::AudioOut(float *outl, float *outr)
         //XXX yes, this is not realtime safe, but it is useful...
         if(strcmp(msg, "/get-vu") && false) {
             fprintf(stdout, "%c[%d;%d;%dm", 0x1B, 0, 5 + 30, 0 + 40);
-            fprintf(stdout, "backend: '%s'<%s>\n", msg,
+            fprintf(stdout, "backend[%d]: '%s'<%s>\n", msg_id++, msg,
                     rtosc_argument_string(msg));
             fprintf(stdout, "%c[%d;%d;%dm", 0x1B, 0, 7 + 30, 0 + 40);
         }
         d.matches = 0;
         //fprintf(stdout, "address '%s'\n", uToB->peak());
-	ports.dispatch(msg+1, d);
+        ports.dispatch(msg+1, d);
         events++;
         if(!d.matches) {// && !ports.apropos(msg)) {
             fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 1, 7 + 30, 0 + 40);
-            fprintf(stderr, "Unknown address '%s'\n", uToB->peak());
-	    if(strstr(msg, "PFMVelocity"))
-	     dump_msg(msg);
-	    if(ports.apropos(msg))
-	     fprintf(stderr, "  -> best match: '%s'\n", ports.apropos(msg)->name);
-	    if(ports.apropos(msg+1))
-	     fprintf(stderr, "  -> best match: '%s'\n", ports.apropos(msg+1)->name);
+            fprintf(stderr, "Unknown address<BACKEND> '%s:%s'\n", uToB->peak(), rtosc_argument_string(uToB->peak()));
+#if 0
+            if(strstr(msg, "PFMVelocity"))
+                dump_msg(msg);
+            if(ports.apropos(msg))
+                fprintf(stderr, "  -> best match: '%s'\n", ports.apropos(msg)->name);
+            if(ports.apropos(msg+1))
+                fprintf(stderr, "  -> best match: '%s'\n", ports.apropos(msg+1)->name);
+#endif
             fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 0, 7 + 30, 0 + 40);
         }
     }
@@ -551,7 +652,7 @@ void Master::AudioOut(float *outl, float *outr)
 
     //Apply the part volumes and pannings (after insertion effects)
     for(int npart = 0; npart < NUM_MIDI_PARTS; ++npart) {
-        if(part[npart]->Penabled)
+        if(!part[npart]->Penabled)
             continue;
 
         Stereo<float> newvol(part[npart]->volume),
@@ -563,6 +664,8 @@ void Master::AudioOut(float *outl, float *outr)
             newvol.l *= pan * 2.0f;
         else
             newvol.r *= (1.0f - pan) * 2.0f;
+        //if(npart==0)
+        //printf("[%d]vol = %f->%f\n", npart, oldvol.l, newvol.l);
 
         //the volume or the panning has changed and needs interpolation
         if(ABOVE_AMPLITUDE_THRESHOLD(oldvol.l, newvol.l)
@@ -578,11 +681,12 @@ void Master::AudioOut(float *outl, float *outr)
             part[npart]->oldvolumel = newvol.l;
             part[npart]->oldvolumer = newvol.r;
         }
-        else
+        else {
             for(int i = 0; i < synth->buffersize; ++i) { //the volume did not changed
                 part[npart]->partoutl[i] *= newvol.l;
                 part[npart]->partoutr[i] *= newvol.r;
             }
+        }
     }
 
 
@@ -724,6 +828,7 @@ Master::~Master()
         delete sysefx[nefx];
 
     delete fft;
+    delete memory;
 }
 
 
@@ -920,6 +1025,7 @@ int Master::loadXML(const char *filename)
     xml->exitbranch();
 
     delete (xml);
+    initialize_rt();
     return 0;
 }
 

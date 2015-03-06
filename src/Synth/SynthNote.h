@@ -22,7 +22,6 @@
 #ifndef SYNTH_NOTE_H
 #define SYNTH_NOTE_H
 #include "../globals.h"
-#include "../Params/FilterParams.h"
 
 class Allocator;
 class Controller;
@@ -104,6 +103,7 @@ class SynthNote
 
         //Realtime Safe Memory Allocator For notes
         class Allocator &memory;
+        const Controller &ctl;
 };
 
 #endif

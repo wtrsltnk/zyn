@@ -40,6 +40,7 @@
 #include "Params/PADnoteParameters.h"
 
 #include "DSP/FFTwrapper.h"
+#include "Misc/PresetExtractor.h"
 #include "Misc/Master.h"
 #include "Misc/Part.h"
 #include "Misc/Util.h"
@@ -80,7 +81,7 @@ char *instance_name = 0;
 
 void exitprogram();
 
-extern int main_thread;
+extern pthread_t main_thread;
 
 //cleanup on signaled exit
 void sigterm_exit(int /*sig*/)
@@ -95,13 +96,6 @@ void sigterm_exit(int /*sig*/)
  */
 void initprogram(void)
 {
-    cerr.precision(1);
-    cerr << std::fixed;
-    cerr << "\nSample Rate = \t\t" << synth->samplerate << endl;
-    cerr << "Sound Buffer Size = \t" << synth->buffersize << " samples" << endl;
-    cerr << "Internal latency = \t" << synth->buffersize_f * 1000.0f
-    / synth->samplerate_f << " ms" << endl;
-    cerr << "ADsynth Oscil.Size = \t" << synth->oscilsize << " samples" << endl;
 
 
     middleware = new MiddleWare();
@@ -137,7 +131,7 @@ void exitprogram()
 
 int main(int argc, char *argv[])
 {
-    main_thread =  (long int)syscall(224);
+    main_thread = pthread_self();
     synth = new SYNTH_T;
     config.init();
     dump.startnow();
@@ -407,12 +401,21 @@ int main(int argc, char *argv[])
         }
         else {
             master->part[loadtopart]->applyparameters();
+            master->part[loadtopart]->initialize_rt();
             cout << "Instrument file loaded." << endl;
         }
     }
 
     //Run the Nio system
     bool ioGood = Nio::start();
+    
+    cerr.precision(1);
+    cerr << std::fixed;
+    cerr << "\nSample Rate = \t\t" << synth->samplerate << endl;
+    cerr << "Sound Buffer Size = \t" << synth->buffersize << " samples" << endl;
+    cerr << "Internal latency = \t" << synth->buffersize_f * 1000.0f
+    / synth->samplerate_f << " ms" << endl;
+    cerr << "ADsynth Oscil.Size = \t" << synth->oscilsize << " samples" << endl;
 
     if(!execAfterInit.empty()) {
         cout << "Executing user supplied command: " << execAfterInit << endl;
@@ -424,6 +427,7 @@ int main(int argc, char *argv[])
     gui = GUI::createUi(middleware->spawnUiApi(), &Pexitprogram);
     middleware->setUiCallback(GUI::raiseUi, gui);
     middleware->setIdleCallback([](){GUI::tickUi(gui);});
+    middlewarepointer = middleware;
 
     if(!noui)
     {

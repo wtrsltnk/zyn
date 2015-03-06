@@ -65,8 +65,9 @@ class PartSysEffSend {open : {public Fl_Group}
         label 01
         xywh {0 0 25 25} box ROUND_UP_BOX labelfont 1 labelsize 10 align 130 maximum 127 step 1
         code0 {o->size(25,25);}
-        code1 {o->init("sysefx"+to_s(neff)+"/part"+to_s(npart)+"/dummy");}
-        code2 {char tmp[10];snprintf(tmp,10,"%d",neff+1);o->copy_label(tmp);}
+        code1 {o->alt_init("/","Psysefxvol"+to_s(neff)+"/part"+to_s(npart));}
+        code2 {o->mark_dead();}
+        code3 {char tmp[10];snprintf(tmp,10,"%d",neff+1);o->copy_label(tmp);}
         class Fl_Osc_Dial
       }
     }
@@ -175,7 +176,7 @@ maxkcounter->do_callback();}
         }
         Fl_Choice sendtoeffect {
           xywh {615 0 45 15} down_box BORDER_BOX labelsize 10 align 5 textfont 1 textsize 10
-          code0 {o->add("OFF");char nrstr[10]; for(int i=0;i<NUM_PART_EFX;i++){sprintf(nrstr,"FX%d",i+1);o->add(nrstr);};}
+          code0 {char nrstr[10]; for(int i=0;i<NUM_PART_EFX;i++){sprintf(nrstr,"FX%d",i+1);o->add(nrstr);};o->add("OFF");}
           code1 {o->init("Psendtoparteffect");//TODO check semantics}
           class Fl_Osc_Choice
         } {}
@@ -262,7 +263,7 @@ class PartUI {open : {public Fl_Osc_Group}
           label KeyShift
           xywh {195 45 90 20} labelsize 11 align 1 minimum -64 maximum 64 step 1
           code0 {o->lstep(12);}
-          code1 {o->init("Pkeyshift");}
+          code1 {o->init("Pkeyshift", 'i', -64);}
           class Fl_Osc_Counter
         }
         Fl_Scroll {} {open
@@ -369,8 +370,8 @@ if (event==FL_RIGHT_MOUSE){
         }
         Fl_Button {} {
           label R
-          callback {o->oscWrite("Pminkey", "c", 0);
-          o->oscWrite("Pmaxkey", "c", 127);}
+          callback {o->oscWrite("Pminkey", "i", 0);
+          o->oscWrite("Pmaxkey", "i", 127);}
           tooltip {reset the minimum key to 0 and maximum key to 127} xywh {330 155 15 12} box THIN_UP_BOX labelfont 1 labelsize 10
           class Fl_Osc_Button
         }
@@ -599,6 +600,7 @@ else {propta->deactivate();proptb->deactivate();}}
         callback {ninseff=(int) o->value()-1;
         insefftype->oscMove("partefx"+to_s(ninseff)+"/efftype");
         inseffectuigroup->reext("partefx"+to_s(ninseff)+"/");
+        bypasseff->oscMove("Pefxbypass"+to_s(ninseff));
 /*insefftype->value(part->partefx[ninseff]->geteffect());*/
 //insefftype->do_callback();
 inseffectui->refresh();
@@ -676,7 +678,7 @@ inseffectui->refresh();}
       }
       Fl_Choice sendtochoice {
         label {Send To.}
-        callback {/*int x=(int) o->value();
+        callback {(void)o;/*int x=(int) o->value();
 part->Pefxroute[ninseff]=x;
 if (x==2) part->partefx[ninseff]->setdryonly(true);
 	else part->partefx[ninseff]->setdryonly(false);*/}
@@ -706,12 +708,12 @@ if (x==2) part->partefx[ninseff]->setdryonly(true);
       }
       Fl_Button {} {
         label C
-        callback {/*presetsui->copy(part->partefx[ninseff]);*/}
+        callback {presetsui->copy(partfx->loc());}
         xywh {90 127 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
       }
       Fl_Button {} {
         label P
-        callback {/*presetsui->paste(part->partefx[ninseff],inseffectui);*/}
+        callback {presetsui->paste(partfx->loc(),inseffectui);}
         xywh {120 127 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
       }
     }
@@ -995,7 +997,6 @@ assert(!loc_.empty());
 bankui=bankui_;
 part_path = part_path_;
 base = part_path;
-osc  = osc;
 npart=npart_;
 ninseff=0;
 osc=osc_;
@@ -1056,13 +1057,13 @@ if (kititem!=lastkititem){
     if(kititem<0) return;
 }
 
-if(!adnoteui  && adsynenabledcheck->value())
+if(!adnoteui  && engine==0)//adsynenabledcheck->value())
     adnoteui=new ADnoteUI(loc+"kit"+to_s(kititem)+"/adpars/", osc);
 
-if(!subnoteui && subsynenabledcheck->value()) 
+if(!subnoteui && engine==1)//subsynenabledcheck->value()) 
     subnoteui=new SUBnoteUI(osc, loc+"kit"+to_s(kititem)+"/subpars/");
 
-if(!padnoteui && padsynenabledcheck->value()) 
+if(!padnoteui && engine==2)//padsynenabledcheck->value()) 
     padnoteui=new PADnoteUI(loc+"kit"+to_s(kititem)+"/padpars/", osc);
 
 if (engine==0&&adnoteui) adnoteui->ADnoteGlobalParameters->show();

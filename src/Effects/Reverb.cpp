@@ -40,6 +40,7 @@ Reverb::Reverb(EffectParams pars)
       Ptype(1),
       Proomsize(64),
       Pbandwidth(30),
+      idelaylen(0),
       roomsize(1.0f),
       rs(1.0f),
       bandwidth(NULL),
@@ -230,10 +231,13 @@ void Reverb::setidelay(unsigned char _Pidelay)
 {
     Pidelay = _Pidelay;
     float delay = powf(50.0f * Pidelay / 127.0f, 2.0f) - 1.0f;
+    int newDelayLen = (int) (samplerate_f * delay / 1000);
+    if(newDelayLen == idelaylen)
+        return;
 
     memory.devalloc(idelay);
 
-    idelaylen = (int) (samplerate_f * delay / 1000);
+    idelaylen = newDelayLen;
     if(idelaylen > 1) {
         idelayk = 0;
         idelay  = memory.valloc<float>(idelaylen);
@@ -253,7 +257,7 @@ void Reverb::sethpf(unsigned char _Phpf)
     if(Phpf == 0) { //No HighPass
         memory.dealloc(hpf);
     } else {
-        float fr = expf(powf(Phpf / 127.0f, 0.5f) * logf(10000.0f)) + 20.0f;
+        float fr = expf(sqrtf(Phpf / 127.0f) * logf(10000.0f)) + 20.0f;
         if(hpf == NULL)
             hpf = memory.alloc<AnalogFilter>(3, fr, 1, 0, samplerate, buffersize);
         else
@@ -267,7 +271,7 @@ void Reverb::setlpf(unsigned char _Plpf)
     if(Plpf == 127) { //No LowPass
         memory.dealloc(lpf);
     } else {
-        float fr = expf(powf(Plpf / 127.0f, 0.5f) * logf(25000.0f)) + 40.0f;
+        float fr = expf(sqrtf(Plpf / 127.0f) * logf(25000.0f)) + 40.0f;
         if(!lpf)
             lpf = memory.alloc<AnalogFilter>(2, fr, 1, 0, samplerate, buffersize);
         else
@@ -314,11 +318,13 @@ void Reverb::settype(unsigned char _Ptype)
         tmp *= samplerate_adjust; //adjust the combs according to the samplerate
         if(tmp < 10.0f)
             tmp = 10.0f;
-        comblen[i] = (int) tmp;
         combk[i]   = 0;
         lpcomb[i]  = 0;
-        memory.devalloc(comb[i]);
-        comb[i] = memory.valloc<float>(comblen[i]);
+        if(comblen[i] != (int)tmp || comb[i] == NULL) {
+            comblen[i] = (int) tmp;
+            memory.devalloc(comb[i]);
+            comb[i] = memory.valloc<float>(comblen[i]);
+        }
     }
 
     for(int i = 0; i < REV_APS * 2; ++i) {
@@ -332,19 +338,20 @@ void Reverb::settype(unsigned char _Ptype)
         tmp *= samplerate_adjust; //adjust the combs according to the samplerate
         if(tmp < 10)
             tmp = 10;
-        aplen[i] = (int) tmp;
         apk[i]   = 0;
-        memory.devalloc(ap[i]);
-        ap[i] = memory.valloc<float>(aplen[i]);
+        if(aplen[i] != (int)tmp || ap[i] == NULL) {
+            aplen[i] = (int) tmp;
+            memory.devalloc(ap[i]);
+            ap[i] = memory.valloc<float>(aplen[i]);
+        }
     }
-    delete bandwidth;
-    bandwidth = NULL;
+    memory.dealloc(bandwidth);
     if(Ptype == 2) { //bandwidth
         //TODO the size of the unison buffer may be too small, though this has
         //not been verified yet.
         //As this cannot be resized in a RT context, a good upper bound should
         //be found
-        bandwidth = memory.alloc<Unison>(buffersize / 4 + 1, 2.0f, samplerate_f);
+        bandwidth = memory.alloc<Unison>(&memory, buffersize / 4 + 1, 2.0f, samplerate_f);
         bandwidth->setSize(50);
         bandwidth->setBaseFrequency(1.0f);
     }

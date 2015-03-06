@@ -1,3 +1,4 @@
+#include <FL/Fl.H>
 #include "Fl_Osc_VSlider.H"
 #include "Fl_Osc_Interface.h"
 #include "Fl_Osc_Pane.H"
@@ -28,6 +29,11 @@ void Fl_Osc_VSlider::OSC_value(char v)
 {
     Fl_Slider::value(v+minimum());
 }
+        
+void Fl_Osc_VSlider::OSC_value(int v)
+{
+    Fl_Slider::value(v+minimum());
+}
 
 void Fl_Osc_VSlider::OSC_value(float v)
 {
@@ -55,6 +61,18 @@ void Fl_Osc_VSlider::callback(Fl_Callback *cb, void *p)
 {
     cb_data.first = cb;
     cb_data.second = p;
+}
+
+int Fl_Osc_VSlider::handle(int ev)
+{
+    bool middle_mouse = (ev == FL_PUSH && Fl::event_state(FL_BUTTON2));
+    bool ctl_click    = (ev == FL_PUSH && Fl::event_state(FL_BUTTON1) && Fl::event_ctrl());
+    if(middle_mouse || ctl_click) {
+        printf("Trying to learn...\n");
+        osc->write("/learn", "s", (loc+ext).c_str());
+        return 1;
+    }
+    return Fl_Value_Slider::handle(ev);
 }
 
 void Fl_Osc_VSlider::update(void)

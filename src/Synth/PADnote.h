@@ -23,11 +23,8 @@
 
 #include "SynthNote.h"
 #include "../globals.h"
-#include "../Params/PADnoteParameters.h"
-#include "../Params/Controller.h"
 #include "Envelope.h"
 #include "LFO.h"
-#include "../Params/Controller.h"
 
 /**The "pad" synthesizer*/
 class PADnote:public SynthNote
@@ -47,13 +44,13 @@ class PADnote:public SynthNote
         void fadein(float *smps);
         void computecurrentparameters();
         bool finished_;
-        PADnoteParameters *pars;
+        const PADnoteParameters &pars;
 
         int   poshi_l, poshi_r;
         float poslo;
 
         float basefreq;
-        bool  firsttime, released;
+        bool  firsttime;
 
         int nsample, portamento;
 
@@ -107,7 +104,6 @@ class PADnote:public SynthNote
 
 
         float globaloldamplitude, globalnewamplitude, velocity, realfreq;
-        Controller &ctl;
 };
 
 

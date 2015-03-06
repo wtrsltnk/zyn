@@ -3,6 +3,7 @@ message(STATUS "Checking Include Path" $ENV{CMAKE_INCLUDE_PATH} ${CMAKE_INCLUDE_
 message(STATUS "Checking Library Path" $ENV{CMAKE_LIBRARY_PATH} ${CMAKE_LIBRARY_PATH})
 
 #Dependency check
+include(CheckFunctionExists)
 find_package(PkgConfig REQUIRED)
 find_package(zlib REQUIRED)
 pkg_check_modules(FFTW REQUIRED fftw3)
@@ -39,7 +40,13 @@ execute_process(COMMAND echo fistpl 0
 # NOTE: These cache variables should normally not be changed in this
 # file, but either in in CMakeCache.txt before compile, or by passing
 # parameters directly into cmake using the -D flag.
-SET (GuiModule fltk CACHE STRING "GUI module, either fltk, ntk or off")
+if(NTK_FOUND)
+  SET (GuiModule ntk CACHE STRING "GUI module, either fltk, ntk or off")
+elseif(FLTK_FOUND)
+  SET (GuiModule fltk CACHE STRING "GUI module, either fltk, ntk or off")
+else()
+  SET (GuiModule off CACHE STRING "GUI module, either fltk, ntk or off")
+endif()
 SET (CompileTests ${CXXTEST_FOUND} CACHE BOOL "whether tests should be compiled in or not")
 SET (AlsaEnable ${ALSA_FOUND} CACHE BOOL
     "Enable support for Advanced Linux Sound Architecture")
@@ -127,26 +134,36 @@ option (BuildForDebug "Include gdb debugging support" OFF)
 set(CMAKE_BUILD_TYPE "Release")
 
 set (BuildOptions_x86_64AMD
-    "-std=c++0x -O3 -march=athlon64 -m64 -Wall -ffast-math -fno-finite-math-only -fomit-frame-pointer"
+    "-std=c++11 -O3 -march=athlon64 -m64 -Wall -Wno-unused-parameter -ffast-math -fno-finite-math-only -fomit-frame-pointer"
   CACHE STRING "X86_64 compiler options"
 )
 
 set (BuildOptions_X86_64Core2
-    "-std=c++0x -O3 -march=core2 -m64 -Wall -ffast-math -fno-finite-math-only -fomit-frame-pointer"
+    "-std=c++11 -O3 -march=core2 -m64 -Wall -Wno-unused-parameter -ffast-math -fno-finite-math-only -fomit-frame-pointer"
   CACHE STRING "X86_64 compiler options"
 )
 
 set (BuildOptionsBasic
-    "-std=c++0x -O3 -msse -msse2 -mfpmath=sse -ffast-math -fomit-frame-pointer"
+    "-std=c++11 -Wno-unused-parameter -O3 -msse -msse2 -mfpmath=sse -ffast-math -fomit-frame-pointer"
     CACHE STRING "basic X86 complier options"
 )
 
 set (BuildOptionsDebug
-    "-std=c++0x -O0 -g3 -ggdb -Wall -Wpointer-arith" CACHE STRING "Debug build flags")
+    "-std=c++11 -O0 -g3 -ggdb -Wall -Wno-unused-parameter -Wpointer-arith" CACHE STRING "Debug build flags")
 
 ########### Settings dependant code ###########
 # From here on, the setting variables have  been prepared so concentrate
 # on the actual compiling.
+
+# To avoid a conflict if PortAudio v1 is installed, the linker directory
+# of portaudio must be specified first, so that xxx/lib/portaudio2 is
+# searched before xxx/lib where PortAudio v1 gets installed.
+if(PaEnable)
+	include_directories(${PORTAUDIO_INCLUDE_DIRS})
+	add_definitions(-DPORTAUDIO=1)
+	list(APPEND AUDIO_LIBRARIES ${PORTAUDIO_LIBRARIES})
+	list(APPEND AUDIO_LIBRARY_DIRS ${PORTAUDIO_LIBRARY_DIRS})
+endif()
 
 if(AlsaEnable)
 	list(APPEND AUDIO_LIBRARIES ${ASOUND_LIBRARY})
@@ -164,13 +181,6 @@ if(OssEnable)
 	add_definitions(-DOSS=1)
 endif(OssEnable)
 
-if(PaEnable)
-	include_directories(${PORTAUDIO_INCLUDEDIR} /usr/lib/blam/bax)
-	add_definitions(-DPORTAUDIO=1)
-	list(APPEND AUDIO_LIBRARIES ${PORTAUDIO_LIBRARIES})
-	list(APPEND AUDIO_LIBRARY_DIRS ${PORTAUDIO_LIBRARY_DIRS})
-endif()
-
 if (CompileTests)
 	ENABLE_TESTING()
 endif()
@@ -185,7 +195,7 @@ endif()
 if(LibloEnable)
 	include_directories(${LIBLO_INCLUDE_DIRS})
 	add_definitions(-DUSE_NSM=1)
-	list(APPEND AUDIO_LIBRARIES ${LIBLO_LIBRARIES})
+        list(APPEND AUDIO_LIBRARIES ${LIBLO_LDFLAGS})
 	list(APPEND AUDIO_LIBRARY_DIRS ${LIBLO_LIBRARY_DIRS})
 	message(STATUS "Compiling with liblo")
 endif()
@@ -258,7 +268,7 @@ if(FltkGui)
 	message(STATUS ${FLTK_LDFLAGS})
 
 
-	set(GUI_LIBRARIES ${FLTK_LIBRARIES} ${FLTK_LIBRARIES} ${OPENGL_LIBRARIES} zynaddsubfx_gui)
+	set(GUI_LIBRARIES zynaddsubfx_gui ${FLTK_LIBRARIES} ${FLTK_LIBRARIES} ${OPENGL_LIBRARIES})
 
 	add_definitions(-DFLTK_GUI)
 	message(STATUS "Will build FLTK gui")
@@ -278,7 +288,7 @@ if(NtkGui)
         
 	message(STATUS ${NTK_LDFLAGS} ${NTK_IMAGES_LDFLAGS})
 
-	set(GUI_LIBRARIES ${NTK_LIBRARIES} ${NTK_IMAGES_LIBRARIES} ${OPENGL_LIBRARIES} zynaddsubfx_gui)
+	set(GUI_LIBRARIES zynaddsubfx_gui ${NTK_LIBRARIES} ${NTK_IMAGES_LIBRARIES} ${OPENGL_LIBRARIES})
 
 	add_definitions(-DNTK_GUI)
 
@@ -291,6 +301,15 @@ if(NtkGui)
 			)
 
 	add_subdirectory(UI)
+endif()
+
+if(NOT FltkGui AND NOT NtkGui)
+    if(LibloEnable)
+        set(NSM_WORKAROUND UI/NSM.C UI/NSM/Client.C)
+    endif()
+    add_library(zynaddsubfx_gui_dummy STATIC UI/ConnectionDummy.cpp ${NSM_WORKAROUND})
+    set(GUI_LIBRARIES zynaddsubfx_gui_dummy)
+    add_definitions(-DNO_UI=1)
 endif()
 
 ########### General section ##############
@@ -358,8 +377,9 @@ target_link_libraries(zynaddsubfx
 	${AUDIO_LIBRARIES}
 	)
 
-if (DssiEnable AND FALSE)
+if (DssiEnable)
 	add_library(zynaddsubfx_dssi SHARED
+        UI/ConnectionDummy.cpp
 		Output/DSSIaudiooutput.cpp
 		)
 
@@ -378,11 +398,8 @@ message(STATUS "Link libraries: ${ZLIB_LIBRARY} ${FFTW_LIBRARY} ${MXML_LIBRARIES
 install(TARGETS zynaddsubfx
 	RUNTIME DESTINATION bin
 	)
-
 if(NtkGui)
 install(DIRECTORY ../pixmaps DESTINATION share/zynaddsubfx)
-add_definitions(-DPIXMAP_PATH="${CMAKE_INSTALL_PREFIX}/share/zynaddsubfx/pixmaps/")
-add_definitions(-DSOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 endif(NtkGui)
 
 include(CTest)

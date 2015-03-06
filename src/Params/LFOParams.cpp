@@ -20,10 +20,11 @@
 
 */
 
-#include <math.h>
-#include <stdio.h>
+#include <cmath>
+#include <cstdio>
 #include "../globals.h"
 #include "../Misc/Util.h"
+#include "../Misc/XMLwrapper.h"
 #include "LFOParams.h"
 
 #include <rtosc/port-sugar.h>
@@ -33,6 +34,8 @@ using namespace rtosc;
 
 #define rObject LFOParams
 static rtosc::Ports _ports = {
+    rSelf(LFOParams),
+    rPaste(),
     rParamF(Pfreq, "frequency of LFO"),
     rParamZyn(Pintensity, "Intensity of LFO"),
     rParamZyn(Pstartphase, rSpecial(random), "Starting Phase"),
@@ -48,6 +51,21 @@ rtosc::Ports &LFOParams::ports = _ports;
 
 int LFOParams::time;
 
+LFOParams::LFOParams()
+{
+    Dfreq       = 64;
+    Dintensity  = 0;
+    Dstartphase = 0;
+    DLFOtype    = 0;
+    Drandomness = 0;
+    Ddelay      = 0;
+    Dcontinous  = 0;
+    fel  = 0;
+    time = 0;
+
+    defaults();
+}
+
 LFOParams::LFOParams(char Pfreq_,
                      char Pintensity_,
                      char Pstartphase_,
@@ -55,19 +73,19 @@ LFOParams::LFOParams(char Pfreq_,
                      char Prandomness_,
                      char Pdelay_,
                      char Pcontinous_,
-                     char fel_):Presets()
+                     char fel_)
 {
-    switch(fel_) {
-        case 0:
-            setpresettype("Plfofrequency");
-            break;
-        case 1:
-            setpresettype("Plfoamplitude");
-            break;
-        case 2:
-            setpresettype("Plfofilter");
-            break;
-    }
+    //switch(fel_) {
+    //    case 0:
+    //        setpresettype("Plfofrequency");
+    //        break;
+    //    case 1:
+    //        setpresettype("Plfoamplitude");
+    //        break;
+    //    case 2:
+    //        setpresettype("Plfofilter");
+    //        break;
+    //}
     Dfreq       = Pfreq_;
     Dintensity  = Pintensity_;
     Dstartphase = Pstartphase_;
@@ -122,4 +140,12 @@ void LFOParams::getfromXML(XMLwrapper *xml)
     Pdelay      = xml->getpar127("delay", Pdelay);
     Pstretch    = xml->getpar127("stretch", Pstretch);
     Pcontinous  = xml->getparbool("continous", Pcontinous);
+}
+
+void LFOParams::paste(LFOParams &x)
+{
+    //Avoid undefined behavior
+    if(&x == this)
+        return;
+    memcpy((char*)this, (const char*)&x, sizeof(*this));
 }

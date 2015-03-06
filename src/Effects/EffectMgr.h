@@ -46,6 +46,7 @@ class EffectMgr:public Presets
         EffectMgr(Allocator &alloc, const bool insertion_);
         ~EffectMgr();
 
+        void paste(EffectMgr &e);
         void add2XML(XMLwrapper *xml);
         void defaults(void) REALTIME;
         void getfromXML(XMLwrapper *xml);
@@ -58,6 +59,7 @@ class EffectMgr:public Presets
         float sysefxgetvolume(void);
 
         void init(void) REALTIME;
+        void kill(void) REALTIME;
         void cleanup(void) REALTIME;
 
         void changeeffectrt(int nefx_) REALTIME;
@@ -69,6 +71,7 @@ class EffectMgr:public Presets
         void seteffectpar(int npar, unsigned char value) NONREALTIME;
         void seteffectparrt(int npar, unsigned char value) REALTIME;
         unsigned char geteffectpar(int npar);
+        unsigned char geteffectparrt(int npar) REALTIME;
 
         const bool insertion;
         float     *efxoutl, *efxoutr;

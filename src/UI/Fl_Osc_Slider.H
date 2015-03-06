@@ -20,11 +20,13 @@ class Fl_Osc_Slider:public Fl_Slider, public Fl_Osc_Widget
         //Refetch parameter information
         void update(void);
         void callback(Fl_Callback *cb, void *p = NULL);
+        
+        //MIDI Learn
+        int handle(int);
 
         void cb(void);
         static void _cb(Fl_Widget *w, void *);
     private:
-        double real_value;
         char osc_type;
         std::pair<Fl_Callback*, void*> cb_data;
 };

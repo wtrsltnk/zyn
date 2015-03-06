@@ -1,29 +1,32 @@
 #include <cstdlib>
+#include <utility>
 
 class Allocator
 {
     public:
         Allocator(void);
-        virtual void *alloc_mem(size_t mem_size);
-        virtual void dealloc_mem(void *memory);
+        Allocator(const Allocator&) = delete;
+        ~Allocator(void);
+        void *alloc_mem(size_t mem_size);
+        void dealloc_mem(void *memory);
 
         template <typename T, typename... Ts>
-        T *alloc(Ts... ts)
+        T *alloc(Ts&&... ts)
         {
             void *data = alloc_mem(sizeof(T));
             if(!data)
                 return nullptr;
-            return new (data) T(ts...);
+            return new (data) T(std::forward<Ts>(ts)...);
         }
 
         template <typename T, typename... Ts>
-        T *valloc(size_t len, Ts... ts)
+        T *valloc(size_t len, Ts&&... ts)
         {
             T *data = (T*)alloc_mem(len*sizeof(T));
             if(!data)
                 return nullptr;
             for(unsigned i=0; i<len; ++i)
-                new ((void*)&data[i]) T(ts...);
+                new ((void*)&data[i]) T(std::forward<Ts>(ts)...);
 
             return data;
         }
@@ -60,33 +63,23 @@ class Allocator
             }
         }
 
-    void addMemory(void *, size_t mem_size);//{(void)mem_size;};
+    void addMemory(void *, size_t mem_size);
 
     //Return true if the current pool cannot allocate n chunks of chunk_size
-    bool lowMemory(unsigned n, size_t chunk_size);//{(void)n;(void)chunk_size; return false;};
+    bool lowMemory(unsigned n, size_t chunk_size);
+    bool memFree(void *pool);
 
-    void *impl;
+    //returns number of pools
+    int memPools();
+
+    int freePools();
+
+    unsigned long long totalAlloced();
+
+    struct AllocatorImpl *impl;
 };
 
-//Memory that could either be from the heap or from the realtime allocator
-//This should be avoided when possible, but it's not clear if it can be avoided
-//in all cases
-template<class T>
-class HeapRtMem
-{
-};
-
-
-//A helper class used to perform a series of allocations speculatively to verify
-//that there is enough memory for a set transation to occur.
-//Stuff will get weird if this ends up failing, but it will be able to at least
-//detect where there is an issue
-class StaticAllocFreeVerifyier
-{
-    void *scratch_buf[4096];
-    unsigned alloc_count;
-};
-
+extern Allocator DummyAlloc;
 
 /**
  * General notes on Memory Allocation Within ZynAddSubFX

@@ -8,13 +8,13 @@ decl {//Copyright (c) 2002-2005 Nasca Octavian Paul} {private local
 decl {//License: GNU GPL version 2 or later} {private local
 } 
 
-decl {\#include <stdlib.h>} {public local
+decl {\#include <cstdlib>} {public local
 } 
 
-decl {\#include <stdio.h>} {public local
+decl {\#include <cstdio>} {public local
 } 
 
-decl {\#include <string.h>} {public local
+decl {\#include <cstring>} {public local
 } 
 
 decl {\#include <FL/Fl_Button.H>} {public local
@@ -24,18 +24,6 @@ decl {\#include <FL/Fl_File_Chooser.H>} {public local
 } 
 
 decl {\#include "Fl_Osc_Interface.h"} {public local
-} 
-
-decl {\#include "../Misc/Master.h"} {public local
-} 
-
-decl {\#include "../Misc/Part.h"} {public local
-} 
-
-decl {\#include "../Misc/Bank.h"} {public local
-} 
-
-decl {\#include "../Misc/Config.h"} {public local
 } 
 
 decl {\#include "../Misc/Util.h"} {public local
@@ -51,8 +39,6 @@ class BankUI {open
     Fl_Window bankuiwindow {
       label Bank open
       xywh {492 406 785 575} type Double
-      code0 {/*o->label(bank->bankfiletitle.c_str());*/}
-      code1 {/*if (bank->bankfiletitle.empty()) o->label ("Choose a bank from the bank list on the left (or go to settings if to configure the bank location) or choose 'New Bank...' to make a new bank.");*/} visible
       class Fl_Osc_Window
     } {
       Fl_Box {} {
@@ -72,6 +58,7 @@ class BankUI {open
       Fl_Group modeselect {open
         xywh {5 528 425 42} box ENGRAVED_BOX
         class BankViewControls
+        code0 {o->box(FL_UP_BOX);}
       } {}
       Fl_Button {} {
         label {New Bank...}
@@ -94,15 +81,10 @@ refreshmainwindow();}
         code0 {o->value(config.cfg.BankUIAutoClose);}
       }
       Fl_Choice banklist {
-        callback { //int n=o->value();
-//std::string dirname="";/*bank->banks[n].dir;*/
-//if (dirname.empty()) return;
-//osc->write("/loadbank", "s", dirname.c_str());
-/*if (bank->loadbank(dirname)==2)
-       fl_alert("Error: Could not load the bank from the directory\\n%s.",dirname.c_str());*/
-refreshmainwindow();}
+        callback {refreshmainwindow();}
         xywh {5 8 220 20} down_box BORDER_BOX labelfont 1 align 0 textfont 1 textsize 11
-        code0 {o->init("loadbank");}
+        code0 {bankview->init(osc, modeselect, npart);}
+        code1 {o->init("loadbank");}
         class BankList
       } {}
       Fl_Button {} {
@@ -115,10 +97,10 @@ banklist->value(0);}
   }
   Function {BankUI(int *npart_, Fl_Osc_Interface *osc_)} {open
   } {
-    code {npart=*npart_;
+    code {npart=npart_;
 osc  =osc_;
 make_window();
-bankview->init(osc, modeselect, npart_);} {}
+} {}
   }
   Function {~BankUI()} {open return_type virtual
   } {
@@ -137,6 +119,7 @@ simplesetmode(config.cfg.UserInterfaceMode==2);} {}
   Function {init(Fl_Valuator *cbwig_)} {open
   } {
     code {cbwig=cbwig_;
+    bankview->cbwig(cbwig);
 rescan_for_banks();} {}
   }
   Function {process()} {open return_type void
@@ -170,6 +153,6 @@ if (banklist->size() == 0)
   }
   decl {Fl_Valuator *cbwig;} {public local
   }
-  decl {int npart;} {private local
+  decl {int *npart;} {private local
   }
 } 

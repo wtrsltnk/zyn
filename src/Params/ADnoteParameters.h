@@ -23,17 +23,8 @@
 #ifndef AD_NOTE_PARAMETERS_H
 #define AD_NOTE_PARAMETERS_H
 
-
 #include "../globals.h"
-#include "../Misc/Util.h"
 #include "PresetsArray.h"
-
-class EnvelopeParams;
-class LFOParams;
-class FilterParams;
-class Resonance;
-class OscilGen;
-class FFTwrapper;
 
 enum FMTYPE {
     NONE, MORPH, RING_MOD, PHASE_MOD, FREQ_MOD, WAVE_MOD, PITCH_MOD
@@ -306,9 +297,9 @@ class ADnoteParameters:public PresetsArray
         void add2XML(XMLwrapper *xml);
         void getfromXML(XMLwrapper *xml);
 
-        float getBandwidthDetuneMultiplier();
-        float getUnisonFrequencySpreadCents(int nvoice);
-        int get_unison_size_index(int nvoice);
+        float getBandwidthDetuneMultiplier() const;
+        float getUnisonFrequencySpreadCents(int nvoice) const;
+        int get_unison_size_index(int nvoice) const;
         void set_unison_size_index(int nvoice, int index);
         static rtosc::Ports &ports;
     private:

@@ -21,25 +21,29 @@
 */
 
 #include "OscilGen.h"
+#include "../DSP/FFTwrapper.h"
+#include "../Synth/Resonance.h"
 #include "../Misc/WaveShapeSmps.h"
 
-int main_thread = 0;
 #include <cassert>
-#include <stdlib.h>
-#include <math.h>
-#include <stdio.h>
-#include <stddef.h>
+#include <cstdlib>
+#include <cmath>
+#include <cstdio>
+#include <cstddef>
 
 #include <unistd.h>
-#include <sys/syscall.h>
 
 #include <rtosc/ports.h>
 #include <rtosc/port-sugar.h>
+
+pthread_t main_thread;
 
 #define PC(x) rParamZyn(P##x, "undocumented oscilgen parameter")
 
 #define rObject OscilGen
 static rtosc::Ports localPorts = {
+    rSelf(OscilGen),
+    rPaste(),
     PC(hmagtype),
     PC(currentbasefunc),
     PC(basefuncpar),
@@ -55,7 +59,8 @@ static rtosc::Ports localPorts = {
     PC(filterbeforews),
     PC(satype),
     PC(sapar),
-    //FIXME missing int stuff
+    rParamI(Pharmonicshift, "Amount of shift on harmonics"),
+    rToggle(Pharmonicshiftfirst, "If harmonics are shifted before waveshaping/filtering"),
     PC(modulation),
     PC(modulationpar1),
     PC(modulationpar2),
@@ -93,7 +98,7 @@ static rtosc::Ports localPorts = {
                 mag = rtosc_argument(m,0).i;
         }},
     {"base-spectrum:", rDoc("Returns spectrum of base waveshape"),
-        NULL, [](const char *m, rtosc::RtData &d) {
+        NULL, [](const char *, rtosc::RtData &d) {
             const unsigned n = synth->oscilsize / 2;
             float *spc = new float[n];
             memset(spc, 0, 4*n);
@@ -102,7 +107,7 @@ static rtosc::Ports localPorts = {
             delete[] spc;
         }},
     {"base-waveform:", rDoc("Returns base waveshape points"),
-        NULL, [](const char *m, rtosc::RtData &d) {
+        NULL, [](const char *, rtosc::RtData &d) {
             const unsigned n = synth->oscilsize;
             float *smps = new float[n];
             memset(smps, 0, 4*n);
@@ -111,7 +116,7 @@ static rtosc::Ports localPorts = {
             delete[] smps;
         }},
     {"spectrum:", rDoc("Returns spectrum of waveform"),
-        NULL, [](const char *m, rtosc::RtData &d) {
+        NULL, [](const char *, rtosc::RtData &d) {
             const unsigned n = synth->oscilsize / 2;
             float *spc = new float[n];
             memset(spc, 0, 4*n);
@@ -120,19 +125,19 @@ static rtosc::Ports localPorts = {
             delete[] spc;
         }},
     {"waveform:", rDoc("Returns waveform points"),
-        NULL, [](const char *m, rtosc::RtData &d) {
+        NULL, [](const char *, rtosc::RtData &d) {
             const unsigned n = synth->oscilsize;
             float *smps = new float[n];
             memset(smps, 0, 4*n);
-            OscilGen *o = ((OscilGen*)d.obj);
+            OscilGen &o = *((OscilGen*)d.obj);
             //printf("%d\n", o->needPrepare());
-            ((OscilGen*)d.obj)->get(smps,-1.0);
+            o.get(smps,-1.0);
             //printf("wave: %f %f %f %f\n", smps[0], smps[1], smps[2], smps[3]);
             d.reply(d.loc, "b", n*sizeof(float), smps);
             delete[] smps;
         }},
     {"prepare:", rDoc("Performs setup operation to oscillator"),
-        NULL, [](const char *m, rtosc::RtData &d) {
+        NULL, [](const char *, rtosc::RtData &d) {
             //fprintf(stderr, "prepare: got a message from '%s'\n", m);
             OscilGen &o = *(OscilGen*)d.obj;
             fft_t *data = new fft_t[synth->oscilsize / 2];
@@ -142,7 +147,7 @@ static rtosc::Ports localPorts = {
             o.pendingfreqs = data;
         }},
     {"convert2sine:", rDoc("Translates waveform into FS"),
-        NULL, [](const char *m, rtosc::RtData &d) {
+        NULL, [](const char *, rtosc::RtData &d) {
             ((OscilGen*)d.obj)->convert2sine();
         }},
     {"prepare:b", rProp(internal) rProp(pointer) rDoc("Sets prepared fft data"),
@@ -152,9 +157,9 @@ static rtosc::Ports localPorts = {
             assert(rtosc_argument(m,0).b.len == sizeof(void*));
             d.reply("/free", "sb", "fft_t", sizeof(void*), &o.oscilFFTfreqs);
             //fprintf(stderr, "\n\n");
-            //fprintf(stderr, "The ID of this of this thread is: %ld\n", (long int)syscall(224));
+            //fprintf(stderr, "The ID of this of this thread is: %ld\n", (long)pthread_self());
             //fprintf(stderr, "o.oscilFFTfreqs = %p\n", o.oscilFFTfreqs);
-            assert(main_thread != syscall(224));
+            assert(main_thread != pthread_self());
             assert(o.oscilFFTfreqs !=*(fft_t**)rtosc_argument(m,0).b.data);
             o.oscilFFTfreqs = *(fft_t**)rtosc_argument(m,0).b.data;
         }},
@@ -235,7 +240,7 @@ void rmsNormalize(fft_t *freqs)
 
 OscilGen::OscilGen(FFTwrapper *fft_, Resonance *res_):Presets()
 {
-    assert(fft_);
+    //assert(fft_);
 
     setpresettype("Poscilgen");
     fft = fft_;
@@ -665,7 +670,7 @@ void OscilGen::spectrumadjust(fft_t *freqs)
                     mag = 1.0f;
                 break;
         }
-        freqs[i] = std::polar<fftw_real>(mag, phase);
+        freqs[i] = FFTpolar<fftw_real>(mag, phase);
     }
 }
 
@@ -766,7 +771,7 @@ void OscilGen::prepare(fft_t *freqs)
                 int k = i * (j + 1);
                 if(k >= synth->oscilsize / 2)
                     break;
-                freqs[k] += basefuncFFTfreqs[i] * std::polar<fftw_real>(
+                freqs[k] += basefuncFFTfreqs[i] * FFTpolar<fftw_real>(
                     hmag[j],
                     hphase[j] * k);
             }
@@ -981,7 +986,7 @@ short int OscilGen::get(float *smps, float freqHz, int resonance)
         const float rnd = PI * powf((Prand - 64.0f) / 64.0f, 2.0f);
         for(int i = 1; i < nyquist - 1; ++i) //to Nyquist only for AntiAliasing
             outoscilFFTfreqs[i] *=
-                std::polar<fftw_real>(1.0f, (float)(rnd * i * RND));
+                FFTpolar<fftw_real>(1.0f, (float)(rnd * i * RND));
     }
 
     //Harmonic Amplitude Randomness
@@ -1111,6 +1116,30 @@ void OscilGen::getcurrentbasefunction(float *smps)
         getbasefunction(smps);   //the sine case
 }
 
+#define PRESERVE(x) decltype(this->x) x = this->x
+#define RESTORE(x)  this->x = x
+void OscilGen::paste(OscilGen &o)
+{
+    //XXX Figure out a better implementation of this sensitive to RT issues...
+    //Preserve Pointer Elements
+    PRESERVE(oscilFFTfreqs);
+    PRESERVE(pendingfreqs);
+    PRESERVE(tmpsmps);
+    PRESERVE(outoscilFFTfreqs);
+    PRESERVE(fft);
+    PRESERVE(basefuncFFTfreqs);
+    PRESERVE(res);
+    memcpy((char*)this, (char*)&o, sizeof(*this));
+    RESTORE(oscilFFTfreqs);
+    RESTORE(pendingfreqs);
+    RESTORE(tmpsmps);
+    RESTORE(outoscilFFTfreqs);
+    RESTORE(fft);
+    RESTORE(basefuncFFTfreqs);
+    RESTORE(res);
+    this->prepare();
+}
+
 void OscilGen::add2XML(XMLwrapper *xml)
 {
     xml->addpar("harmonic_mag_type", Phmagtype);
@@ -1167,7 +1196,7 @@ void OscilGen::add2XML(XMLwrapper *xml)
         for(int i = 1; i < synth->oscilsize / 2; ++i) {
             float xc = basefuncFFTfreqs[i].real();
             float xs = basefuncFFTfreqs[i].imag();
-            if((fabs(xs) > 0.00001f) && (fabs(xs) > 0.00001f)) {
+            if((fabs(xs) > 1e-6f) && (fabs(xc) > 1e-6f)) {
                 xml->beginbranch("BF_HARMONIC", i);
                 xml->addparreal("cos", xc);
                 xml->addparreal("sin", xs);

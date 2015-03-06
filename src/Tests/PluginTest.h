@@ -27,9 +27,13 @@
 #include <string>
 #include "../Misc/MiddleWare.h"
 #include "../Misc/Master.h"
+#include "../Misc/PresetExtractor.h"
+#include "../Misc/PresetExtractor.cpp"
 #include "../Misc/Util.h"
 #include "../globals.h"
+#include "../UI/NSM.H"
 SYNTH_T *synth;
+NSM_Client *nsm = 0;
 
 using namespace std;
 
@@ -105,12 +109,12 @@ class PluginTest:public CxxTest::TestSuite
         void testLoadSave(void)
         {
             const string fname = string(SOURCE_DIR) + "/guitar-adnote.xmz";
-            const string fdata = string("\n") + loadfile(fname);
+            const string fdata = loadfile(fname);
             char *result = NULL;
             master[0]->putalldata((char*)fdata.c_str(), fdata.length());
             int res = master[0]->getalldata(&result);
 
-            TS_ASSERT_EQUALS(fdata.length()+1, res);
+            TS_ASSERT_EQUALS((int)(fdata.length()+1), res);
             TS_ASSERT(fdata == result);
         }
 

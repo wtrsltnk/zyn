@@ -561,6 +561,9 @@ static block_header_t* block_locate_free(control_t* control, size_t size)
 	{
 		mapping_search(size, &fl, &sl);
 		block = search_suitable_block(control, &fl, &sl);
+		if(block && !block->size)
+			block = NULL;
+
 	}
 
 	if (block)
@@ -617,6 +620,7 @@ typedef struct integrity_t
 
 static void integrity_walker(void* ptr, size_t size, int used, void* user)
 {
+    (void) used;
 	block_header_t* block = block_from_ptr(ptr);
 	integrity_t* integ = tlsf_cast(integrity_t*, user);
 	const int this_prev_status = block_is_prev_free(block) ? 1 : 0;

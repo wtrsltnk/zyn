@@ -1,3 +1,4 @@
+#include <FL/Fl.H>
 #include "Fl_Osc_Dial.H"
 #include "Fl_Osc_Interface.h"
 #include "Fl_Osc_Pane.H"
@@ -37,7 +38,7 @@ void Fl_Osc_Dial::init(std::string path_)
     ext = path_;
     oscRegister(path_.c_str());
 };
-        
+
 void Fl_Osc_Dial::alt_init(std::string base, std::string path_)
 {
     Fl_Osc_Pane *pane = fetch_osc_pane(this);
@@ -59,6 +60,18 @@ void Fl_Osc_Dial::callback(Fl_Callback *cb, void *p)
     cb_data.second = p;
 }
 
+int Fl_Osc_Dial::handle(int ev)
+{
+    bool middle_mouse = (ev == FL_PUSH && Fl::event_state(FL_BUTTON2));
+    bool ctl_click    = (ev == FL_PUSH && Fl::event_state(FL_BUTTON1) && Fl::event_ctrl());
+    if(middle_mouse || ctl_click) {
+        printf("Trying to learn...\n");
+        osc->write("/learn", "s", (loc+ext).c_str());
+        return 1;
+    }
+    return WidgetPDial::handle(ev);
+}
+
 void Fl_Osc_Dial::OSC_value(int v)
 {
     value(v+minimum());
@@ -68,7 +81,7 @@ void Fl_Osc_Dial::OSC_value(char v)
 {
     value(v+minimum());
 }
-        
+
 void Fl_Osc_Dial::update(void)
 {
     osc->requestValue(loc+ext);
@@ -83,7 +96,7 @@ void Fl_Osc_Dial::cb(void)
     }
     else*/
         oscWrite(ext, "i", (int)(value()-minimum()));
-    
+
     if(cb_data.first)
         cb_data.first(this, cb_data.second);
 }
@@ -93,10 +106,9 @@ void Fl_Osc_Dial::mark_dead(void)
     dead = true;
 }
 
-        
 void Fl_Osc_Dial::rebase(std::string new_base)
 {
-    if(dead)
+    if(dead || loc == "/")
         return;
     if(!alt_style) {
         Fl_Osc_Widget::rebase(new_base);
@@ -122,7 +134,7 @@ void Fl_Osc_Dial::rebase(std::string new_base)
         //well, that didn't work
         assert(!"good enough hack");
     }
-    
+
     std::string new_loc = new_base.substr(0, match_pos+1);
     printf("Moving '%s' to\n", (loc+ext).c_str());
     printf("       '%s'\n", (new_loc+ext).c_str());

@@ -4,7 +4,7 @@
 #include "Fl_Osc_Widget.H"
 #include "Fl_Osc_Choice.H"
 #include <FL/Fl_Group.H>
-#include <FL/Fl_Button.H>
+#include <FL/Fl_Check_Button.H>
 #include <string>
 
 #include "common.H"
@@ -37,7 +37,7 @@ class BankSlot : public Fl_Button
         std::string name_;
         std::string filename_;
         char labelstr[128];
-        int nslot; 
+        int nslot;
         BankView *bv;
 };
 
@@ -52,11 +52,11 @@ class BankViewControls: public Fl_Group
         void mode(int);
 
     private:
-        Fl_Light_Button *read;
-        Fl_Light_Button *write;
-        Fl_Light_Button *clear;
-        Fl_Light_Button *swap;
-        
+        Fl_Check_Button *read;
+        Fl_Check_Button *write;
+        Fl_Check_Button *clear;
+        Fl_Check_Button *swap;
+
         //1 -> read
         //2 -> write
         //3 -> clear
@@ -78,6 +78,7 @@ class BankView: public Fl_Group, public Fl_Osc_Widget
         void react(int event, int slot);
 
         virtual void OSC_raw(const char *msg) override;
+        void cbwig(Fl_Widget *w);
 
         void refresh(void);
     private:
@@ -88,9 +89,10 @@ class BankView: public Fl_Group, public Fl_Osc_Widget
         std::string loc;
 
         //XXX TODO locked banks...
-        int mode;
         int nselected;
         int *npart;
+
+        Fl_Widget *cbwig_;
 };
 
 #endif

@@ -1,21 +1,22 @@
 /*
-    JackEngine.cpp
+  ZynAddSubFX - a software synthesizer
+  JackEngine.cpp - Jack Driver
 
-    Copyright 2009, Alan Calvert
-    Copyright 2014, Mark McCurry
+  Copyright 2009, Alan Calvert
+            2014, Mark McCurry
 
-    This file is part of ZynAddSubFX, which is free software: you can
-    redistribute it and/or modify it under the terms of the GNU General
-    Public License as published by the Free Software Foundation, either
-    version 3 of the License, or (at your option) any later version.
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of version 2 of the GNU General Public License
+  as published by the Free Software Foundation.
 
-    ZynAddSubFX is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License (version 2 or later) for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with ZynAddSubFX.  If not, see <http://www.gnu.org/licenses/>.
+  You should have received a copy of the GNU General Public License (version 2)
+  along with this program; if not, write to the Free Software Foundation,
+  Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 */
 
 #include <iostream>
@@ -99,12 +100,11 @@ bool JackEngine::connectJack()
     connectServer("");
     if(NULL != jackClient) {
         setBufferSize(jack_get_buffer_size(jackClient));
-        int chk;
         jack_set_error_function(_errorCallback);
         jack_set_info_function(_infoCallback);
         if(jack_set_buffer_size_callback(jackClient, _bufferSizeCallback, this))
             cerr << "Error setting the bufferSize callback" << endl;
-        if((chk = jack_set_xrun_callback(jackClient, _xrunCallback, this)))
+        if((jack_set_xrun_callback(jackClient, _xrunCallback, this)))
             cerr << "Error setting jack xrun callback" << endl;
         if(jack_set_process_callback(jackClient, _processCallback, this)) {
             cerr << "Error, JackEngine failed to set process callback" << endl;
@@ -318,7 +318,7 @@ bool JackEngine::processAudio(jack_nframes_t nframes)
     void   *oscport    = jack_port_get_buffer(osc.oscport, nframes);
     size_t osc_packets = jack_osc_get_event_count(oscport);
 
-    for(int i = 0; i < osc_packets; ++i) {
+    for(size_t i = 0; i < osc_packets; ++i) {
         jack_osc_event_t event;
         if(jack_osc_event_get(&event, oscport, i))
             continue;

@@ -56,6 +56,7 @@ static Ports voicePorts = {
 
     rToggle(Enabled, "Voice Enable"),
     rParamZyn(Unison_size, "Number of subvoices"),
+    rParamZyn(Unison_phase_randomness, "Phase Randomness"),
     rParamZyn(Unison_frequency_spread, "Subvoice detune"),
     rParamZyn(Unison_stereo_spread, "Subvoice L/R Separation"),
     rParamZyn(Unison_vibratto, "Subvoice vibratto"),
@@ -455,7 +456,7 @@ void ADnoteVoiceParam::enable(FFTwrapper *fft, Resonance *Reson)
 /*
  * Get the Multiplier of the fine detunes of the voices
  */
-float ADnoteParameters::getBandwidthDetuneMultiplier()
+float ADnoteParameters::getBandwidthDetuneMultiplier() const
 {
     float bw = (GlobalPar.PBandwidth - 64.0f) / 64.0f;
     bw = powf(2.0f, bw * powf(fabs(bw), 0.2f) * 5.0f);
@@ -467,7 +468,8 @@ float ADnoteParameters::getBandwidthDetuneMultiplier()
  * Get the unison spread in cents for a voice
  */
 
-float ADnoteParameters::getUnisonFrequencySpreadCents(int nvoice) {
+float ADnoteParameters::getUnisonFrequencySpreadCents(int nvoice) const
+{
     return VoicePar[nvoice].getUnisonFrequencySpreadCents();
 }
 
@@ -521,7 +523,8 @@ ADnoteParameters::~ADnoteParameters()
         KillVoice(nvoice);
 }
 
-int ADnoteParameters::get_unison_size_index(int nvoice) {
+int ADnoteParameters::get_unison_size_index(int nvoice) const
+{
     int index = 0;
     if(nvoice >= NUM_VOICES)
         return 0;

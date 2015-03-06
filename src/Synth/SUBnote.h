@@ -25,15 +25,12 @@
 
 #include "SynthNote.h"
 #include "../globals.h"
-#include "../Params/SUBnoteParameters.h"
-#include "../Params/Controller.h"
-#include "Envelope.h"
 #include "../DSP/Filter.h"
 
 class SUBnote:public SynthNote
 {
     public:
-        SUBnote(SUBnoteParameters *parameters, SynthParams pars);
+        SUBnote(SUBnoteParameters *parameters, SynthParams &pars);
         ~SUBnote();
 
         void legatonote(LegatoParams pars);
@@ -52,7 +49,7 @@ class SUBnote:public SynthNote
         void initparameters(float freq);
         void KillNote();
 
-        SUBnoteParameters *pars;
+        const SUBnoteParameters &pars;
 
         //parameters
         bool       stereo;
@@ -101,7 +98,6 @@ class SUBnote:public SynthNote
         float overtone_rolloff[MAX_SUB_HARMONICS];
         float overtone_freq[MAX_SUB_HARMONICS];
 
-        Controller *ctl;
         int   oldpitchwheel, oldbandwidth;
         float globalfiltercenterq;
 };

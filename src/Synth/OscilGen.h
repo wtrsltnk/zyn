@@ -24,10 +24,7 @@
 #define OSCIL_GEN_H
 
 #include "../globals.h"
-#include "../Misc/XMLwrapper.h"
-#include "../DSP/FFTwrapper.h"
 #include "../Params/Presets.h"
-#include "Resonance.h"
 
 class OscilGen:public Presets
 {
@@ -53,6 +50,7 @@ class OscilGen:public Presets
         /**convert oscil to base function*/
         void useasbase();
 
+        void paste(OscilGen &o);
         void add2XML(XMLwrapper *xml);
         void defaults();
         void getfromXML(XMLwrapper *xml);
