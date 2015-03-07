@@ -494,7 +494,7 @@ void ADnote::legatonote(LegatoParams lpars)
                                          getvoicebasefreq(nvoice),
                                          pars.VoicePar[nvoice].Presonance); //(gf)Modif of the above line.
 	NoteVoicePar[nvoice]._base_func =
-	   getBaseFunction(pars->VoicePar[vc].OscilSmp->Pcurrentbasefunc);
+	   getBaseFunction(pars.VoicePar[vc].OscilSmp->Pcurrentbasefunc);
 
         //I store the first elments to the last position for speedups
         for(int i = 0; i < OSCIL_SMP_EXTRA_SAMPLES; ++i)
