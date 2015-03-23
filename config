@@ -1,0 +1,21 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+[remote "sourceforge"]
+	url = ssh://caoliver@git.code.sf.net/p/zynaddsubfx/code
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "master"]
+	remote = origin
+	merge = refs/heads/master
+[remote "origin"]
+	url = git@gitlab.com:zasfx/code.git
+	fetch = +refs/*:refs/*
+	mirror = true
+[gui]
+	wmstate = normal
+	geometry = 1072x969+0+0 192 177
+[branch "local-hacks"]
+	remote = origin
+	merge = refs/heads/2.4.4-fixes

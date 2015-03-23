@@ -54,6 +54,7 @@ class SVFilter:public Filter
             float f, q, q_sqrt;
         } par, ipar;
 
+        void singlefilterout_interp(float *smp, fstage &x, parameters &opar, parameters &npar);
         void singlefilterout(float *smp, fstage &x, parameters &par);
         void computefiltercoefs(void);
         int   type;    // The type of the filter (LPF1,HPF1,LPF2,HPF2...)

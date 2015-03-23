@@ -65,6 +65,11 @@ void SVFilter::computefiltercoefs(void)
     par.q      = 1.0f - atanf(sqrtf(q)) * 2.0f / PI;
     par.q      = powf(par.q, 1.0f / (stages + 1));
     par.q_sqrt = sqrtf(par.q);
+    if(!firsttime)
+        needsinterpolation = true;
+    else
+        ipar = par;
+
 }
 
 
@@ -85,7 +90,7 @@ void SVFilter::setfreq(float frequency)
     if((rap > 3.0f) || nyquistthresh) { //(now, filter and coeficients backup)
         if(!firsttime)
             needsinterpolation = true;
-        ipar = par;
+        //ipar = par;
     }
     freq = frequency;
     computefiltercoefs();
@@ -154,24 +159,47 @@ void SVFilter::singlefilterout(float *smp, fstage &x, parameters &par)
     }
 }
 
+void SVFilter::singlefilterout_interp(float *smp, fstage &x, parameters &opar, parameters &npar)
+{
+    float *out = NULL;
+    switch(type) {
+        case 0:
+            out = &x.low;
+            break;
+        case 1:
+            out = &x.high;
+            break;
+        case 2:
+            out = &x.band;
+            break;
+        case 3:
+            out = &x.notch;
+            break;
+        default:
+            errx(1, "Impossible SVFilter type encountered [%d]", type);
+    }
+
+    for(int i = 0; i < buffersize; ++i) {
+        float t = i/(buffersize_f-1.0f);
+        x.low   = x.low + (t*npar.f + (1-t)*opar.f) * x.band;
+        x.high  = par.q_sqrt * smp[i] - x.low - (t*npar.q + (1-t)*opar.q)* x.band;
+        x.band  = (t*par.f + (1-t)*opar.f) * x.high + x.band;
+        x.notch = x.high + x.low;
+        smp[i]  = *out;
+    }
+    ipar = par;
+}
+
 void SVFilter::filterout(float *smp)
 {
-    for(int i = 0; i < stages + 1; ++i)
-        singlefilterout(smp, st[i], par);
-
-    if(needsinterpolation) {
-        float ismp[buffersize];
-        memcpy(ismp, smp, bufferbytes);
-
+    if(!needsinterpolation)
         for(int i = 0; i < stages + 1; ++i)
-            singlefilterout(ismp, st[i], ipar);
+            singlefilterout(smp, st[i], par);
+    else
+        for(int i = 0; i < stages + 1; ++i)
+            singlefilterout_interp(smp, st[i], ipar, par);
 
-        for(int i = 0; i < buffersize; ++i) {
-            float x = i / buffersize_f;
-            smp[i] = ismp[i] * (1.0f - x) + smp[i] * x;
-        }
-        needsinterpolation = false;
-    }
+    needsinterpolation = false;
 
     for(int i = 0; i < buffersize; ++i)
         smp[i] *= outgain;
