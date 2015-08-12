@@ -30,6 +30,30 @@ if(NtkGui)
     add_definitions(-DSOURCE_DIR="${CMAKE_SOURCE_DIR}")
 endif()
 
+if(FltkGui)
+    add_executable(zynaddsubfx-ext-gui guimain.cpp)
+    target_link_libraries(zynaddsubfx-ext-gui zynaddsubfx_gui ${FLTK_LIBRARIES}
+        ${FLTK_LIBRARIES} ${OPENGL_LIBRARIES} ${LIBLO_LIBRARIES} rtosc rtosc-cpp)
+    if(X11_FOUND AND HAS_XPM)
+        add_definitions(-DHAS_X11=1)
+        target_link_libraries(zynaddsubfx-ext-gui ${X11_LIBRARIES} -lXpm)
+    else()
+        add_definitions(-DHAS_X11=0)
+    endif()
+    install(TARGETS zynaddsubfx-ext-gui RUNTIME DESTINATION bin)
+elseif(NtkGui)
+    add_executable(zynaddsubfx-ext-gui guimain.cpp)
+    target_link_libraries(zynaddsubfx-ext-gui zynaddsubfx_gui ${NTK_LDFLAGS}
+        ${OPENGL_LIBRARIES} ${LIBLO_LIBRARIES} rtosc rtosc-cpp)
+    if(X11_FOUND AND HAS_XPM)
+        add_definitions(-DHAS_X11=1)
+        target_link_libraries(zynaddsubfx-ext-gui ${X11_LIBRARIES} -lXpm)
+    else()
+        add_definitions(-DHAS_X11=0)
+    endif()
+    install(TARGETS zynaddsubfx-ext-gui RUNTIME DESTINATION bin)
+endif()
+
 add_library(zynaddsubfx_gui STATIC
 	${UI_objs}
 	${zynaddsubfx_gui_FLTK_UI_SRCS}
@@ -49,14 +73,19 @@ add_library(zynaddsubfx_gui STATIC
         Fl_Osc_Output.cpp
         Fl_Osc_Counter.cpp
         Fl_Osc_Input.cpp
+        Fl_Osc_Numeric_Input.cpp
         Fl_Osc_Value.cpp
+        Fl_Osc_ListView.cpp
         Fl_Resonance_Graph.cpp
         Fl_EQGraph.cpp
         FormantFilterGraph.cpp
         EnvelopeFreeEdit.cpp
         BankView.cpp
-        Connection.cpp
 	)
+add_library(zynaddsubfx_gui_bridge STATIC
+    Connection.cpp)
+add_dependencies(zynaddsubfx_gui_bridge zynaddsubfx_gui)
+
 
 if(NtkGui)
   target_link_libraries(zynaddsubfx_gui ${NTK_LIBRARIES} ${NTK_IMAGES_LIBRARIES})

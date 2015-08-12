@@ -31,6 +31,7 @@
 #include "../Misc/Master.h"
 #include "../Misc/Util.h"
 #include "../Misc/Allocator.h"
+#include "../Misc/XMLwrapper.h"
 #include "../Synth/PADnote.h"
 #include "../Synth/OscilGen.h"
 #include "../Params/PADnoteParameters.h"
@@ -80,7 +81,7 @@ class PadNoteTest:public CxxTest::TestSuite
 
             fft = new FFTwrapper(synth->oscilsize);
             //prepare the default settings
-            pars = new PADnoteParameters(fft);
+            pars = new PADnoteParameters(*synth, fft);
 
 
             //Assert defaults
@@ -108,12 +109,12 @@ class PadNoteTest:public CxxTest::TestSuite
 
 
 
-            controller = new Controller();
+            controller = new Controller(*synth);
 
             //lets go with.... 50! as a nice note
             testnote = 50;
             float freq = 440.0f * powf(2.0f, (testnote - 69.0f) / 12.0f);
-            SynthParams pars_{memory, *controller, freq, 120, 0, testnote, false};
+            SynthParams pars_{memory, *controller, *synth, freq, 120, 0, testnote, false};
 
             note = new PADnote(pars, pars_);
         }
@@ -161,7 +162,7 @@ class PadNoteTest:public CxxTest::TestSuite
             TS_ASSERT_DELTA(outL[255], 0.0660f, 0.0005f);
 
 
-            note->relasekey();
+            note->releasekey();
 
 
             note->noteout(outL, outR);

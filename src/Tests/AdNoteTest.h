@@ -75,7 +75,7 @@ class AdNoteTest:public CxxTest::TestSuite
 
             fft = new FFTwrapper(synth->oscilsize);
             //prepare the default settings
-            ADnoteParameters *defaultPreset = new ADnoteParameters(fft);
+            ADnoteParameters *defaultPreset = new ADnoteParameters(*synth, fft);
 
             //Assert defaults
             TS_ASSERT(!defaultPreset->VoicePar[1].Enabled);
@@ -99,22 +99,17 @@ class AdNoteTest:public CxxTest::TestSuite
 
 
 
-            controller = new Controller();
+            controller = new Controller(*synth);
 
             //lets go with.... 50! as a nice note
             testnote = 50;
             float freq = 440.0f * powf(2.0f, (testnote - 69.0f) / 12.0f);
-            SynthParams pars{memory, *controller, freq, 120, 0, testnote, false};
+            SynthParams pars{memory, *controller, *synth, freq, 120, 0, testnote, false};
 
             note = new ADnote(defaultPreset, pars);
 
             delete defaultPreset;
             delete wrap;
-        }
-
-        void willNoteBeRunButIsHereForLinkingReasonsHowsThisForCamelCaseEh()
-        {
-            master = new Master();
         }
 
         void tearDown() {
@@ -146,7 +141,7 @@ class AdNoteTest:public CxxTest::TestSuite
 
             TS_ASSERT_DELTA(outL[255], 0.254609f, 0.0001f);
 
-            note->relasekey();
+            note->releasekey();
 
 
             note->noteout(outL, outR);

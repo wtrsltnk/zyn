@@ -33,7 +33,7 @@ Fl_Osc_Slider::~Fl_Osc_Slider(void)
 void Fl_Osc_Slider::OSC_value(int v)
 {
     const float min_ = min__(minimum(), maximum());//flipped sliders
-    Fl_Slider::value(v+min_);
+    Fl_Slider::value(v+min_+fmodf(value(),1.0));
 }
 
 void Fl_Osc_Slider::OSC_value(float v)
@@ -45,7 +45,7 @@ void Fl_Osc_Slider::OSC_value(float v)
 void Fl_Osc_Slider::OSC_value(char v)
 {
     const float min_ = min__(minimum(), maximum());//flipped sliders
-    Fl_Slider::value(v+min_);
+    Fl_Slider::value(v+min_+fmodf(value(),1.0));
 }
 
 void Fl_Osc_Slider::cb(void)
@@ -74,11 +74,15 @@ void Fl_Osc_Slider::callback(Fl_Callback *cb, void *p)
 
 int Fl_Osc_Slider::handle(int ev)
 {
-    bool middle_mouse = (ev == FL_PUSH && Fl::event_state(FL_BUTTON2));
+    bool middle_mouse = (ev == FL_PUSH && Fl::event_state(FL_BUTTON2) && !Fl::event_shift());
     bool ctl_click    = (ev == FL_PUSH && Fl::event_state(FL_BUTTON1) && Fl::event_ctrl());
+    bool shift_middle = (ev == FL_PUSH && Fl::event_state(FL_BUTTON2) && Fl::event_shift());
     if(middle_mouse || ctl_click) {
         printf("Trying to learn...\n");
         osc->write("/learn", "s", (loc+ext).c_str());
+        return 1;
+    } else if(shift_middle) {
+        osc->write("/unlearn", "s", (loc+ext).c_str());
         return 1;
     }
     return Fl_Slider::handle(ev);

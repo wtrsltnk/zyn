@@ -4,8 +4,11 @@ message(STATUS "Checking Library Path" $ENV{CMAKE_LIBRARY_PATH} ${CMAKE_LIBRARY_
 
 #Dependency check
 include(CheckFunctionExists)
+include(CheckIncludeFile)
 find_package(PkgConfig REQUIRED)
 find_package(zlib REQUIRED)
+find_package(X11)
+check_include_file(X11/xpm.h HAS_XPM)
 pkg_check_modules(FFTW REQUIRED fftw3)
 pkg_check_modules(MXML REQUIRED mxml)
 find_package(Threads   REQUIRED)
@@ -68,8 +71,6 @@ SET (LibloEnable ${LIBLO_FOUND} CACHE BOOL
 
 # Add version information
 add_definitions(-DVERSION="${VERSION}")
-
-message(STATUS "Building on a '${CMAKE_SYSTEM_NAME}' System")
 
 if(NOT "Darwin" STREQUAL ${CMAKE_SYSTEM_NAME})
     # Add scheduler function existance info (OSX compatiability)
@@ -195,7 +196,7 @@ endif()
 if(LibloEnable)
 	include_directories(${LIBLO_INCLUDE_DIRS})
 	add_definitions(-DUSE_NSM=1)
-        list(APPEND AUDIO_LIBRARIES ${LIBLO_LDFLAGS})
+    list(APPEND AUDIO_LIBRARIES ${LIBLO_LIBRARIES})
 	list(APPEND AUDIO_LIBRARY_DIRS ${LIBLO_LIBRARY_DIRS})
 	message(STATUS "Compiling with liblo")
 endif()
@@ -204,7 +205,6 @@ endif()
 include_directories(${ZLIB_INCLUDE_DIRS} ${MXML_INCLUDE_DIRS})
 
 add_definitions(
-	 -g #TODO #todo put in a better location
 	 -Wall
 	 -Wextra
 	 )
@@ -269,6 +269,9 @@ if(FltkGui)
 
 
 	set(GUI_LIBRARIES zynaddsubfx_gui ${FLTK_LIBRARIES} ${FLTK_LIBRARIES} ${OPENGL_LIBRARIES})
+    if(X11_FOUND AND HAS_XPM)
+        set(GUI_LIBRARIES ${GUI_LIBRARIES} ${X11_LIBRARIES} -lXpm)
+    endif()
 
 	add_definitions(-DFLTK_GUI)
 	message(STATUS "Will build FLTK gui")
@@ -290,6 +293,10 @@ if(NtkGui)
 
 	set(GUI_LIBRARIES zynaddsubfx_gui ${NTK_LIBRARIES} ${NTK_IMAGES_LIBRARIES} ${OPENGL_LIBRARIES})
 
+    if(X11_FOUND AND HAS_XPM)
+        set(GUI_LIBRARIES ${GUI_LIBRARIES} ${X11_LIBRARIES} -lXpm)
+    endif()
+
 	add_definitions(-DNTK_GUI)
 
 	message(STATUS "Will build NTK gui")
@@ -307,8 +314,7 @@ if(NOT FltkGui AND NOT NtkGui)
     if(LibloEnable)
         set(NSM_WORKAROUND UI/NSM.C UI/NSM/Client.C)
     endif()
-    add_library(zynaddsubfx_gui_dummy STATIC UI/ConnectionDummy.cpp ${NSM_WORKAROUND})
-    set(GUI_LIBRARIES zynaddsubfx_gui_dummy)
+    add_library(zynaddsubfx_gui_bridge STATIC UI/ConnectionDummy.cpp ${NSM_WORKAROUND})
     add_definitions(-DNO_UI=1)
 endif()
 
@@ -362,8 +368,6 @@ if(CompileTests)
 	add_subdirectory(Tests)
 endif(CompileTests)
 
-message(STATUS "using link directories: ${AUDIO_LIBRARY_DIRS} ${ZLIB_LIBRARY_DIRS} ${FFTW_LIBRARY_DIRS} ${MXML_LIBRARY_DIRS} ${FLTK_LIBRARY_DIRS}")
-
 
 add_executable(zynaddsubfx main.cpp)
 
@@ -372,6 +376,7 @@ add_executable(zynaddsubfx main.cpp)
 target_link_libraries(zynaddsubfx
     zynaddsubfx_core
 	zynaddsubfx_nio
+    zynaddsubfx_gui_bridge
 	${GUI_LIBRARIES}
 	${NIO_LIBRARIES}
 	${AUDIO_LIBRARIES}
@@ -386,6 +391,7 @@ if (DssiEnable)
 	target_link_libraries(zynaddsubfx_dssi
         zynaddsubfx_core
 		${OS_LIBRARIES}
+        ${LIBLO_LIBRARIES}
 		)
 	if (${CMAKE_SIZEOF_VOID_P} EQUAL "8")
 		install(TARGETS zynaddsubfx_dssi LIBRARY DESTINATION lib64/dssi/)
@@ -394,12 +400,51 @@ if (DssiEnable)
 	endif ()
 endif()
 
-message(STATUS "Link libraries: ${ZLIB_LIBRARY} ${FFTW_LIBRARY} ${MXML_LIBRARIES} ${AUDIO_LIBRARIES} ${OS_LIBRARIES}")
 install(TARGETS zynaddsubfx
 	RUNTIME DESTINATION bin
 	)
 if(NtkGui)
-install(DIRECTORY ../pixmaps DESTINATION share/zynaddsubfx)
+    install(DIRECTORY ../pixmaps DESTINATION share/zynaddsubfx)
 endif(NtkGui)
 
 include(CTest)
+
+
+##Summarize The Full Configuration
+message(STATUS)
+message(STATUS "${ColorBold}ZynAddSubFX Build Configuration")
+message(STATUS             "===============================${ColorReset}")
+message(STATUS)
+message(STATUS "Building on a '${CMAKE_SYSTEM_NAME}' System")
+
+
+macro(package_status foundvar pkg state)#optional color
+    set (extra_macro_args ${ARGN})
+    list(LENGTH extra_macro_args num_extra_args)
+    if (${num_extra_args} GREATER 0)
+        list(GET extra_macro_args 0 color)
+    endif ()
+    if(${foundvar})
+        message(STATUS "${pkg} -- ${Green}${state}${ColorReset}")
+    else()
+        message(STATUS "${pkg} -- ${color}NOT ${state}${ColorReset}")
+    endif()
+endmacro()
+
+package_status(PKG_CONFIG_FOUND "PkgConfig" "found"   ${Red})
+package_status(ZLIB_FOUND       "zlib     " "found"   ${Red})
+package_status(MXML_FOUND       "mxml     " "found"   ${Red})
+package_status(FFTW_FOUND       "fftw3    " "found"   ${Red})
+package_status(OssEnable        "OSS      " "enabled" ${Yellow})
+package_status(AlsaEnable       "ALSA     " "enabled" ${Yellow})
+package_status(JackEnable       "JACK     " "enabled" ${Yellow})
+package_status(PaEnable         "PA       " "enabled" ${Yellow})
+package_status(CXXTEST_FOUND    "CxxTest  " "found"   ${Yellow})
+#TODO GUI MODULE
+package_status(LASH_FOUND       "Lash     " "enabled" ${Yellow})
+package_status(DSSI_FOUND       "DSSI     " "enabled" ${Yellow})
+package_status(LIBLO_FOUND      "liblo    " "enabled" ${Red})
+package_status(FLTK_FOUND       "fltk     " "found"   ${Yellow})
+package_status(NTK_FOUND        "ntk      " "found"   ${Yellow})
+package_status(X11_FOUND        "x11      " "found"   ${Yellow})
+message(STATUS "Link libraries: ${ZLIB_LIBRARY} ${FFTW_LIBRARY} ${MXML_LIBRARIES} ${AUDIO_LIBRARIES} ${OS_LIBRARIES}")

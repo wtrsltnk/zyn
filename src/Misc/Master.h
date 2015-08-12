@@ -26,15 +26,14 @@
 #include "../globals.h"
 #include "Microtonal.h"
 #include <rtosc/miditable.h>
+#include <rtosc/ports.h>
 
 #include "Bank.h"
 #include "Recorder.h"
-#include "Dump.h"
 
 #include "../Params/Controller.h"
 
 class Allocator;
-extern Dump dump;
 
 struct vuData {
     vuData(void);
@@ -50,7 +49,7 @@ class Master
 {
     public:
         /** Constructor TODO make private*/
-        Master();
+        Master(const SYNTH_T &synth);
         /** Destructor*/
         ~Master();
 
@@ -79,11 +78,11 @@ class Master
 
         void getfromXML(XMLwrapper *xml);
 
-        /**get all data to a newly allocated array (used for VST)
+        /**get all data to a newly allocated array (used for plugin)
          * @return the datasize*/
         int getalldata(char **data) NONREALTIME;
-        /**put all data from the *data array to zynaddsubfx parameters (used for VST)*/
-        void putalldata(char *data, int size);
+        /**put all data from the *data array to zynaddsubfx parameters (used for plugin)*/
+        void putalldata(const char *data);
 
         //Midi IN
         void noteOn(char chan, char note, char velocity);
@@ -108,6 +107,9 @@ class Master
 
 
         void partonoff(int npart, int what);
+
+        //Set callback to run when master changes
+        void setMasterChangedCallback(void(*cb)(void*,Master*),void *ptr);
 
         /**parts \todo see if this can be made to be dynamic*/
         class Part * part[NUM_MIDI_PARTS];
@@ -155,7 +157,7 @@ class Master
 
         class FFTwrapper * fft;
 
-        static rtosc::Ports &ports;
+        static const rtosc::Ports &ports;
         float  volume;
 
         //Statistics on output levels
@@ -165,7 +167,10 @@ class Master
 
         bool   frozenState;//read-only parameters for threadsafe actions
         Allocator *memory;
+        rtosc::ThreadLink *bToU;
+        rtosc::ThreadLink *uToB;
         bool pendingMemory;
+        const SYNTH_T &synth;
     private:
         float  sysefxvol[NUM_SYS_EFX][NUM_MIDI_PARTS];
         float  sysefxsend[NUM_SYS_EFX][NUM_SYS_EFX];
@@ -176,6 +181,10 @@ class Master
         float *bufr;
         off_t  off;
         size_t smps;
+
+        //Callback When Master changes
+        void(*mastercb)(void*,Master*);
+        void* mastercb_ptr;
 };
 
 #endif

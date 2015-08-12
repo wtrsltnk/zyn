@@ -63,7 +63,7 @@ class PluginTest:public CxxTest::TestSuite
                 denormalkillbuf[i] = 0;
 
             for(int i = 0; i < 16; ++i)
-                master[i] = new Master();
+                master[i] = new Master(*synth);
         }
 
         void tearDown() {
@@ -111,7 +111,7 @@ class PluginTest:public CxxTest::TestSuite
             const string fname = string(SOURCE_DIR) + "/guitar-adnote.xmz";
             const string fdata = loadfile(fname);
             char *result = NULL;
-            master[0]->putalldata((char*)fdata.c_str(), fdata.length());
+            master[0]->putalldata((char*)fdata.c_str());
             int res = master[0]->getalldata(&result);
 
             TS_ASSERT_EQUALS((int)(fdata.length()+1), res);

@@ -24,12 +24,13 @@
 #define OSCIL_GEN_H
 
 #include "../globals.h"
+#include <rtosc/ports.h>
 #include "../Params/Presets.h"
 
 class OscilGen:public Presets
 {
     public:
-        OscilGen(FFTwrapper *fft_, Resonance *res_);
+        OscilGen(const SYNTH_T &synth, FFTwrapper *fft_, Resonance *res_);
         ~OscilGen();
 
         /**computes the full spectrum of oscil from harmonics,phases and basefunc*/
@@ -113,7 +114,7 @@ class OscilGen:public Presets
 
         bool ADvsPAD; //if it is used by ADsynth or by PADsynth
 
-        static rtosc::Ports &ports;
+        static const rtosc::Ports ports;
 
         /* Oscillator Frequencies -
          *  this is different than the hamonics set-up by the user,
@@ -176,6 +177,8 @@ class OscilGen:public Presets
         Resonance *res;
 
         unsigned int randseed;
+    public:
+        const SYNTH_T &synth;
 };
 
 typedef float (*filter_func)(unsigned int, float, float);

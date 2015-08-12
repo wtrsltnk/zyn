@@ -26,7 +26,7 @@ void EnvelopeFreeEdit::init(void)
 void EnvelopeFreeEdit::OSC_raw(const char *msg)
 {
     const char *args = rtosc_argument_string(msg);
-    if(strstr(msg,"Penvpoints") && !strcmp(args, "c")) {
+    if(strstr(msg,"Penvpoints") && !strcmp(args, "i")) {
         Penvpoints = rtosc_argument(msg, 0).i;
     } else if(strstr(msg,"Penvdt") && !strcmp(args, "b")) {
         rtosc_blob_t b = rtosc_argument(msg, 0).b;
@@ -36,7 +36,7 @@ void EnvelopeFreeEdit::OSC_raw(const char *msg)
         rtosc_blob_t b = rtosc_argument(msg, 0).b;
         assert(b.len == MAX_ENVELOPE_POINTS);
         memcpy(Penvval, b.data, MAX_ENVELOPE_POINTS);
-    } else if(strstr(msg,"Penvsustain") && !strcmp(args, "c")) {
+    } else if(strstr(msg,"Penvsustain") && !strcmp(args, "i")) {
         Penvsustain = rtosc_argument(msg, 0).i;
     }
     redraw();
@@ -88,9 +88,14 @@ int EnvelopeFreeEdit::getnearest(int x,int y) const
     return nearestpoint;
 }
 
+static float dt(char val)
+{
+    return (powf(2.0f, val / 127.0f * 12.0f) - 1.0f) * 10.0f; //miliseconds
+}
+
 float EnvelopeFreeEdit::getdt(int i) const
 {
-    return EnvelopeParams::dt(Penvdt[i]);
+    return dt(Penvdt[i]);
 }
 
 void EnvelopeFreeEdit::draw(void)
@@ -197,7 +202,10 @@ int EnvelopeFreeEdit::handle(int event)
         else
             Penvdt[currentpoint]=0;
 
-        oscWrite(to_s("Penvdt")+to_s(currentpoint), "c", newdt);
+        oscWrite(to_s("Penvval")+to_s(currentpoint), "c", ny);
+        oscWrite(to_s("Penvdt")+to_s(currentpoint),  "c", newdt);
+        oscWrite("Penvdt","");
+        oscWrite("Penvval","");
         redraw();
 
         if(pair)
@@ -214,4 +222,14 @@ void EnvelopeFreeEdit::update(void)
     oscWrite("Penvdt");
     oscWrite("Penvval");
     oscWrite("Penvsustain");
+}
+
+void EnvelopeFreeEdit::rebase(std::string new_base)
+{
+    osc->renameLink(loc+"Penvpoints", new_base+"Penvpoints", this);
+    osc->renameLink(loc+"Penvdt", new_base+"Penvdt", this);
+    osc->renameLink(loc+"Penvval",    new_base+"Penvval", this);
+    osc->renameLink(loc+"Penvsustain", new_base+"Penvsustain", this);
+    loc = new_base;
+    update();
 }

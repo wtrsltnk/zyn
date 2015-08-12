@@ -6,7 +6,6 @@
 
 #include <rtosc/rtosc.h>
 #include <rtosc/ports.h>
-#include <rtosc/undo-history.h>
 
 #include <FL/Fl.H>
 #include "Fl_Osc_Tree.H"
@@ -27,9 +26,6 @@
 
 using namespace GUI;
 class MasterUI *ui;
-extern rtosc::UndoHistory undo;
-
-Fl_Osc_Interface *osc;//TODO: the scope of this should be narrowed
 
 #ifdef NTK_GUI
 static Fl_Tiled_Image *module_backdrop;
@@ -39,13 +35,10 @@ int undo_redo_handler(int)
 {
     const bool undo_ = Fl::event_ctrl() && Fl::event_key() == 'z';
     const bool redo = Fl::event_ctrl() && Fl::event_key() == 'r';
-    if(undo_) {
-        printf("Trying to undo an action\n");
-        undo.seekHistory(-1);
-    } else if(redo) {
-        printf("Trying to redo an action\n");
-        undo.seekHistory(+1);
-    }
+    if(undo_)
+        ui->osc->write("/undo", "");
+    else if(redo)
+        ui->osc->write("/redo", "");
     return undo_ || redo;
 }
 
@@ -71,29 +64,43 @@ set_module_parameters ( Fl_Widget *o )
 
 ui_handle_t GUI::createUi(Fl_Osc_Interface *osc, void *exit)
 {
-    ::osc = osc;
 #ifdef NTK_GUI
     fl_register_images();
 
     Fl_Dial::default_style(Fl_Dial::PIXMAP_DIAL);
 
+#ifdef CARLA_VERSION_STRING
+    if(Fl_Shared_Image *img = Fl_Shared_Image::get(gUiPixmapPath + "knob.png"))
+        Fl_Dial::default_image(img);
+#else
     if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/knob.png"))
         Fl_Dial::default_image(img);
+#endif
     else if(Fl_Shared_Image *img = Fl_Shared_Image::get(SOURCE_DIR "/pixmaps/knob.png"))
         Fl_Dial::default_image(img);
     else
         errx(1, "ERROR: Cannot find pixmaps/knob.png");
 
 
+#ifdef CARLA_VERSION_STRING
+    if(Fl_Shared_Image *img = Fl_Shared_Image::get(gUiPixmapPath + "/window_backdrop.png"))
+        Fl::scheme_bg(new Fl_Tiled_Image(img));
+#else
     if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/window_backdrop.png"))
         Fl::scheme_bg(new Fl_Tiled_Image(img));
+#endif
     else if(Fl_Shared_Image *img = Fl_Shared_Image::get(SOURCE_DIR "/pixmaps/window_backdrop.png"))
         Fl::scheme_bg(new Fl_Tiled_Image(img));
     else
         errx(1, "ERROR: Cannot find pixmaps/window_backdrop.png");
 
+#ifdef CARLA_VERSION_STRING
+    if(Fl_Shared_Image *img = Fl_Shared_Image::get(gUiPixmapPath + "/module_backdrop.png"))
+        module_backdrop = new Fl_Tiled_Image(img);
+#else
     if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/module_backdrop.png"))
         module_backdrop = new Fl_Tiled_Image(img);
+#endif
     else if(Fl_Shared_Image *img = Fl_Shared_Image::get(SOURCE_DIR "/pixmaps/module_backdrop.png"))
         module_backdrop = new Fl_Tiled_Image(img);
     else
@@ -130,10 +137,14 @@ void GUI::destroyUi(ui_handle_t ui)
 
 #define END }},
 
+struct uiPorts {
+    static rtosc::Ports ports;
+};
+
 //DSL based ports
-static rtosc::Ports ports = {
-    BEGIN("show:T") {
-        ui->showUI();
+rtosc::Ports uiPorts::ports = {
+    BEGIN("show:i") {
+        ui->showUI(a0.i);
     } END
     BEGIN("alert:s") {
         fl_alert("%s",a0.s);
@@ -172,7 +183,20 @@ static rtosc::Ports ports = {
 
 void GUI::raiseUi(ui_handle_t gui, const char *message)
 {
+    if(!gui)
+        return;
     MasterUI *mui = (MasterUI*)gui;
+    if(string("/damage") == message && rtosc_type(message, 0) == 's') {
+        string damage_str = rtosc_argument(message,0).s;
+        int npart = -1;
+        if(sscanf(damage_str.c_str(), "/part%d", &npart) == 1 && damage_str.size() < 10) {
+            if(mui->npartcounter->value()-1 == npart) {
+                mui->partui->showparameters(0,-1);
+                mui->npartcounter->do_callback();
+            }
+        }
+        mui->osc->damage(rtosc_argument(message,0).s);
+    }
     mui->osc->tryLink(message);
     //printf("got message for UI '%s'\n", message);
     char buffer[1024];
@@ -181,7 +205,7 @@ void GUI::raiseUi(ui_handle_t gui, const char *message)
     d.loc = buffer;
     d.loc_size = 1024;
     d.obj = gui;
-    ports.dispatch(message+1, d);
+    uiPorts::ports.dispatch(message+1, d);
 }
 
 void GUI::raiseUi(ui_handle_t gui, const char *dest, const char *args, ...)
@@ -215,6 +239,7 @@ class UI_Interface:public Fl_Osc_Interface
 
         void requestValue(string s) override
         {
+            assert(s!="/Psysefxvol-1/part0");
             //Fl_Osc_Interface::requestValue(s);
             if(impl->activeUrl() != "GUI") {
                 impl->transmitMsg("/echo", "ss", "OSC_URL", "GUI");
@@ -279,8 +304,8 @@ class UI_Interface:public Fl_Osc_Interface
 
         void renameLink(string old, string newer, Fl_Osc_Widget *w) override
         {
-            fprintf(stdout, "renameLink('%s','%s',%p)\n",
-                    old.c_str(), newer.c_str(), w);
+            //fprintf(stdout, "renameLink('%s','%s',%p)\n",
+            //        old.c_str(), newer.c_str(), w);
             removeLink(old, w);
             createLink(newer, w);
         }
@@ -319,16 +344,13 @@ class UI_Interface:public Fl_Osc_Interface
         virtual void damage(const char *path) override
         {
 #ifndef NO_UI
-            //printf("\n\nDamage(\"%s\")\n", path);
+            printf("\n\nDamage(\"%s\")\n", path);
             for(auto pair:map) {
                 if(strstr(pair.first.c_str(), path)) {
                     auto *tmp = dynamic_cast<Fl_Widget*>(pair.second);
-                    //if(tmp)
-                    //    printf("%x, %d %d [%s]\n", (int)pair.second, tmp->visible_r(), tmp->visible(), pair.first.c_str());
-                    //else
-                    //    printf("%x, (NULL)[%s]\n", (int)pair.second,pair.first.c_str());
-                    if(!tmp || tmp->visible_r())
+                    if(!tmp || tmp->visible_r()) {
                         pair.second->update();
+                    }
                 }
             }
 #endif
@@ -336,7 +358,6 @@ class UI_Interface:public Fl_Osc_Interface
 
         void tryLink(const char *msg) override
         {
-
             //DEBUG
             //if(strcmp(msg, "/vu-meter"))//Ignore repeated message
             //    printf("trying the link for a '%s'<%s>\n", msg, rtosc_argument_string(msg));

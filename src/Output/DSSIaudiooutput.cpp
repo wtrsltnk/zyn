@@ -37,6 +37,7 @@
 #include <string.h>
 #include <limits.h>
 
+using std::set;
 using std::string;
 using std::vector;
 
@@ -51,6 +52,12 @@ namespace Nio {
     void waveStart(void){}
     void waveStop(void){}
     void waveEnd(void){}
+    bool setSource(string){return true;}
+    bool setSink(string){return true;}
+    set<string> getSources(void){return set<string>();}
+    set<string> getSinks(void){return set<string>();}
+    string getSource(void){return "";}
+    string getSink(void){return "";}
 }
 
 //
@@ -364,9 +371,7 @@ const DSSI_Program_Descriptor *DSSIaudiooutput::getProgram(unsigned long index)
  */
 void DSSIaudiooutput::selectProgram(unsigned long bank, unsigned long program)
 {
-    middleware->pendingSetProgram(0);
-    extern rtosc::ThreadLink *bToU;
-    bToU->write("/setprogram", "cc", 0, program);
+    middleware->pendingSetProgram(0, program);
 }
 
 /**
@@ -587,7 +592,6 @@ DSSIaudiooutput *DSSIaudiooutput::getInstance(LADSPA_Handle instance)
     return (DSSIaudiooutput *)(instance);
 }
 
-SYNTH_T *synth;
 
 /**
  * The private sole constructor for the DSSIaudiooutput class.
@@ -598,8 +602,8 @@ SYNTH_T *synth;
  */
 DSSIaudiooutput::DSSIaudiooutput(unsigned long sampleRate)
 {
-    synth = new SYNTH_T;
-    synth->samplerate = sampleRate;
+    SYNTH_T synth;
+    synth.samplerate = sampleRate;
 
     this->sampleRate  = sampleRate;
     this->banksInited = false;
@@ -607,12 +611,12 @@ DSSIaudiooutput::DSSIaudiooutput(unsigned long sampleRate)
     config.init();
 
     sprng(time(NULL));
-    denormalkillbuf = new float [synth->buffersize];
-    for(int i = 0; i < synth->buffersize; i++)
+    denormalkillbuf = new float [synth.buffersize];
+    for(int i = 0; i < synth.buffersize; i++)
         denormalkillbuf[i] = (RND - 0.5f) * 1e-16;
 
-    synth->alias();
-    middleware = new MiddleWare();
+    synth.alias();
+    middleware = new MiddleWare(synth);
     initBanks();
     loadThread = new std::thread([this]() {
             while(middleware) {

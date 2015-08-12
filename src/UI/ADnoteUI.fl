@@ -98,7 +98,7 @@ class ADvoicelistitem {open : {public Fl_Osc_Group}
         }
         Fl_Value_Slider voicelfofreq {
           tooltip {Frequency LFO amount} xywh {500 5 115 20} type {Horz Knob} box NO_BOX labelsize 8 align 5 maximum 127 step 1
-          code0 {o->init("FreqLfo/Pintensity");}
+          code0 {o->init("FreqLfo/Pintensity", 'i');}
           class Fl_Osc_Slider
         }
         Fl_Dial voicepanning {
@@ -108,7 +108,7 @@ class ADvoicelistitem {open : {public Fl_Osc_Group}
         }
         Fl_Group voiceoscil {open
           xywh {60 5 30 20} box THIN_DOWN_BOX color 32 selection_color 71 labelcolor 179
-          code0 {voiceoscil->ext = "oscil/";}
+          code0 {voiceoscil->ext = "OscilSmp/";}
           code1 {oscil=new Fl_Oscilloscope(o->x(),o->y(),o->w(),o->h(),"");}
           code2 {oscil->init(false);}
           class Fl_Osc_Group
@@ -119,7 +119,7 @@ class ADvoicelistitem {open : {public Fl_Osc_Group}
           class Fl_Osc_Output
         }
         Fl_Slider voicedetune {
-          callback {//detunevalueoutput->do_callback();}
+          callback {detunevalueoutput->update();}
           tooltip {Fine Detune (cents)} xywh {315 5 185 20} type {Horz Knob} box NO_BOX minimum -8192 maximum 8191 step 1
           code0 {o->init("PDetune",'i');}
           class Fl_Osc_Slider
@@ -207,7 +207,7 @@ class ADvoiceUI {open : {public Fl_Group}
       Fl_Box {} {
         label label
         xywh {25 25 35 16}
-        code0 {ADnoteVoiceParameters->base = base+"voice"+to_s(nvoice)+"/";}
+        code0 {ADnoteVoiceParameters->base = base+"VoicePar"+to_s(nvoice)+"/";}
         code1 {ADnoteVoiceParameters->osc = osc_i;}
       }
       Fl_Group voiceparametersgroup {open
@@ -235,7 +235,7 @@ class ADvoiceUI {open : {public Fl_Group}
                 callback {if (o->value()==0) voiceFMfreqenvgroup->deactivate();
 else voiceFMfreqenvgroup->activate();
 o->redraw();}
-                tooltip {Forced Relase} xywh {545 305 50 10} down_box DOWN_BOX labelfont 1 labelsize 11
+                tooltip {Forced Release} xywh {545 305 50 10} down_box DOWN_BOX labelfont 1 labelsize 11
                 code0 {o->init("PFMFreqEnvelopeEnabled");}
                 class Fl_Osc_Check
               }
@@ -253,7 +253,7 @@ o->redraw();}
                 class Fl_Osc_Counter
               }
               Fl_Slider {} {
-                callback {o->oscWrite("detunevalue");}
+                callback {fmdetunevalueoutput->update();}
                 tooltip {Fine Detune (cents)} xywh {590 245 155 15} type {Horz Knob} box NO_BOX minimum -8192 maximum 8191 step 1
                 code0 {o->init("PFMDetune", 'i');}
                 class Fl_Osc_Slider
@@ -266,7 +266,7 @@ o->redraw();}
               }
               Fl_Choice {} {
                 label {Detune Type}
-                callback {fmdetunevalueoutput->do_callback();} open
+                callback {fmdetunevalueoutput->update();} open
                 xywh {540 280 75 15} down_box BORDER_BOX labelsize 10 align 5 textfont 1 textsize 10
                 code0 {o->add("Default");o->add("L35cents");o->add("L10cents");o->add("E100cents");o->add("E1200cents");}
                 code1 {o->init("PFMDetuneType");}
@@ -301,7 +301,7 @@ o->redraw();}
                 callback {if (o->value()==0) voiceFMampenvgroup->deactivate();
 else voiceFMampenvgroup->activate();
 o->redraw();}
-                tooltip {Forced Relase} xywh {545 150 50 10} down_box DOWN_BOX labelfont 1 labelsize 11
+                tooltip {Forced Release} xywh {545 150 50 10} down_box DOWN_BOX labelfont 1 labelsize 11
                 code0 {o->init("PFMAmpEnvelopeEnabled");}
                 class Fl_Osc_Check
               }
@@ -317,7 +317,7 @@ o->redraw();}
             } {
               Fl_Group fmoscil {open
                 xywh {535 440 220 140} box THIN_DOWN_BOX color 32 selection_color 71 labelcolor 179
-                code0 {fmoscil->base = loc; fmoscil->ext="mod-oscil/";fmoscil->osc = osc_i;fmoscil->begin();}
+                code0 {fmoscil->base = loc; fmoscil->ext="FMSmp/";fmoscil->osc = osc_i;fmoscil->begin();}
                 code1 {oscFM=new Fl_Oscilloscope(o->x(),o->y(),o->w(),o->h(),"");}
                 code2 {//int nv=nvoice; if (pars->VoicePar[nvoice].PextFMoscil>=0) nv=pars->VoicePar[nvoice].PextFMoscil;}
                 code3 {oscFM->parent(fmoscil);oscFM->init(false);oscFM->update();fmoscil->end();}
@@ -336,7 +336,7 @@ o->redraw();}
 //if (extFMoscil->value()>=0)
 //    nv=extFMoscil->value();
 
-oscedit=new OscilEditor(true, loc+"mod-oscil/", osc_i);}
+oscedit=new OscilEditor(true, loc+"FMSmp/", osc_i);}
                 xywh {700 380 55 15} box THIN_UP_BOX labelfont 1 labelsize 11
                 code0 {(void)o;/*if (extFMoscil->value()>=0) o->labelcolor(FL_BLUE);*/}
               }
@@ -437,7 +437,7 @@ o->redraw();}
               callback {if (o->value()==0) voicefreqenvgroup->deactivate();
 else voicefreqenvgroup->activate();
 o->redraw();}
-              tooltip {Forced Relase} xywh {15 310 50 10} down_box DOWN_BOX labelfont 1 labelsize 11
+              tooltip {Forced Release} xywh {15 310 50 10} down_box DOWN_BOX labelfont 1 labelsize 11
               code0 {o->init("PFreqEnvelopeEnabled");}
               class Fl_Osc_Check
             }
@@ -452,7 +452,7 @@ o->redraw();}
               callback {if (o->value()==0) voicefreqlfogroup->deactivate();
 else voicefreqlfogroup->activate();
 o->redraw();}
-              tooltip {Forced Relase} xywh {225 311 55 10} down_box DOWN_BOX labelfont 1 labelsize 11
+              tooltip {Forced Release} xywh {225 311 55 10} down_box DOWN_BOX labelfont 1 labelsize 11
               code0 {o->init("PFreqLfoEnabled");}
               class Fl_Osc_Check
             }
@@ -470,7 +470,7 @@ o->redraw();}
               class Fl_Osc_Counter
             }
             Fl_Slider {} {
-              callback {detunevalueoutput->do_callback();}
+              callback {detunevalueoutput->update();}
               tooltip {Fine Detune (cents)} xywh {58 287 392 13} type {Horz Knob} box NO_BOX minimum -8192 maximum 8191 step 1
               code0 {o->init("PDetune", 'i');}
               class Fl_Osc_Slider
@@ -497,7 +497,7 @@ o->redraw();}
             }
             Fl_Choice {} {
               label {Detune Type}
-              callback {detunevalueoutput->do_callback();} open
+              callback {detunevalueoutput->update();} open
               xywh {455 320 70 15} down_box BORDER_BOX labelsize 10 align 5 textfont 1 textsize 10
               code0 {o->add("Default");o->add("L35cents");o->add("L10cents");o->add("E100cents");o->add("E1200cents");}
               code1 {o->init("PDetuneType");}
@@ -506,7 +506,7 @@ o->redraw();}
           }
           Fl_Group voiceoscil {
             xywh {80 390 445 145} box THIN_DOWN_BOX color 32 selection_color 71 labelcolor 179
-            code0 {voiceoscil->base = loc;voiceoscil->ext="oscil/";voiceoscil->begin();//int nv=nvoice; if (extoscil->value()>=0) nv=extoscil->value();}
+            code0 {voiceoscil->base = loc;voiceoscil->ext="OscilSmp/";voiceoscil->begin();//int nv=nvoice; if (extoscil->value()>=0) nv=extoscil->value();}
             code1 {osc=new Fl_Oscilloscope(o->x(),o->y(),o->w(),o->h(),"");}
             code2 {voiceoscil->osc = osc_i;}
             code3 {osc->parent(voiceoscil); osc->init(false);voiceoscil->end();}
@@ -518,7 +518,7 @@ o->redraw();}
                 //if(extoscil->value()>=0)
                 //    nv=extoscil->value();
 
-                oscedit=new OscilEditor(true,loc+"oscil/", osc_i);}
+                oscedit=new OscilEditor(true,loc+"OscilSmp/", osc_i);}
             xywh {5 490 65 20} box THIN_UP_BOX labelfont 1 labelsize 11
             code0 {(void)o;/*if (extoscil->value()>=0) o->labelcolor(FL_BLUE);*/}
           }
@@ -648,7 +648,7 @@ voiceonbutton->redraw();} open
             callback {if (o->value()==0) voiceampenvgroup->deactivate();
 else voiceampenvgroup->activate();
 o->redraw();}
-            tooltip {Forced Relase} xywh {15 110 50 10} down_box DOWN_BOX labelfont 1 labelsize 11
+            tooltip {Forced Release} xywh {15 110 50 10} down_box DOWN_BOX labelfont 1 labelsize 11
             code0 {o->init("PAmpEnvelopeEnabled");}
             class Fl_Osc_Check
           }
@@ -663,7 +663,7 @@ o->redraw();}
             callback {if (o->value()==0) voiceamplfogroup->deactivate();
 else voiceamplfogroup->activate();
 o->redraw();}
-            tooltip {Forced Relase} xywh {15 185 55 10} down_box DOWN_BOX labelfont 1 labelsize 11
+            tooltip {Forced Release} xywh {15 185 55 10} down_box DOWN_BOX labelfont 1 labelsize 11
             code0 {o->init("PAmpLfoEnabled");}
             class Fl_Osc_Check
           }
@@ -696,7 +696,7 @@ o->redraw();}
             callback {if (o->value()==0) voicefilterenvgroup->deactivate();
 else voicefilterenvgroup->activate();
 o->redraw();}
-            tooltip {Forced Relase} xywh {255 119 55 10} down_box DOWN_BOX labelfont 1 labelsize 11
+            tooltip {Forced Release} xywh {255 119 55 10} down_box DOWN_BOX labelfont 1 labelsize 11
             code0 {o->init("PFilterEnvelopeEnabled");}
             class Fl_Osc_Check
           }
@@ -711,7 +711,7 @@ o->redraw();}
             callback {if (o->value()==0) voicefilterlfogroup->deactivate();
 else voicefilterlfogroup->activate();
 o->redraw();}
-            tooltip {Forced Relase} xywh {255 196 55 10} down_box DOWN_BOX labelfont 1 labelsize 11
+            tooltip {Forced Release} xywh {255 196 55 10} down_box DOWN_BOX labelfont 1 labelsize 11
             code0 {o->init("PFilterLfoEnabled");}
             class Fl_Osc_Check
           }
@@ -765,7 +765,7 @@ bypassfiltercheckbutton->redraw();}
         }
         Fl_Box noiselabel {
           label {White Noise}
-          xywh {150 430 300 65} labelfont 1 labelsize 50 labelcolor 53
+          xywh {150 430 300 65} labelfont 1 labelsize 50 labelcolor 53 hide
         }
       }
       Fl_Check_Button voiceonbutton {
@@ -788,7 +788,7 @@ oscedit=NULL;} {}
     code {assert(osc_);
 assert(!loc_.empty());
 nvoice=nvoice_;
-loc=loc_+"voice"+to_s(nvoice)+"/";
+loc=loc_+"VoicePar"+to_s(nvoice)+"/";
 base = loc_;
 osc_i=osc_;
 make_window();
@@ -805,10 +805,10 @@ delete(oscedit);
   Function {change_voice(int nvoice_)} {open
   } {
     code {nvoice = nvoice_;
-    loc = base+"voice"+to_s(nvoice)+"/";
+    loc = base+"VoicePar"+to_s(nvoice)+"/";
     char tmp[10];snprintf(tmp,10,"%d",nvoice+1);
     activeVoiceID->label(strdup(tmp));
-ADnoteVoiceParameters->rebase(base+"voice"+to_s(nvoice)+"/");} {selected
+ADnoteVoiceParameters->rebase(base+"VoicePar"+to_s(nvoice)+"/");} {selected
     }
   }
   decl {int nvoice;} {private local
@@ -838,7 +838,7 @@ class ADnoteUI {open : {public PresetsUI_}
     } {
       Fl_Box {} {
         xywh {0 0 0 0}
-        code0 {ADnoteGlobalParameters->base = loc + "global/"; ADnoteGlobalParameters->osc = osc;}
+        code0 {ADnoteGlobalParameters->base = loc + "GlobalPar/"; ADnoteGlobalParameters->osc = osc;}
       }
       Fl_Group {} {
         label FREQUENCY open
@@ -847,7 +847,7 @@ class ADnoteUI {open : {public PresetsUI_}
         Fl_Group freqenv {
           label {ADSynth Global - Frequency Envelope} open
           xywh {10 320 205 70} box FLAT_BOX color 51 align 144
-          code0 {o->init(ENV_ASR, osc, loc, "global/FreqEnvelope/");}
+          code0 {o->init(ENV_ASR, osc, loc, "GlobalPar/FreqEnvelope/");}
           class EnvelopeUI
         } {}
         Fl_Counter octave {
@@ -866,11 +866,11 @@ class ADnoteUI {open : {public PresetsUI_}
         Fl_Group freqlfo {
           label {Frequency LFO     } open
           xywh {220 320 230 70} box FLAT_BOX color 47 align 144
-          code0 {o->init(osc, loc, "global/FreqLfo/");}
+          code0 {o->init(osc, loc, "GlobalPar/FreqLfo/");}
           class LFOUI
         } {}
         Fl_Slider detune {
-          callback {o->oscWrite("detunevalue");}
+          callback {detunevalueoutput->update();}
           tooltip {Fine Detune (cents)} xywh {60 300 385 15} type {Horz Knob} box NO_BOX minimum -8192 maximum 8191 step 1
           code0 {o->init("PDetune", 'i');}
           class Fl_Osc_Slider
@@ -883,7 +883,7 @@ class ADnoteUI {open : {public PresetsUI_}
         }
         Fl_Choice detunetype {
           label {Detune Type}
-          callback {o->oscWrite("detunevalue");} open
+          callback {detunevalueoutput->update();} open
           xywh {455 340 75 15} down_box BORDER_BOX labelsize 10 align 5 textfont 1 textsize 10
           code0 {o->add("L35cents");o->add("L10cents");o->add("E100cents");o->add("E1200cents");}
           code1 {o->init("PDetuneType",1);}
@@ -948,13 +948,13 @@ class ADnoteUI {open : {public PresetsUI_}
         Fl_Group ampenv {
           label {ADSynth Global - Amplitude Envelope} open
           xywh {10 75 205 70} box FLAT_BOX color 51 align 144
-          code0 {o->init(ENV_ADSR, osc, loc, "global/AmpEnvelope/");}
+          code0 {o->init(ENV_ADSR, osc, loc, "GlobalPar/AmpEnvelope/");}
           class EnvelopeUI
         } {}
         Fl_Group amplfo {
           label {Amplitude LFO          } open
           xywh {10 150 230 70} box FLAT_BOX color 47 align 144
-          code0 {o->init(osc, loc, "global/AmpLfo/");}
+          code0 {o->init(osc, loc, "GlobalPar/AmpLfo/");}
           class LFOUI
         } {}
         Fl_Check_Button rndgrp {
@@ -971,20 +971,20 @@ class ADnoteUI {open : {public PresetsUI_}
         Fl_Group filterenv {
           label {ADSynth Global - Filter Envelope} open
           xywh {255 118 275 70} box FLAT_BOX color 51 align 144
-          code0 {o->init(ENV_ADSR_FILTER, osc, loc, "global/FilterEnvelope/");}
+          code0 {o->init(ENV_ADSR_FILTER, osc, loc, "GlobalPar/FilterEnvelope/");}
           class EnvelopeUI
         } {}
         Fl_Group filterlfo {
           label {Filter LFO} open
           xywh {255 195 230 70} box FLAT_BOX color 47 align 144
-          code0 {o->init(osc, loc, "global/FilterLfo/");}
+          code0 {o->init(osc, loc, "GlobalPar/FilterLfo/");}
           class LFOUI
         } {}
         Fl_Group filterui {
           label {ADsynth Global - Filter} open
           xywh {255 35 275 75} box FLAT_BOX color 50 align 144
-          code0 {o->init(loc + "global/PFilter",
-          osc, loc, "global/GlobalFilter/");}
+          code0 {o->init(loc + "GlobalPar/PFilter",
+          osc, loc, "GlobalPar/GlobalFilter/");}
           class FilterUI
         } {}
       }
@@ -1020,12 +1020,12 @@ resui->resonancewindow->show();}
       }
       Fl_Button {} {
         label C
-        callback {presetsui->copyArray(loc);}
+        callback {presetsui->copy(loc);}
         xywh {405 405 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
       }
       Fl_Button {} {
         label P
-        callback {presetsui->pasteArray(loc,this);}
+        callback {presetsui->paste(loc,this);}
         xywh {435 405 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
       }
     }
@@ -1112,7 +1112,7 @@ advoice->change_voice(nvoice);}
       } {
         Fl_Pack {} {open
           xywh {0 20 620 210}
-          code0 {o->begin();for (int i=0;i<NUM_VOICES;i++){voicelistitem[i]=new ADvoicelistitem(0,0,620,25,"");voicelistitem[i]->init(i,loc+"voice"+to_s(i)+"/",osc);}o->end();}
+          code0 {o->begin();for (int i=0;i<NUM_VOICES;i++){voicelistitem[i]=new ADvoicelistitem(0,0,620,25,"");voicelistitem[i]->init(i,loc+"VoicePar"+to_s(i)+"/",osc);}o->end();}
         } {}
       }
     }
@@ -1123,7 +1123,7 @@ advoice->change_voice(nvoice);}
 assert(!loc_.empty());
 
 nvoice=0;
-resui=new ResonanceUI(osc_, loc_+"global/Reson/");
+resui=new ResonanceUI(osc_, loc_+"GlobalPar/Reson/");
 loc=loc_;
 osc=osc_;
 make_window();} {}

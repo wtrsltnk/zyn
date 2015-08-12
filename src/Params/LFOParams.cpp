@@ -33,9 +33,9 @@ using namespace rtosc;
 
 
 #define rObject LFOParams
-static rtosc::Ports _ports = {
+static const rtosc::Ports _ports = {
     rSelf(LFOParams),
-    rPaste(),
+    rPaste,
     rParamF(Pfreq, "frequency of LFO"),
     rParamZyn(Pintensity, "Intensity of LFO"),
     rParamZyn(Pstartphase, rSpecial(random), "Starting Phase"),
@@ -47,7 +47,7 @@ static rtosc::Ports _ports = {
     rParamZyn(Pstretch, rCentered, "Note frequency stretch"),
 };
 
-rtosc::Ports &LFOParams::ports = _ports;
+const rtosc::Ports &LFOParams::ports = _ports;
 
 int LFOParams::time;
 
@@ -75,17 +75,17 @@ LFOParams::LFOParams(char Pfreq_,
                      char Pcontinous_,
                      char fel_)
 {
-    //switch(fel_) {
-    //    case 0:
-    //        setpresettype("Plfofrequency");
-    //        break;
-    //    case 1:
-    //        setpresettype("Plfoamplitude");
-    //        break;
-    //    case 2:
-    //        setpresettype("Plfofilter");
-    //        break;
-    //}
+    switch(fel_) {
+        case 0:
+            setpresettype("Plfofrequency");
+            break;
+        case 1:
+            setpresettype("Plfoamplitude");
+            break;
+        case 2:
+            setpresettype("Plfofilter");
+            break;
+    }
     Dfreq       = Pfreq_;
     Dintensity  = Pintensity_;
     Dstartphase = Pstartphase_;

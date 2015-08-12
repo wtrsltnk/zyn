@@ -53,7 +53,7 @@ class ADnote:public SynthNote
         void legatonote(LegatoParams pars);
 
         int noteout(float *outl, float *outr);
-        void relasekey();
+        void releasekey();
         int finished() const;
     private:
 
@@ -122,6 +122,7 @@ class ADnote:public SynthNote
         struct Global {
             void kill(Allocator &memory);
             void initparameters(const ADnoteGlobalParam &param,
+                                const SYNTH_T &synth,
                                 class Allocator &memory,
                                 float basefreq, float velocity,
                                 bool stereo);
@@ -169,7 +170,7 @@ class ADnote:public SynthNote
         /***********************************************************/
         struct Voice {
             void releasekey();
-            void kill(Allocator &memory);
+            void kill(Allocator &memory, const SYNTH_T &synth);
             /* If the voice is enabled */
             ONOFFTYPE Enabled;
 

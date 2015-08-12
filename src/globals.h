@@ -33,12 +33,8 @@
 #define NONREALTIME
 #endif
 
-//Forward declarations
-namespace rtosc{struct Ports; class ThreadLink;};
-extern rtosc::ThreadLink *bToU;
-extern rtosc::ThreadLink *uToB;
-
 //Forward Declarations
+namespace rtosc{struct Ports; class ThreadLink;};
 class  EffectMgr;
 class  ADnoteParameters;
 struct ADnoteGlobalParam;
@@ -110,9 +106,9 @@ typedef std::complex<fftw_real> fft_t;
 #define NUM_VOICES 8
 
 /*
- * The poliphony (notes)
+ * The polyphony (notes)
  */
-#define POLIPHONY 60
+#define POLYPHONY 60
 
 /*
  * Number of system effects
@@ -166,6 +162,8 @@ typedef std::complex<fftw_real> fft_t;
 #define FF_MAX_VOWELS 6
 #define FF_MAX_FORMANTS 12
 #define FF_MAX_SEQUENCE 8
+
+#define MAX_PRESETTYPE_SIZE 30
 
 #define LOG_2 0.693147181f
 #define PI 3.1415926536f
@@ -289,6 +287,10 @@ struct SYNTH_T {
     int   bufferbytes;
     float oscilsize_f;
 
+    float dt(void) const
+    {
+        return buffersize_f / samplerate_f;
+    }
     inline void alias(void)
     {
         halfsamplerate_f = (samplerate_f = samplerate) / 2.0f;
@@ -298,6 +300,4 @@ struct SYNTH_T {
     }
     static float numRandom(void); //defined in Util.cpp for now
 };
-
-extern SYNTH_T *synth;
 #endif

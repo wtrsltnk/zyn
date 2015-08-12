@@ -17,10 +17,8 @@ class Fl_Oscilloscope : public Fl_Box, public Fl_Osc_Widget
 {
     public:
         Fl_Oscilloscope(int x,int y, int w, int h, const char *label=0)
-            :Fl_Box(x,y,w,h,label), Fl_Osc_Widget(this)
+            :Fl_Box(x,y,w,h,label), Fl_Osc_Widget(this), smps(0), oscilsize(0)
         {
-            smps = new float[synth->oscilsize];
-            memset(smps, 0, synth->oscilsize*sizeof(float));
             phase=64;
             box(FL_FLAT_BOX);
         }
@@ -33,6 +31,8 @@ class Fl_Oscilloscope : public Fl_Box, public Fl_Osc_Widget
         void init(bool base_waveform_p)
         {
             ext = (base_waveform_p ? "base-waveform": "waveform");
+            osc->createLink("/oscilsize", this);
+            osc->requestValue("/oscilsize");
             assert(osc);
             oscRegister(ext.c_str());
         }
@@ -42,21 +42,34 @@ class Fl_Oscilloscope : public Fl_Box, public Fl_Osc_Widget
             oscWrite(ext);
         }
 
+        virtual void OSC_value(int smp)
+        {
+            if(smp == oscilsize)
+                return;
+            oscilsize = smp;
+            delete []smps;
+            smps = new float[oscilsize];
+            memset(smps, 0, oscilsize*sizeof(float));
+        }
+
         virtual void OSC_value(unsigned N, void *data) override
         {
-            assert(N==(unsigned)(synth->oscilsize*4));
+            if(oscilsize == 0)
+                OSC_value((int)N/4);
+
+            assert(N==(unsigned)(oscilsize*4));
 
             memcpy(smps, data, N);
 
             //normalize
             float max=0;
-            for (int i=0;i<synth->oscilsize;i++)
+            for (int i=0;i<oscilsize;i++)
                 if(max<fabs(smps[i]))
                     max=fabs(smps[i]);
             if (max<0.00001) max=1.0;
             max *= -1.05;
 
-            for(int i=0; i < synth->oscilsize; ++i)
+            for(int i=0; i < oscilsize; ++i)
                 smps[i] /= max;
 
             //Get widget to redraw new data
@@ -97,16 +110,18 @@ class Fl_Oscilloscope : public Fl_Box, public Fl_Osc_Widget
 
             fl_color( fl_color_add_alpha( fl_color(), 127 ) );
 
-            int lw=2;
-            fl_line_style(FL_SOLID,lw);
-            fl_begin_line();
-            double ph=((phase-64.0)/128.0*synth->oscilsize+synth->oscilsize);
-            for (int i=1;i<lx;i++){
-                int k2=(synth->oscilsize*i/lx)+ph;
-                double y2=smps[k2%synth->oscilsize];
-                fl_vertex(i+ox,y2*ly/2.0+oy+ly/2);
+            if(smps) {
+                int lw=2;
+                fl_line_style(FL_SOLID,lw);
+                fl_begin_line();
+                double ph=((phase-64.0)/128.0*oscilsize+oscilsize);
+                for (int i=1;i<lx;i++){
+                    int k2=(oscilsize*i/lx)+ph;
+                    double y2=smps[k2%oscilsize];
+                    fl_vertex(i+ox,y2*ly/2.0+oy+ly/2);
+                }
+                fl_end_line();
             }
-            fl_end_line();
 
             fl_line_style(FL_SOLID,0);
         }
@@ -127,4 +142,5 @@ class Fl_Oscilloscope : public Fl_Box, public Fl_Osc_Widget
         }
 
         float *smps;
+        int oscilsize;
 };

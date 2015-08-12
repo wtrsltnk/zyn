@@ -27,7 +27,7 @@
 #include "../Misc/XMLwrapper.h"
 #include "Presets.h"
 
-class EnvelopeParams
+class EnvelopeParams:public Presets
 {
     public:
         EnvelopeParams(unsigned char Penvstretch_=64,
@@ -74,7 +74,7 @@ class EnvelopeParams
                      // 4 for ADSR_filter parameters (filter parameters)
                      // 5 for ASR_bw parameters (bandwidth parameters)
 
-        static rtosc::Ports &ports;
+        static const rtosc::Ports &ports;
     private:
         void store2defaults();
 

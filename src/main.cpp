@@ -44,8 +44,6 @@
 #include "Misc/Master.h"
 #include "Misc/Part.h"
 #include "Misc/Util.h"
-#include "Misc/Dump.h"
-extern Dump dump;
 
 //Nio System
 #include "Nio/Nio.h"
@@ -61,7 +59,6 @@ MiddleWare *middleware;
 using namespace std;
 
 Master   *master;
-SYNTH_T  *synth;
 int       swaplr = 0; //1 for left-right swapping
 
 int Pexitprogram = 0;     //if the UI set this to 1, the program will exit
@@ -94,17 +91,15 @@ void sigterm_exit(int /*sig*/)
 /*
  * Program initialisation
  */
-void initprogram(void)
+void initprogram(SYNTH_T synth, int prefered_port)
 {
-
-
-    middleware = new MiddleWare();
+    middleware = new MiddleWare(synth, prefered_port);
     master = middleware->spawnMaster();
     master->swaplr = swaplr;
 
     signal(SIGINT, sigterm_exit);
     signal(SIGTERM, sigterm_exit);
-    Nio::init(master);
+    Nio::init(master->synth, master);
 }
 
 /*
@@ -113,6 +108,7 @@ void initprogram(void)
 void exitprogram()
 {
     Nio::stop();
+    config.save();
 
     GUI::destroyUi(gui);
     delete middleware;
@@ -132,9 +128,8 @@ void exitprogram()
 int main(int argc, char *argv[])
 {
     main_thread = pthread_self();
-    synth = new SYNTH_T;
+    SYNTH_T synth;
     config.init();
-    dump.startnow();
     int noui = 0;
     cerr
     << "\nZynAddSubFX - Copyright (c) 2002-2013 Nasca Octavian Paul and others"
@@ -149,14 +144,14 @@ int main(int argc, char *argv[])
         cerr << "Try 'zynaddsubfx --help' for command-line options." << endl;
 
     /* Get the settings from the Config*/
-    synth->samplerate = config.cfg.SampleRate;
-    synth->buffersize = config.cfg.SoundBufferSize;
-    synth->oscilsize  = config.cfg.OscilSize;
+    synth.samplerate = config.cfg.SampleRate;
+    synth.buffersize = config.cfg.SoundBufferSize;
+    synth.oscilsize  = config.cfg.OscilSize;
     swaplr = config.cfg.SwapStereo;
 
-    Nio::preferedSampleRate(synth->samplerate);
+    Nio::preferedSampleRate(synth.samplerate);
 
-    synth->alias(); //build aliases
+    synth.alias(); //build aliases
 
     sprng(time(NULL));
 
@@ -176,9 +171,6 @@ int main(int argc, char *argv[])
         },
         {
             "oscil-size", 2, NULL, 'o'
-        },
-        {
-            "dump", 2, NULL, 'D'
         },
         {
             "swap", 2, NULL, 'S'
@@ -202,6 +194,12 @@ int main(int argc, char *argv[])
             "auto-connect", 0, NULL, 'a'
         },
         {
+            "pid-in-client-name", 0, NULL, 'p'
+        },
+        {
+            "prefered-port", 1, NULL, 'P',
+        },
+        {
             "output", 1, NULL, 'O'
         },
         {
@@ -219,6 +217,7 @@ int main(int argc, char *argv[])
     };
     opterr = 0;
     int option_index = 0, opt, exitwithhelp = 0, exitwithversion = 0;
+    int prefered_port = -1;
 
     string loadfile, loadinstrument, execAfterInit;
 
@@ -228,7 +227,7 @@ int main(int argc, char *argv[])
         /**\todo check this process for a small memory leak*/
         opt = getopt_long(argc,
                           argv,
-                          "l:L:r:b:o:I:O:N:e:hvaSDUY",
+                          "l:L:r:b:o:I:O:N:e:P:hvapSDUY",
                           opts,
                           &option_index);
         char *optarguments = optarg;
@@ -266,16 +265,16 @@ int main(int argc, char *argv[])
                 GETOP(loadinstrument);
                 break;
             case 'r':
-                GETOPNUM(synth->samplerate);
-                if(synth->samplerate < 4000) {
+                GETOPNUM(synth.samplerate);
+                if(synth.samplerate < 4000) {
                     cerr << "ERROR:Incorrect sample rate: " << optarguments
                          << endl;
                     exit(1);
                 }
                 break;
             case 'b':
-                GETOPNUM(synth->buffersize);
-                if(synth->buffersize < 2) {
+                GETOPNUM(synth.buffersize);
+                if(synth.buffersize < 2) {
                     cerr << "ERROR:Incorrect buffer size: " << optarguments
                          << endl;
                     exit(1);
@@ -283,23 +282,20 @@ int main(int argc, char *argv[])
                 break;
             case 'o':
                 if(optarguments)
-                    synth->oscilsize = tmp = atoi(optarguments);
-                if(synth->oscilsize < MAX_AD_HARMONICS * 2)
-                    synth->oscilsize = MAX_AD_HARMONICS * 2;
-                synth->oscilsize =
+                    synth.oscilsize = tmp = atoi(optarguments);
+                if(synth.oscilsize < MAX_AD_HARMONICS * 2)
+                    synth.oscilsize = MAX_AD_HARMONICS * 2;
+                synth.oscilsize =
                     (int) powf(2,
-                               ceil(logf(synth->oscilsize - 1.0f) / logf(2.0f)));
-                if(tmp != synth->oscilsize)
+                               ceil(logf(synth.oscilsize - 1.0f) / logf(2.0f)));
+                if(tmp != synth.oscilsize)
                     cerr
                     <<
-                    "synth->oscilsize is wrong (must be 2^n) or too small. Adjusting to "
-                    << synth->oscilsize << "." << endl;
+                    "synth.oscilsize is wrong (must be 2^n) or too small. Adjusting to "
+                    << synth.oscilsize << "." << endl;
                 break;
             case 'S':
                 swaplr = 1;
-                break;
-            case 'D':
-                dump.startnow();
                 break;
             case 'N':
                 Nio::setPostfix(optarguments);
@@ -314,6 +310,13 @@ int main(int argc, char *argv[])
                 break;
             case 'a':
                 Nio::autoConnect = true;
+                break;
+            case 'p':
+                Nio::pidInClientName = true;
+                break;
+            case 'P':
+                if(optarguments)
+                    prefered_port = atoi(optarguments);
                 break;
             case 'e':
                 GETOP(execAfterInit);
@@ -339,7 +342,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    synth->alias();
+    synth.alias();
 
     if(exitwithversion) {
         cout << "Version: " << VERSION << endl;
@@ -356,11 +359,13 @@ int main(int argc, char *argv[])
         "  -b BS, --buffer-size=SR\t\t Set the buffer size (granularity)\n"
              << "  -o OS, --oscil-size=OS\t\t Set the ADsynth oscil. size\n"
              << "  -S , --swap\t\t\t\t Swap Left <--> Right\n"
-             << "  -D , --dump\t\t\t\t Dumps midi note ON/OFF commands\n"
              <<
         "  -U , --no-gui\t\t\t\t Run ZynAddSubFX without user interface\n"
              << "  -N , --named\t\t\t\t Postfix IO Name when possible\n"
              << "  -a , --auto-connect\t\t\t AutoConnect when using JACK\n"
+             << "  -p , --pid-in-client-name\t\t Append PID to (JACK) "
+                "client name\n"
+             << "  -P , --prefered-port\t\t\t Prefered OSC Port\n"
              << "  -O , --output\t\t\t\t Set Output Engine\n"
              << "  -I , --input\t\t\t\t Set Input Engine\n"
              << "  -e , --exec-after-init\t\t Run post-initialization script\n"
@@ -371,11 +376,11 @@ int main(int argc, char *argv[])
     }
 
     //produce denormal buf
-    denormalkillbuf = new float [synth->buffersize];
-    for(int i = 0; i < synth->buffersize; ++i)
+    denormalkillbuf = new float [synth.buffersize];
+    for(int i = 0; i < synth.buffersize; ++i)
         denormalkillbuf[i] = (RND - 0.5f) * 1e-16;
 
-    initprogram();
+    initprogram(synth, prefered_port);
 
     if(!loadfile.empty()) {
         int tmp = master->loadXML(loadfile.c_str());
@@ -411,11 +416,10 @@ int main(int argc, char *argv[])
     
     cerr.precision(1);
     cerr << std::fixed;
-    cerr << "\nSample Rate = \t\t" << synth->samplerate << endl;
-    cerr << "Sound Buffer Size = \t" << synth->buffersize << " samples" << endl;
-    cerr << "Internal latency = \t" << synth->buffersize_f * 1000.0f
-    / synth->samplerate_f << " ms" << endl;
-    cerr << "ADsynth Oscil.Size = \t" << synth->oscilsize << " samples" << endl;
+    cerr << "\nSample Rate = \t\t" << synth.samplerate << endl;
+    cerr << "Sound Buffer Size = \t" << synth.buffersize << " samples" << endl;
+    cerr << "Internal latency = \t" << synth.dt() * 1000.0f << " ms" << endl;
+    cerr << "ADsynth Oscil.Size = \t" << synth.oscilsize << " samples" << endl;
 
     if(!execAfterInit.empty()) {
         cout << "Executing user supplied command: " << execAfterInit << endl;
@@ -424,14 +428,33 @@ int main(int argc, char *argv[])
     }
 
 
-    gui = GUI::createUi(middleware->spawnUiApi(), &Pexitprogram);
+    gui = NULL;
+
+    //Capture Startup Responses
+    typedef std::vector<const char *> wait_t;
+    wait_t msg_waitlist;
+    middleware->setUiCallback([](void*v,const char*msg) {
+            wait_t &wait = *(wait_t*)v;
+            size_t len = rtosc_message_length(msg, -1);
+            char *copy = new char[len];
+            memcpy(copy, msg, len);
+            wait.push_back(copy);
+            }, &msg_waitlist);
+
+    if(!noui)
+        gui = GUI::createUi(middleware->spawnUiApi(), &Pexitprogram);
     middleware->setUiCallback(GUI::raiseUi, gui);
-    middleware->setIdleCallback([](){GUI::tickUi(gui);});
-    middlewarepointer = middleware;
+    middleware->setIdleCallback([](void*){GUI::tickUi(gui);}, NULL);
+
+    //Replay Startup Responses
+    for(auto msg:msg_waitlist) {
+        GUI::raiseUi(gui, msg);
+        delete [] msg;
+    }
 
     if(!noui)
     {
-        GUI::raiseUi(gui, "/show",  "T");
+        GUI::raiseUi(gui, "/show",  "i", config.cfg.UserInterfaceMode);
         if(!ioGood)
             GUI::raiseUi(gui, "/alert", "s",
                     "Default IO did not initialize.\nDefaulting to NULL backend.");

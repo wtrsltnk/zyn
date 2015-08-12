@@ -26,6 +26,9 @@ decl {\#include "../Misc/Util.h"} {public local
 decl {\#include "WidgetPDial.h"} {public local
 } 
 
+decl {\#include "Fl_Osc_Counter.H"} {public local
+}
+
 decl {\#include "common.H"} {public local
 } 
 
@@ -61,7 +64,7 @@ decl {const int keysoct1az[]={'a',233,'z','\\"','e','r','(','t','-','y',232,'u',
 decl {const int keysoct2az[]={'w','s','x','d','c','v','g','b','h','n','j',',',';','l',':','m','!',0};} {private local
 } 
 
-class VirKeys {open : {public Fl_Box}
+class VirKeys {open : {public Fl_Box, public Fl_Osc_Widget}
 } {
   decl {static const int N_OCT=6;} {private local
   }
@@ -69,14 +72,22 @@ class VirKeys {open : {public Fl_Box}
   }
   decl {static const int SIZE_BLACK=8;} {private local
   }
-  Function {VirKeys(int x,int y, int w, int h, const char *label=0):Fl_Box(x,y,w,h,label)} {} {
+  Function {VirKeys(int x,int y, int w, int h, const char *label=0):Fl_Box(x,y,w,h,label),Fl_Osc_Widget()} {} {
     code {} {}
+  }
+  Function {OSC_value(int layout)} {} {
+    code {
+    keylayout = layout;
+    } {}
   }
   Function {init(Fl_Osc_Interface *osc_, std::string loc_)} {open
   } {
     code {osc=osc_;
+    osc->createLink("/config/cfg.VirKeybLayout", this);
+    osc->requestValue("/config/cfg.VirKeybLayout");
 loc=loc_;
 for (int i=0;i<N_OCT*12+1;i++) pressed[i]=0;
+keylayout=0;
 midich=0;
 midivel=100;
 midioct=2;
@@ -91,10 +102,10 @@ rndvelocity=0;} {selected
 
 \#ifdef NTK_GUI
 \#ifdef CARLA_VERSION_STRING
- Fl_Image *white_up = Fl_Shared_Image::get( gUiPixmapPath + "white_key.png" );
- Fl_Image *white_down = Fl_Shared_Image::get( gUiPixmapPath + "white_key_pressed.png" );
- Fl_Image *black_up = Fl_Shared_Image::get( gUiPixmapPath + "black_key.png" );
- Fl_Image *black_down = Fl_Shared_Image::get( gUiPixmapPath + "black_key_pressed.png" );
+ Fl_Image *white_up = Fl_Shared_Image::get( gUiPixmapPath + "/white_key.png" );
+ Fl_Image *white_down = Fl_Shared_Image::get( gUiPixmapPath + "/white_key_pressed.png" );
+ Fl_Image *black_up = Fl_Shared_Image::get( gUiPixmapPath + "/black_key.png" );
+ Fl_Image *black_down = Fl_Shared_Image::get( gUiPixmapPath + "/black_key_pressed.png" );
 \#else
  Fl_Image *white_up = Fl_Shared_Image::get( PIXMAP_PATH "white_key.png" );
  Fl_Image *white_down = Fl_Shared_Image::get( PIXMAP_PATH "white_key_pressed.png" );
@@ -221,10 +232,10 @@ if ((event==FL_PUSH)||(event==FL_DRAG)||(event==FL_RELEASE)){
 
    if ((event==FL_PUSH)&&(Fl::event_shift()!=0)) {
        if (pressed[kpos]==0) presskey(kpos,0,1);
-          else relasekey(kpos,1);
+          else releasekey(kpos,1);
    };
    if ((event==FL_RELEASE)&&(Fl::event_shift()==0))
-        relaseallkeys(1);
+        releaseallkeys(1);
    take_focus();
 };
 
@@ -232,13 +243,13 @@ if ((event==FL_PUSH)||(event==FL_DRAG)||(event==FL_RELEASE)){
 const int *keysoct1=keysoct1qwerty;
 const int *keysoct2=keysoct2qwerty;
 
-if (config.cfg.VirKeybLayout==2) {
+if (keylayout==2) {
 	keysoct1=keysoct1dw;
 	keysoct2=keysoct2dw;
-}else if (config.cfg.VirKeybLayout==3) {
+}else if (keylayout==3) {
 	keysoct1=keysoct1qwertz;
 	keysoct2=keysoct2qwertz;
-}else if (config.cfg.VirKeybLayout==4) {
+}else if (keylayout==4) {
 	keysoct1=keysoct1az;
 	keysoct2=keysoct2az;
 };
@@ -255,7 +266,7 @@ if ((event==FL_KEYDOWN)||(event==FL_KEYUP)){
    if (kpos==-1) return(0);
    if ((event==FL_KEYUP) && (Fl::event_key(key)==0) && (Fl::get_key(key)!=0)) return(0);
    if (event==FL_KEYDOWN) presskey(kpos,0,2);
-      else relasekey(kpos,2);
+      else releasekey(kpos,2);
 };
 
 return(1);} {}
@@ -265,24 +276,24 @@ return(1);} {}
 //when the user uses the shift key
 if (nk>=N_OCT*12) return;
 if ((nk<0)&&(exclusive==0)) {
-  relaseallkeys(type);
+  releaseallkeys(type);
   return;
 };
 if (nk<0) return;
 if (pressed[nk]!=0) return;//the key is already pressed
 
-if (exclusive!=0) relaseallkeys(type);
+if (exclusive!=0) releaseallkeys(type);
 pressed[nk]=type;
 
 damage(1);
 float vel=midivel;
 if (rndvelocity!=0){
-  vel=midivel*(127.0-rndvelocity)/127.0+RND*rndvelocity;
+  vel=midivel*(127.0-rndvelocity)/127.0+(rand()/RAND_MAX)*rndvelocity;
 };
 
 osc->write(loc+"noteOn", "iii", midich,nk+midioct*12,(int)vel);} {}
   }
-  Function {relasekey(int nk,int type)} {} {
+  Function {releasekey(int nk,int type)} {} {
     code {if ((nk<0)||(nk>=N_OCT*12)) return;
 if (pressed[nk]==0) return;//the key is not pressed
 if ((type!=0)&&(pressed[nk]!=type)) return;
@@ -294,12 +305,14 @@ damage(1);
 
 osc->write(loc+"noteOff", "ii", midich,nk+12*midioct);} {}
   }
-  Function {relaseallkeys(int type)} {} {
-    code {for (int i=0;i<N_OCT*12;i++) relasekey(i,type);} {}
+  Function {releaseallkeys(int type)} {} {
+    code {for (int i=0;i<N_OCT*12;i++) releasekey(i,type);} {}
   }
   decl {int pressed[N_OCT*12+1];} {private local
   }
   decl {unsigned char midich;} {public local
+  }
+  decl {int keylayout;} {public local
   }
   decl {unsigned char midivel;} {public local
   }
@@ -319,7 +332,7 @@ class VirKeyboard {open
   } {
     Fl_Window virkeyboardwindow {
       label {Virtual Keyboard - ZynAddSubFX}
-      callback {relaseallkeys();
+      callback {releaseallkeys();
 virkeyboardwindow->hide();} open
       xywh {103 620 650 130} type Double visible
     } {
@@ -331,7 +344,7 @@ virkeyboardwindow->hide();} open
       }
       Fl_Counter {} {
         label {"qwer.." Oct}
-        callback {relaseallkeys();
+        callback {releaseallkeys();
 virkeys->keyoct1=(int) o->value();
 virkeys->take_focus();}
         tooltip {keys "q2w3er5t6y..." octave} xywh {380 95 45 15} type Simple labelsize 10 align 4 when 6 minimum 0 maximum 5 step 1 textfont 1 textsize 10
@@ -339,7 +352,7 @@ virkeys->take_focus();}
       }
       Fl_Counter {} {
         label {"zxcv.." Oct}
-        callback {relaseallkeys();
+        callback {releaseallkeys();
 virkeys->keyoct2=(int) o->value();
 virkeys->take_focus();}
         tooltip {keys "zsxdcvgbh..." octave} xywh {380 110 45 15} type Simple labelsize 10 align 4 when 6 minimum 0 maximum 5 step 1 textfont 1 textsize 10
@@ -354,7 +367,7 @@ virkeys->take_focus();}
       }
       Fl_Counter {} {
         label {Oct.}
-        callback {relaseallkeys();
+        callback {releaseallkeys();
 virkeys->midioct=(int) o->value();
 virkeys->take_focus();}
         tooltip {Midi Octave} xywh {255 100 55 20} type Simple labelsize 11 align 4 when 6 minimum 0 maximum 5 step 1 textfont 1 textsize 11
@@ -362,7 +375,7 @@ virkeys->take_focus();}
       }
       Fl_Button {} {
         label Close
-        callback {relaseallkeys();
+        callback {releaseallkeys();
 virkeyboardwindow->hide();}
         xywh {545 105 55 20} box THIN_UP_BOX
       }
@@ -469,7 +482,7 @@ pitchwheelroller->do_callback();}
       }
       Fl_Choice partrcv {
         label {MIDI Ch.}
-        callback {relaseallkeys();
+        callback {releaseallkeys();
 virkeys->midich=(int) o->value();
 virkeys->take_focus();} open
         tooltip {Send to Midi Channel} xywh {20 105 65 20} down_box BORDER_BOX labelsize 10 align 5 textfont 1 textsize 10
@@ -493,9 +506,9 @@ make_window();} {}
   } {
     code {virkeyboardwindow->show();} {}
   }
-  Function {relaseallkeys()} {open
+  Function {releaseallkeys()} {open
   } {
-    code {virkeys->relaseallkeys(0);} {}
+    code {virkeys->releaseallkeys(0);} {}
   }
   decl {int midictl;} {private local
   }

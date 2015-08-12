@@ -81,8 +81,6 @@ void InMgr::flush(unsigned frameStart, unsigned frameStop)
 
         switch(ev.type) {
             case M_NOTE:
-                dump.dumpnote(ev.channel, ev.num, ev.value);
-
                 if(ev.value)
                     master->noteOn(ev.channel, ev.num, ev.value);
                 else
@@ -90,7 +88,6 @@ void InMgr::flush(unsigned frameStart, unsigned frameStop)
                 break;
 
             case M_CONTROLLER:
-                dump.dumpcontroller(ev.channel, ev.num, ev.value);
                 master->setController(ev.channel, ev.num, ev.value);
                 break;
 
@@ -98,8 +95,7 @@ void InMgr::flush(unsigned frameStart, unsigned frameStop)
                 for(int i=0; i < NUM_MIDI_PARTS; ++i) {
                     //set the program of the parts assigned to the midi channel
                     if(master->part[i]->Prcvchn == ev.channel) {
-                        bToU->write("/setprogram", "cc", i, ev.num);
-                        middleware->pendingSetProgram(i);
+                        middleware->pendingSetProgram(i, ev.num);
                     }
                 }
                 break;
@@ -148,7 +144,7 @@ string InMgr::getSource() const
 
 MidiIn *InMgr::getIn(string name)
 {
-    EngineMgr &eng = EngineMgr::getInstance();
+    EngineMgr &eng = EngineMgr::getInstance(NULL);
     return dynamic_cast<MidiIn *>(eng.getEng(name));
 }
 

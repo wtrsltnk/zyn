@@ -27,7 +27,7 @@
 #include "../Misc/XMLwrapper.h"
 #include "PresetsArray.h"
 
-class FilterParams
+class FilterParams:public PresetsArray
 {
     public:
         FilterParams();
@@ -42,6 +42,7 @@ class FilterParams
         void getfromXML(XMLwrapper *xml);
         void getfromXMLsection(XMLwrapper *xml, int n);
         void paste(FilterParams &);
+        void pasteArray(FilterParams &, int section);
 
 
         void getfromFilterParams(FilterParams *pars);
@@ -84,17 +85,17 @@ class FilterParams
         float getfreqpos(float freq);
         float getfreqx(float x);
 
-        void formantfilterH(int nvowel, int nfreqs, float *freqs); //used by UI
-
         float getformantfreq(unsigned char freq);
         float getformantamp(unsigned char amp);
         float getformantq(unsigned char q);
 
+        void defaults(int n);
+
+
         bool changed;
 
-        static rtosc::Ports ports;
+        static const rtosc::Ports ports;
     private:
-        void defaults(int n);
 
         //stored default parameters
         unsigned char Dtype;

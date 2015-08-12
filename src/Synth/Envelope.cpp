@@ -24,20 +24,18 @@
 #include "Envelope.h"
 #include "../Params/EnvelopeParams.h"
 
-Envelope::Envelope(EnvelopeParams &pars, float basefreq)
+Envelope::Envelope(EnvelopeParams &pars, float basefreq, float bufferdt)
 {
     envpoints = pars.Penvpoints;
     if(envpoints > MAX_ENVELOPE_POINTS)
         envpoints = MAX_ENVELOPE_POINTS;
     envsustain     = (pars.Penvsustain == 0) ? -1 : pars.Penvsustain;
-    forcedrelase   = pars.Pforcedrelease;
+    forcedrelease   = pars.Pforcedrelease;
     envstretch     = powf(440.0f / basefreq, pars.Penvstretch / 64.0f);
     linearenvelope = pars.Plinearenvelope;
 
     if(!pars.Pfreemode)
         pars.converttofree();
-
-    const float bufferdt = synth->buffersize_f / synth->samplerate_f;
 
     int mode = pars.Envmode;
 
@@ -92,14 +90,14 @@ Envelope::~Envelope()
 
 
 /*
- * Relase the key (note envelope)
+ * Release the key (note envelope)
  */
-void Envelope::relasekey()
+void Envelope::releasekey()
 {
     if(keyreleased)
         return;
     keyreleased = true;
-    if(forcedrelase != 0)
+    if(forcedrelease != 0)
         t = 0.0f;
 }
 
@@ -119,7 +117,7 @@ float Envelope::envout()
         return envoutval;
     }
 
-    if(keyreleased && (forcedrelase != 0)) { //do the forced release
+    if(keyreleased && (forcedrelease != 0)) { //do the forced release
         int tmp = (envsustain < 0) ? (envpoints - 1) : (envsustain + 1); //if there is no sustain point, use the last point for release
 
         if(envdt[tmp] < 0.00000001f)
@@ -130,7 +128,7 @@ float Envelope::envout()
 
         if(t >= 1.0f) {
             currentpoint = envsustain + 2;
-            forcedrelase = 0;
+            forcedrelease = 0;
             t    = 0.0f;
             inct = envdt[currentpoint];
             if((currentpoint >= envpoints) || (envsustain < 0))
@@ -175,7 +173,7 @@ float Envelope::envout_dB()
     if(linearenvelope != 0)
         return envout();
 
-    if((currentpoint == 1) && (!keyreleased || (forcedrelase == 0))) { //first point is always lineary interpolated
+    if((currentpoint == 1) && (!keyreleased || (forcedrelease == 0))) { //first point is always lineary interpolated
         float v1 = env_dB2rap(envval[0]);
         float v2 = env_dB2rap(envval[1]);
         out = v1 + (v2 - v1) * t;

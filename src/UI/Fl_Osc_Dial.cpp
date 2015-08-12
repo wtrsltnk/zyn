@@ -8,7 +8,7 @@
 #include <cassert>
 #include <sstream>
 
-static void callback_fn(Fl_Widget *w, void *)
+static void callback_fn_dial(Fl_Widget *w, void *)
 {
     ((Fl_Osc_Dial*)w)->cb();
 }
@@ -28,7 +28,7 @@ Fl_Osc_Dial::Fl_Osc_Dial(int X, int Y, int W, int H, const char *label)
     :WidgetPDial(X,Y,W,H, label), Fl_Osc_Widget(this), alt_style(false), dead(false)
 {
     bounds(0.0, 127.0f);
-    WidgetPDial::callback(callback_fn);
+    WidgetPDial::callback(callback_fn_dial);
 }
 
 
@@ -62,11 +62,15 @@ void Fl_Osc_Dial::callback(Fl_Callback *cb, void *p)
 
 int Fl_Osc_Dial::handle(int ev)
 {
-    bool middle_mouse = (ev == FL_PUSH && Fl::event_state(FL_BUTTON2));
+    bool middle_mouse = (ev == FL_PUSH && Fl::event_state(FL_BUTTON2) && !Fl::event_shift());
     bool ctl_click    = (ev == FL_PUSH && Fl::event_state(FL_BUTTON1) && Fl::event_ctrl());
+    bool shift_middle = (ev == FL_PUSH && Fl::event_state(FL_BUTTON2) && Fl::event_shift());
     if(middle_mouse || ctl_click) {
         printf("Trying to learn...\n");
         osc->write("/learn", "s", (loc+ext).c_str());
+        return 1;
+    } else if(shift_middle) {
+        osc->write("/unlearn", "s", (loc+ext).c_str());
         return 1;
     }
     return WidgetPDial::handle(ev);
@@ -74,12 +78,15 @@ int Fl_Osc_Dial::handle(int ev)
 
 void Fl_Osc_Dial::OSC_value(int v)
 {
-    value(v+minimum());
+    if(64 != (int)minimum())
+        value(v+minimum()+fmodf(value(), 1));
+    else
+        value(v+fmodf(value(), 1));
 }
 
 void Fl_Osc_Dial::OSC_value(char v)
 {
-    value(v+minimum());
+    value(v+minimum()+fmodf(value(), 1));
 }
 
 void Fl_Osc_Dial::update(void)
@@ -91,11 +98,10 @@ void Fl_Osc_Dial::cb(void)
 {
     assert(osc);
 
-/*    if((maximum()-minimum()) == 127 || (maximum()-minimum()) == 255) {
-	oscWrite(ext, "i", (int)(value()-minimum()));
-    }
-    else*/
+    if(64 != (int)minimum())
         oscWrite(ext, "i", (int)(value()-minimum()));
+    else
+        oscWrite(ext, "i", (int)(value()));
 
     if(cb_data.first)
         cb_data.first(this, cb_data.second);

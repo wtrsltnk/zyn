@@ -30,6 +30,7 @@
 #include "../DSP/FFTwrapper.h"
 #include "../Misc/Allocator.h"
 #include "../Nio/Nio.h"
+#include "PresetExtractor.h"
 
 #include <rtosc/ports.h>
 #include <rtosc/port-sugar.h>
@@ -48,7 +49,7 @@ using namespace std;
 using namespace rtosc;
 #define rObject Master
 
-static Ports sysefxPort =
+static const Ports sysefxPort =
 {
     {"part#" STRINGIFY(NUM_MIDI_PARTS) "::i", 0, 0, [](const char *m, RtData&d)
         {
@@ -75,7 +76,7 @@ static Ports sysefxPort =
         }}
 };
 
-static Ports sysefsendto = 
+static const Ports sysefsendto =
 {
     {"to#" STRINGIFY(NUM_SYS_EFX) "::i", 0, 0, [](const char *m, RtData&d)
         {
@@ -99,7 +100,7 @@ static Ports sysefsendto =
         }}
 };
 
-static Ports localports = {
+static const Ports master_ports = {
     rRecursp(part, 16, "Part"),//NUM_MIDI_PARTS
     rRecursp(sysefx, 4, "System Effect"),//NUM_SYS_EFX
     rRecursp(insefx, 8, "Insertion Effect"),//NUM_INS_EFX
@@ -107,11 +108,11 @@ static Ports localports = {
     rRecur(ctl, "Controller"),
     rParamZyn(Pkeyshift,  "Global Key Shift"),
     rArrayI(Pinsparts, NUM_INS_EFX, "Part to insert part onto"),
-    {"echo", rDoc("Hidden port to echo messages"), 0, [](const char *m, RtData&) {
-       bToU->raw_write(m-1);}},
+    {"echo", rDoc("Hidden port to echo messages"), 0, [](const char *m, RtData&d) {
+       d.reply(m-1);}},
     {"get-vu", rDoc("Grab VU Data"), 0, [](const char *, RtData &d) {
        Master *m = (Master*)d.obj;
-       bToU->write("/vu-meter", "bb", sizeof(m->vu), &m->vu, sizeof(float)*NUM_MIDI_PARTS, m->vuoutpeakpart);}},
+       d.reply("/vu-meter", "bb", sizeof(m->vu), &m->vu, sizeof(float)*NUM_MIDI_PARTS, m->vuoutpeakpart);}},
     {"reset-vu", rDoc("Grab VU Data"), 0, [](const char *, RtData &d) {
        Master *m = (Master*)d.obj;
        m->vuresetpeaks();}},
@@ -179,7 +180,7 @@ static Ports localports = {
             Master *M =  (Master*)d.obj;
             std::atomic_thread_fence(std::memory_order_release);
             M->frozenState = true;
-            d.reply("/state_frozen");}},
+            d.reply("/state_frozen", "");}},
     {"thaw_state:", rDoc("Internal Read-only Mode"), 0,
         [](const char *,RtData &d) {
             Master *M =  (Master*)d.obj;
@@ -193,8 +194,12 @@ static Ports localports = {
             Master *M =  (Master*)d.obj;
             printf("learning '%s'\n", rtosc_argument(m,0).s);
             M->midi.learn(rtosc_argument(m,0).s);}},
-    {"close-ui", rDoc("Request to close any connection named \"GUI\""), 0, [](const char *, RtData &) {
-       bToU->write("/close-ui", "");}},
+    {"unlearn:s", rDoc("Remove Learning for specified address"), 0,
+        [](const char *m, RtData &d){
+            Master *M =  (Master*)d.obj;
+            M->midi.clear_entry(rtosc_argument(m,0).s);}},
+    {"close-ui", rDoc("Request to close any connection named \"GUI\""), 0, [](const char *, RtData &d) {
+       d.reply("/close-ui", "");}},
     {"add-rt-memory:bi", rProp(internal) rDoc("Add Additional Memory To RT MemPool"), 0,
         [](const char *msg, RtData &d)
         {
@@ -204,16 +209,32 @@ static Ports localports = {
             m.memory->addMemory(mem, i);
             m.pendingMemory = false;
         }},
+    {"samplerate:", rMap(unit, Hz) rDoc("Synthesizer Global Sample Rate"), 0, [](const char *, RtData &d) {
+            Master &m = *(Master*)d.obj;
+            d.reply("/samplerate", "f", m.synth.samplerate_f);
+        }},
+    {"oscilsize:", rDoc("Synthesizer Global Oscillator Size"), 0, [](const char *, RtData &d) {
+            Master &m = *(Master*)d.obj;
+            d.reply("/oscilsize", "f", m.synth.oscilsize_f);
+            d.reply("/oscilsize", "i", m.synth.oscilsize);
+        }},
     {"undo_pause",0,0,[](const char *, rtosc::RtData &d)
         {d.reply("/undo_pause", "");}},
     {"undo_resume",0,0,[](const char *, rtosc::RtData &d)
         {d.reply("/undo_resume", "");}},
+    {"config/", 0, &Config::ports, [](const char *, rtosc::RtData &){}},
+    {"presets/", 0, &preset_ports, rBOIL_BEGIN
+        SNIP
+            preset_ports.dispatch(msg, data);
+        rBOIL_END},
 };
+const Ports &Master::ports = master_ports;
 
-
-
-Ports &Master::ports = localports;
+#ifndef PLUGINVERSION
+//XXX HACKS
 Master *the_master;
+rtosc::ThreadLink *the_bToU;
+#endif
 
 class DataObj:public rtosc::RtData
 {
@@ -227,7 +248,7 @@ class DataObj:public rtosc::RtData
             bToU     = bToU_;
         }
 
-        virtual void reply(const char *path, const char *args, ...)
+        virtual void reply(const char *path, const char *args, ...) override
         {
             va_list va;
             va_start(va,args);
@@ -236,14 +257,16 @@ class DataObj:public rtosc::RtData
             reply(buffer);
             va_end(va);
         }
-        virtual void reply(const char *msg)
+        virtual void reply(const char *msg) override
         {
+            if(rtosc_message_length(msg, -1) == 0)
+                fprintf(stderr, "Warning: Invalid Rtosc message '%s'\n", msg);
             bToU->raw_write(msg);
         }
         virtual void broadcast(const char *path, const char *args, ...) override{
             va_list va;
             va_start(va,args);
-            reply("/broadcast");
+            reply("/broadcast", "");
             char *buffer = bToU->buffer();
             rtosc_vmessage(buffer,bToU->buffer_size(),path,args,va);
             reply(buffer);
@@ -263,18 +286,22 @@ vuData::vuData(void)
       rmspeakl(0.0f), rmspeakr(0.0f), clipped(0)
 {}
 
-Master::Master()
-:midi(Master::ports), frozenState(false), pendingMemory(false)
+Master::Master(const SYNTH_T &synth_)
+:HDDRecorder(synth_), ctl(synth_), midi(Master::ports), frozenState(false), pendingMemory(false), synth(synth_)
 {
+    bToU = NULL;
+    uToB = NULL;
     memory = new Allocator();
-    the_master = this;
     swaplr = 0;
     off  = 0;
     smps = 0;
-    bufl = new float[synth->buffersize];
-    bufr = new float[synth->buffersize];
+    bufl = new float[synth.buffersize];
+    bufr = new float[synth.buffersize];
+#ifndef PLUGINVERSION
+    the_master = this;
+#endif
 
-    fft = new FFTwrapper(synth->oscilsize);
+    fft = new FFTwrapper(synth.oscilsize);
 
     shutup = 0;
     for(int npart = 0; npart < NUM_MIDI_PARTS; ++npart) {
@@ -283,39 +310,46 @@ Master::Master()
     }
 
     for(int npart = 0; npart < NUM_MIDI_PARTS; ++npart)
-        part[npart] = new Part(*memory, &microtonal, fft);
+        part[npart] = new Part(*memory, synth, &microtonal, fft);
 
     //Insertion Effects init
     for(int nefx = 0; nefx < NUM_INS_EFX; ++nefx)
-        insefx[nefx] = new EffectMgr(*memory, 1);
+        insefx[nefx] = new EffectMgr(*memory, synth, 1);
 
     //System Effects init
     for(int nefx = 0; nefx < NUM_SYS_EFX; ++nefx)
-        sysefx[nefx] = new EffectMgr(*memory, 0);
+        sysefx[nefx] = new EffectMgr(*memory, synth, 0);
 
 
     defaults();
 
+#ifndef PLUGINVERSION
     midi.event_cb = [](const char *m)
     {
         char loc_buf[1024];
-        DataObj d{loc_buf, 1024, the_master, bToU};
-        memset(loc_buf, sizeof(loc_buf), 0);
+        DataObj d{loc_buf, 1024, the_master, the_bToU};
+        memset(loc_buf, 0, sizeof(loc_buf));
         //printf("sending an event to the owner of '%s'\n", m);
         Master::ports.dispatch(m+1, d);
     };
+#else
+    midi.event_cb = [](const char *) {};
+#endif
 
     midi.error_cb = [](const char *a, const char *b)
     {
         fprintf(stderr, "MIDI- got an error '%s' -- '%s'\n",a,b);
     };
+
+    mastercb = 0;
+    mastercb_ptr = 0;
 }
 
 void Master::applyOscEvent(const char *msg)
 {
     char loc_buf[1024];
     DataObj d{loc_buf, 1024, this, bToU};
-    memset(loc_buf, sizeof(loc_buf), 0);
+    memset(loc_buf, 0, sizeof(loc_buf));
     d.matches = 0;
     ports.dispatch(msg+1, d);
     if(d.matches == 0)
@@ -448,7 +482,7 @@ void Master::vuUpdate(const float *outl, const float *outr)
     //Peak computation (for vumeters)
     vu.outpeakl = 1e-12;
     vu.outpeakr = 1e-12;
-    for(int i = 0; i < synth->buffersize; ++i) {
+    for(int i = 0; i < synth.buffersize; ++i) {
         if(fabs(outl[i]) > vu.outpeakl)
             vu.outpeakl = fabs(outl[i]);
         if(fabs(outr[i]) > vu.outpeakr)
@@ -464,12 +498,12 @@ void Master::vuUpdate(const float *outl, const float *outr)
     //RMS Peak computation (for vumeters)
     vu.rmspeakl = 1e-12;
     vu.rmspeakr = 1e-12;
-    for(int i = 0; i < synth->buffersize; ++i) {
+    for(int i = 0; i < synth.buffersize; ++i) {
         vu.rmspeakl += outl[i] * outl[i];
         vu.rmspeakr += outr[i] * outr[i];
     }
-    vu.rmspeakl = sqrt(vu.rmspeakl / synth->buffersize_f);
-    vu.rmspeakr = sqrt(vu.rmspeakr / synth->buffersize_f);
+    vu.rmspeakl = sqrt(vu.rmspeakl / synth.buffersize_f);
+    vu.rmspeakr = sqrt(vu.rmspeakr / synth.buffersize_f);
 
     //Part Peak computation (for Part vumeters or fake part vumeters)
     for(int npart = 0; npart < NUM_MIDI_PARTS; ++npart) {
@@ -477,7 +511,7 @@ void Master::vuUpdate(const float *outl, const float *outr)
         if(part[npart]->Penabled != 0) {
             float *outl = part[npart]->partoutl,
             *outr = part[npart]->partoutr;
-            for(int i = 0; i < synth->buffersize; ++i) {
+            for(int i = 0; i < synth.buffersize; ++i) {
                 float tmp = fabs(outl[i] + outr[i]);
                 if(tmp > vuoutpeakpart[npart])
                     vuoutpeakpart[npart] = tmp;
@@ -510,6 +544,12 @@ void Master::partonoff(int npart, int what)
         part[npart]->Penabled = 1;
         fakepeakpart[npart]   = 0;
     }
+}
+
+void Master::setMasterChangedCallback(void(*cb)(void*,Master*), void *ptr)
+{
+    mastercb     = cb;
+    mastercb_ptr = ptr;
 }
 
 #if 0
@@ -574,7 +614,7 @@ void Master::AudioOut(float *outl, float *outr)
 {
     //Danger Limits
     if(memory->lowMemory(2,1024*1024))
-        printf("LOW MEMORY OHOH NOONONONONOOOOOOOO!!\n");
+        printf("QUITE LOW MEMORY IN THE RT POOL BE PREPARED FOR WEIRD BEHAVIOR!!\n");
     //Normal Limits
     if(!pendingMemory && memory->lowMemory(4,1024*1024)) {
         printf("Requesting more memory\n");
@@ -584,9 +624,9 @@ void Master::AudioOut(float *outl, float *outr)
     //Handle user events TODO move me to a proper location
     char loc_buf[1024];
     DataObj d{loc_buf, 1024, this, bToU};
-    memset(loc_buf, sizeof(loc_buf), 0);
+    memset(loc_buf, 0, sizeof(loc_buf));
     int events = 0;
-    while(uToB->hasNext() && events < 10) {
+    while(uToB && uToB->hasNext() && events < 10) {
         const char *msg = uToB->read();
 
         if(!strcmp(msg, "/load-master")) {
@@ -594,6 +634,8 @@ void Master::AudioOut(float *outl, float *outr)
             Master *new_master  = *(Master**)rtosc_argument(msg, 0).b.data;
             new_master->AudioOut(outl, outr);
             Nio::masterSwap(new_master);
+            if (mastercb)
+                mastercb(mastercb_ptr, new_master);
             bToU->write("/free", "sb", "Master", sizeof(Master*), &this_master);
             return;
         }
@@ -632,8 +674,8 @@ void Master::AudioOut(float *outl, float *outr)
         swap(outl, outr);
 
     //clean up the output samples (should not be needed?)
-    memset(outl, 0, synth->bufferbytes);
-    memset(outr, 0, synth->bufferbytes);
+    memset(outl, 0, synth.bufferbytes);
+    memset(outr, 0, synth.bufferbytes);
 
     //Compute part samples and store them part[npart]->partoutl,partoutr
     for(int npart = 0; npart < NUM_MIDI_PARTS; ++npart)
@@ -670,11 +712,11 @@ void Master::AudioOut(float *outl, float *outr)
         //the volume or the panning has changed and needs interpolation
         if(ABOVE_AMPLITUDE_THRESHOLD(oldvol.l, newvol.l)
            || ABOVE_AMPLITUDE_THRESHOLD(oldvol.r, newvol.r)) {
-            for(int i = 0; i < synth->buffersize; ++i) {
+            for(int i = 0; i < synth.buffersize; ++i) {
                 Stereo<float> vol(INTERPOLATE_AMPLITUDE(oldvol.l, newvol.l,
-                                                        i, synth->buffersize),
+                                                        i, synth.buffersize),
                                   INTERPOLATE_AMPLITUDE(oldvol.r, newvol.r,
-                                                        i, synth->buffersize));
+                                                        i, synth.buffersize));
                 part[npart]->partoutl[i] *= vol.l;
                 part[npart]->partoutr[i] *= vol.r;
             }
@@ -682,7 +724,7 @@ void Master::AudioOut(float *outl, float *outr)
             part[npart]->oldvolumer = newvol.r;
         }
         else {
-            for(int i = 0; i < synth->buffersize; ++i) { //the volume did not changed
+            for(int i = 0; i < synth.buffersize; ++i) { //the volume did not changed
                 part[npart]->partoutl[i] *= newvol.l;
                 part[npart]->partoutr[i] *= newvol.r;
             }
@@ -695,11 +737,11 @@ void Master::AudioOut(float *outl, float *outr)
         if(sysefx[nefx]->geteffect() == 0)
             continue;  //the effect is disabled
 
-        float tmpmixl[synth->buffersize];
-        float tmpmixr[synth->buffersize];
+        float tmpmixl[synth.buffersize];
+        float tmpmixr[synth.buffersize];
         //Clean up the samples used by the system effects
-        memset(tmpmixl, 0, synth->bufferbytes);
-        memset(tmpmixr, 0, synth->bufferbytes);
+        memset(tmpmixl, 0, synth.bufferbytes);
+        memset(tmpmixr, 0, synth.bufferbytes);
 
         //Mix the channels according to the part settings about System Effect
         for(int npart = 0; npart < NUM_MIDI_PARTS; ++npart) {
@@ -713,7 +755,7 @@ void Master::AudioOut(float *outl, float *outr)
 
             //the output volume of each part to system effect
             const float vol = sysefxvol[nefx][npart];
-            for(int i = 0; i < synth->buffersize; ++i) {
+            for(int i = 0; i < synth.buffersize; ++i) {
                 tmpmixl[i] += part[npart]->partoutl[i] * vol;
                 tmpmixr[i] += part[npart]->partoutr[i] * vol;
             }
@@ -723,7 +765,7 @@ void Master::AudioOut(float *outl, float *outr)
         for(int nefxfrom = 0; nefxfrom < nefx; ++nefxfrom)
             if(Psysefxsend[nefxfrom][nefx] != 0) {
                 const float vol = sysefxsend[nefxfrom][nefx];
-                for(int i = 0; i < synth->buffersize; ++i) {
+                for(int i = 0; i < synth.buffersize; ++i) {
                     tmpmixl[i] += sysefx[nefxfrom]->efxoutl[i] * vol;
                     tmpmixr[i] += sysefx[nefxfrom]->efxoutr[i] * vol;
                 }
@@ -733,7 +775,7 @@ void Master::AudioOut(float *outl, float *outr)
 
         //Add the System Effect to sound output
         const float outvol = sysefx[nefx]->sysefxgetvolume();
-        for(int i = 0; i < synth->buffersize; ++i) {
+        for(int i = 0; i < synth.buffersize; ++i) {
             outl[i] += tmpmixl[i] * outvol;
             outr[i] += tmpmixr[i] * outvol;
         }
@@ -742,7 +784,7 @@ void Master::AudioOut(float *outl, float *outr)
     //Mix all parts
     for(int npart = 0; npart < NUM_MIDI_PARTS; ++npart)
         if(part[npart]->Penabled)   //only mix active parts
-            for(int i = 0; i < synth->buffersize; ++i) { //the volume did not changed
+            for(int i = 0; i < synth.buffersize; ++i) { //the volume did not changed
                 outl[i] += part[npart]->partoutl[i];
                 outr[i] += part[npart]->partoutr[i];
             }
@@ -754,7 +796,7 @@ void Master::AudioOut(float *outl, float *outr)
 
 
     //Master Volume
-    for(int i = 0; i < synth->buffersize; ++i) {
+    for(int i = 0; i < synth.buffersize; ++i) {
         outl[i] *= volume;
         outr[i] *= volume;
     }
@@ -763,8 +805,8 @@ void Master::AudioOut(float *outl, float *outr)
 
     //Shutup if it is asked (with fade-out)
     if(shutup) {
-        for(int i = 0; i < synth->buffersize; ++i) {
-            float tmp = (synth->buffersize_f - i) / synth->buffersize_f;
+        for(int i = 0; i < synth.buffersize; ++i) {
+            float tmp = (synth.buffersize_f - i) / synth.buffersize_f;
             outl[i] *= tmp;
             outr[i] *= tmp;
         }
@@ -773,8 +815,6 @@ void Master::AudioOut(float *outl, float *outr)
 
     //update the LFO's time
     LFOParams::time++;
-
-    dump.inctick();
 }
 
 //TODO review the respective code from yoshimi for this
@@ -787,8 +827,8 @@ void Master::GetAudioOutSamples(size_t nsamples,
     off_t out_off = 0;
 
     //Fail when resampling rather than doing a poor job
-    if(synth->samplerate != samplerate) {
-        printf("darn it: %d vs %d\n", synth->samplerate, samplerate);
+    if(synth.samplerate != samplerate) {
+        printf("darn it: %d vs %d\n", synth.samplerate, samplerate);
         return;
     }
 
@@ -803,7 +843,7 @@ void Master::GetAudioOutSamples(size_t nsamples,
             AudioOut(bufl, bufr);
             off  = 0;
             out_off  += smps;
-            smps = synth->buffersize;
+            smps = synth.buffersize;
         }
         else {   //use some samples
             memcpy(outl + out_off, bufl + off, sizeof(float) * nsamples);
@@ -978,7 +1018,7 @@ int Master::getalldata(char **data)
     return strlen(*data) + 1;
 }
 
-void Master::putalldata(char *data, int /*size*/)
+void Master::putalldata(const char *data)
 {
     XMLwrapper *xml = new XMLwrapper();
     if(!xml->putXMLdata(data)) {

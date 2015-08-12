@@ -22,6 +22,7 @@
 #include <cxxtest/TestSuite.h>
 #include <string>
 #include "../Synth/OscilGen.h"
+#include "../Misc/XMLwrapper.h"
 #include "../DSP/FFTwrapper.h"
 #include "../Misc/Util.h"
 #include "../globals.h"
@@ -56,7 +57,7 @@ class OscilGenTest:public CxxTest::TestSuite
 
             //prepare the default settings
             fft   = new FFTwrapper(synth->oscilsize);
-            oscil = new OscilGen(fft, NULL);
+            oscil = new OscilGen(*synth, fft, NULL);
 
             //Assert defaults [TODO]
 

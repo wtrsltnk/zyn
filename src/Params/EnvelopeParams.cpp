@@ -31,10 +31,14 @@
 #define rObject EnvelopeParams
 using namespace rtosc;
 
-static rtosc::Ports localPorts = {
+static const rtosc::Ports localPorts = {
     rSelf(EnvelopeParams),
-    rPaste(),
+    rPaste,
+#undef  rChangeCb
+#define rChangeCb if(!obj->Pfreemode) obj->converttofree();
     rToggle(Pfreemode, "Complex Envelope Definitions"),
+#undef  rChangeCb
+#define rChangeCb
     rParamZyn(Penvpoints, rProp(internal), "Number of points in complex definition"),
     rParamZyn(Penvsustain, rProp(internal), "Location of the sustain point"),
     rParams(Penvdt,  MAX_ENVELOPE_POINTS, "Envelope Delay Times"),
@@ -90,7 +94,7 @@ static rtosc::Ports localPorts = {
         }},
 };
 
-rtosc::Ports &EnvelopeParams::ports = localPorts;
+const rtosc::Ports &EnvelopeParams::ports = localPorts;
 
 EnvelopeParams::EnvelopeParams(unsigned char Penvstretch_,
         unsigned char Pforcedrelease_)
@@ -146,7 +150,7 @@ float EnvelopeParams::dt(char val)
  */
 void EnvelopeParams::ADSRinit(char A_dt, char D_dt, char S_val, char R_dt)
 {
-    //setpresettype("Penvamplitude");
+    setpresettype("Penvamplitude");
     Envmode   = 1;
     PA_dt     = A_dt;
     PD_dt     = D_dt;
@@ -160,7 +164,7 @@ void EnvelopeParams::ADSRinit(char A_dt, char D_dt, char S_val, char R_dt)
 
 void EnvelopeParams::ADSRinit_dB(char A_dt, char D_dt, char S_val, char R_dt)
 {
-    //setpresettype("Penvamplitude");
+    setpresettype("Penvamplitude");
     Envmode   = 2;
     PA_dt     = A_dt;
     PD_dt     = D_dt;
@@ -174,7 +178,7 @@ void EnvelopeParams::ADSRinit_dB(char A_dt, char D_dt, char S_val, char R_dt)
 
 void EnvelopeParams::ASRinit(char A_val, char A_dt, char R_val, char R_dt)
 {
-    //setpresettype("Penvfrequency");
+    setpresettype("Penvfrequency");
     Envmode   = 3;
     PA_val    = A_val;
     PA_dt     = A_dt;
@@ -193,7 +197,7 @@ void EnvelopeParams::ADSRinit_filter(char A_val,
                                      char R_dt,
                                      char R_val)
 {
-    //setpresettype("Penvfilter");
+    setpresettype("Penvfilter");
     Envmode   = 4;
     PA_val    = A_val;
     PA_dt     = A_dt;
@@ -208,7 +212,7 @@ void EnvelopeParams::ADSRinit_filter(char A_val,
 
 void EnvelopeParams::ASRinit_bw(char A_val, char A_dt, char R_val, char R_dt)
 {
-    //setpresettype("Penvbandwidth");
+    setpresettype("Penvbandwidth");
     Envmode   = 5;
     PA_val    = A_val;
     PA_dt     = A_dt;

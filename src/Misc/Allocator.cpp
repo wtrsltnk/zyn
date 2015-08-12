@@ -36,7 +36,7 @@ struct AllocatorImpl
 Allocator::Allocator(void)
 {
     impl = new AllocatorImpl;
-    size_t default_size = 5*1024*1024;
+    size_t default_size = 10*1024*1024;
     impl->pools = (next_t*)malloc(default_size);
     impl->pools->next = 0x0;
     impl->pools->pool_size = default_size;
@@ -107,6 +107,7 @@ void Allocator::addMemory(void *v, size_t mem_size)
         printf("FAILED TO INSERT MEMORY POOL\n");
 };//{(void)mem_size;};
 
+#ifndef INCLUDED_tlsfbits
 //From tlsf internals
 typedef struct block_header_t
 {
@@ -121,6 +122,7 @@ typedef struct block_header_t
 	struct block_header_t* prev_free;
 } block_header_t;
 static const size_t block_header_free_bit = 1 << 0;
+#endif
 
 bool Allocator::memFree(void *pool)
 {

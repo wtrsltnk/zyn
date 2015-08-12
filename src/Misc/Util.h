@@ -27,6 +27,7 @@
 #include <sstream>
 #include <stdint.h>
 #include <algorithm>
+#include <set>
 #include "Config.h"
 #include "../globals.h"
 
@@ -51,6 +52,9 @@ void set_realtime();
 
 /**Os independent sleep in microsecond*/
 void os_sleep(long length);
+
+//! returns pid padded to maximum pid lenght, posix conform
+std::string os_pid_as_padded_string();
 
 std::string legalizeFilename(std::string filename);
 
@@ -144,82 +148,44 @@ float interpolate(const float *data, size_t len, float pos);
 //Linear circular interpolation
 float cinterpolate(const float *data, size_t len, float pos);
 
-/**
- * Port macros - these produce easy and regular port definitions for common
- * types
- */
-
-///trims a path in recursions
-const char *message_snip(const char *m);
-
 template<class T>
 static inline void nullify(T &t) {delete t; t = NULL; }
 template<class T>
 static inline void arrayNullify(T &t) {delete [] t; t = NULL; }
+
+char *rtosc_splat(const char *path, std::set<std::string>);
+
+/**
+ * Port macros - these produce easy and regular port definitions for common
+ * types
+ */
 #define rParamZyn(name, ...) \
   {STRINGIFY(name) "::i",  rProp(parameter) rMap(min, 0) rMap(max, 127) DOC(__VA_ARGS__), NULL, rParamICb(name)}
-
-///floating point parameter - with lookup code
-#define PARAMF(type, var, name, scale, _min, _max, desc) \
-{#name"::f", ":parameter\0:documentation\0=" desc "\0", 0, \
-    [](const char *m, rtosc::RtData &d) { \
-        if(rtosc_narguments(m)==0) {\
-            d.reply(d.loc, "f", ((type*)d.obj)->var); \
-        } else if(rtosc_narguments(m)==1 && rtosc_type(m,0)=='f') {\
-            ((type*)d.obj)->var = limit<float>(rtosc_argument(m,0).f,_min,_max); \
-            d.broadcast(d.loc, "f", ((type*)d.obj)->var);}}}
-
-///character parameter - with lookup code
-#define PARAMC(type, var, name, desc) \
-{#name"::c", ":parameter\0:old-param\0:documentation\0=" desc"\0", 0, \
-    [](const char *m, rtosc::RtData &d) { \
-        if(rtosc_narguments(m)==0) {\
-            d.reply(d.loc, "c", ((type*)d.obj)->var); \
-        } else if(rtosc_narguments(m)==1 && rtosc_type(m,0)=='c') {\
-            ((type*)d.obj)->var = limit<char>(rtosc_argument(m,0).i,0,127); \
-            d.broadcast(d.loc, "c", ((type*)d.obj)->var);}}}
-
-///Recur - perform a simple recursion
-#define RECUR(type, cast, name, var, desc) \
-{#name"/", ":recursion\0:documentation\0=" desc"\0", &cast::ports, [](const char *m, rtosc::RtData &d){\
-    d.obj = &(((type*)d.obj)->var); \
-    cast::ports.dispatch(message_snip(m), d);}}
-
-///Recurs - perform a ranged recursion
-#define RECURS(type, cast, name, var, length, desc) \
-{#name "#" #length "/", ":recursion\0:documentation\0=" desc"\0", &cast::ports, \
-    [](const char *m, rtosc::RtData &d){ \
-        const char *mm = m; \
-        while(!isdigit(*mm))++mm; \
-        d.obj = &(((type*)d.obj)->var)[atoi(mm)]; \
-        cast::ports.dispatch(message_snip(m), d);}}
-
-///Recur - perform a simple recursion (on pointer member)
-#define RECURP(type, cast, name, var, desc) \
-{#name"/", ":recursion\0:documentation\0=" desc"\0", &cast::ports, [](const char *m, rtosc::RtData &d){\
-    d.obj = (((type*)d.obj)->var); \
-    if(d.obj) cast::ports.dispatch(message_snip(m), d);}}
-
-///Recurs - perform a ranged recursion (on pointer array member)
-#define RECURSP(type, cast, name, var, length, desc) \
-{#name "#" #length "/", ":recursion\0:documentation\0=" desc"\0", &cast::ports, \
-    [](const char *m, rtosc::RtData &d){ \
-        const char *mm = m; \
-        while(!isdigit(*mm))++mm; \
-        d.obj = (((type*)d.obj)->var)[atoi(mm)]; \
-        cast::ports.dispatch(message_snip(m), d);}}
 
 #define rSelf(type) \
 {"self", rProp(internal) rMap(class, type) rDoc("port metadata"), 0, \
     [](const char *, rtosc::RtData &d){ \
         d.reply(d.loc, "b", sizeof(d.obj), &d.obj);}}\
 
-#define rPaste() \
+#define rPaste \
+{"preset-type", rProp(internal), 0, \
+    [](const char *, rtosc::RtData &d){ \
+        rObject *obj = (rObject*)d.obj; \
+        d.reply(d.loc, "s", obj->type);}},\
 {"paste:b", rProp(internal) rDoc("paste port"), 0, \
     [](const char *m, rtosc::RtData &d){ \
         printf("rPaste...\n"); \
         rObject &paste = **(rObject **)rtosc_argument(m,0).b.data; \
         rObject &o = *(rObject*)d.obj;\
         o.paste(paste);}}
+
+#define rArrayPaste \
+{"paste-array:bi", rProp(internal) rDoc("array paste port"), 0, \
+    [](const char *m, rtosc::RtData &d){ \
+        printf("rArrayPaste...\n"); \
+        rObject &paste = **(rObject **)rtosc_argument(m,0).b.data; \
+        int field = rtosc_argument(m,1).i; \
+        rObject &o = *(rObject*)d.obj;\
+        o.pasteArray(paste,field);}}
 
 #endif

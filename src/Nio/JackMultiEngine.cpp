@@ -28,6 +28,7 @@
 #include <cassert>
 
 #include "Nio.h"
+#include "../Misc/Util.h"
 #include "../Misc/Master.h"
 #include "../Misc/Part.h"
 #include "../Misc/MiddleWare.h"
@@ -44,8 +45,8 @@ struct jack_multi
     bool running;
 };
 
-JackMultiEngine::JackMultiEngine(void)
-    :impl(new jack_multi())
+JackMultiEngine::JackMultiEngine(const SYNTH_T &synth)
+    :AudioOut(synth), impl(new jack_multi())
 {
     impl->running = false;
     impl->client  = NULL;
@@ -82,6 +83,8 @@ bool JackMultiEngine::Start(void)
     string postfix    = Nio::getPostfix();
     if(!postfix.empty())
         clientname += "_" + postfix;
+    if(Nio::pidInClientName)
+        clientname += "_" + os_pid_as_padded_string();
     jack_status_t jackstatus;
 
     impl->client = jack_client_open(clientname.c_str(), JackNullOption, &jackstatus);
@@ -112,9 +115,9 @@ bool JackMultiEngine::Start(void)
     //verify that all sample rate and buffer_size are the same in jack.
     //This insures that the connection can be made with no resampling or
     //buffering
-    if(synth->samplerate != jack_get_sample_rate(impl->client))
+    if(synth.samplerate != jack_get_sample_rate(impl->client))
         errx(1, "jack must have the same sample rate!");
-    if(synth->buffersize != (int) jack_get_buffer_size(impl->client))
+    if(synth.buffersize != (int) jack_get_buffer_size(impl->client))
         errx(1, "jack must have the same buffer size");
 
     jack_set_process_callback(impl->client, _processCallback, this);
@@ -144,14 +147,14 @@ int JackMultiEngine::processAudio(jack_nframes_t nframes)
 
     //Get the wet samples from OutMgr
     Stereo<float *> smp = getNext();
-    memcpy(buffers[0], smp.l, synth->bufferbytes);
-    memcpy(buffers[1], smp.r, synth->bufferbytes);
+    memcpy(buffers[0], smp.l, synth.bufferbytes);
+    memcpy(buffers[1], smp.r, synth.bufferbytes);
 
     //Gather other samples from individual parts
     Master &master = *middleware->spawnMaster();
     for(int i = 0; i < NUM_MIDI_PARTS; ++i) {
-        memcpy(buffers[2*i + 2], master.part[i]->partoutl, synth->bufferbytes);
-        memcpy(buffers[2*i + 3], master.part[i]->partoutr, synth->bufferbytes);
+        memcpy(buffers[2*i + 2], master.part[i]->partoutl, synth.bufferbytes);
+        memcpy(buffers[2*i + 3], master.part[i]->partoutr, synth.bufferbytes);
     }
 
     return false;

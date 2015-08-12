@@ -11,13 +11,15 @@
 #define MAX_DB 30
 
 Fl_EQGraph::Fl_EQGraph(int x,int y, int w, int h, const char *label)
-    :Fl_Box(x,y,w,h,label), Fl_Osc_Widget(this)
+    :Fl_Box(x,y,w,h,label), Fl_Osc_Widget(this), samplerate(48000)
 {
     memset(num, 0, sizeof(num));
     memset(dem, 0, sizeof(dem));
     num[0] = 1;
     dem[0] = 1;
     ext = "eq-coeffs";
+    osc->createLink("/samplerate", this);
+    osc->requestValue("/samplerate");
     oscRegister("eq-coeffs");
 }
 
@@ -26,9 +28,13 @@ Fl_EQGraph::~Fl_EQGraph(void)
 
 void Fl_EQGraph::OSC_raw(const char *msg)
 {
-    memcpy(dem, rtosc_argument(msg, 0).b.data, sizeof(dem));
-    memcpy(num, rtosc_argument(msg, 1).b.data, sizeof(dem));
-    redraw();
+    if(strstr(msg, "samplerate") && !strcmp("f", rtosc_argument_string(msg))) {
+        samplerate = rtosc_argument(msg, 0).f;
+    } else {
+        memcpy(dem, rtosc_argument(msg, 0).b.data, sizeof(dem));
+        memcpy(num, rtosc_argument(msg, 1).b.data, sizeof(num));
+        redraw();
+    }
 }
 
 void Fl_EQGraph::update(void)
@@ -114,7 +120,7 @@ void Fl_EQGraph::draw(void)
     fl_begin_line();
     for (i=1;i<lx;i++){
         float frq=getfreqx(i/(float) lx);
-        if (frq>synth->samplerate/2) break;
+        if (frq>samplerate/2) break;
         iy=getresponse(ly,frq);
         if ((oiy>=0) && (oiy<ly) &&
                 (iy>=0) && (iy<ly) )
@@ -134,17 +140,25 @@ void Fl_EQGraph::draw(void)
  */
 double Fl_EQGraph::getresponse(int maxy,float freq) const
 {
-    const float angle = 2*PI*freq/synth->samplerate_f;
-    std::complex<float> num_res = 0;
-    std::complex<float> dem_res = 0;
+    const float angle = 2*PI*freq/samplerate;
+    float mag = 1;
+    //std::complex<float> num_res = 0;
+    //std::complex<float> dem_res = 0;
          
 
-    for(int i = 0; i < MAX_EQ_BANDS*MAX_FILTER_STAGES*2+1; ++i) {
-        num_res += FFTpolar<float>(num[i], i*angle);
-        dem_res += FFTpolar<float>(dem[i], i*angle);
+    for(int i = 0; i < MAX_EQ_BANDS*MAX_FILTER_STAGES; ++i) {
+        if(num[3*i] == 0)
+            break;
+        std::complex<float> num_res= 0;
+        std::complex<float> dem_res= 0;
+        for(int j=0; j<3; ++j) {
+            num_res += FFTpolar<float>(num[3*i+j], j*angle);
+            dem_res += FFTpolar<float>(dem[3*i+j], j*angle);
+        }
+        mag *= abs(num_res/dem_res);
     }
 
-    float dbresp=20*log(abs(num_res/dem_res))/log(10);
+    float dbresp=20*log(mag)/log(10);
 
     //rescale
     return (int) ((dbresp/MAX_DB+1.0)*maxy/2.0);

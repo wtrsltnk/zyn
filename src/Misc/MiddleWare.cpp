@@ -8,6 +8,7 @@
 #include <rtosc/undo-history.h>
 #include <rtosc/thread-link.h>
 #include <rtosc/ports.h>
+#include <rtosc/typed-message.h>
 #include <lo/lo.h>
 
 #include <unistd.h>
@@ -21,23 +22,28 @@
 #include "Util.h"
 #include "Master.h"
 #include "Part.h"
+#include "PresetExtractor.h"
+#include "../Params/PresetsStore.h"
 #include "../Params/ADnoteParameters.h"
 #include "../Params/SUBnoteParameters.h"
 #include "../Params/PADnoteParameters.h"
 #include "../DSP/FFTwrapper.h"
 #include "../Synth/OscilGen.h"
+#include "../Nio/Nio.h"
 
 #include <string>
 #include <future>
 #include <atomic>
 #include <list>
 
+#ifndef errx
 #include <err.h>
+#endif
 
 using std::string;
-rtosc::ThreadLink *bToU = new rtosc::ThreadLink(4096*2,1024);
-rtosc::ThreadLink *uToB = new rtosc::ThreadLink(4096*2,1024);
-rtosc::UndoHistory undo;
+#ifndef PLUGINVERSION
+extern rtosc::ThreadLink *the_bToU;//XXX
+#endif
 
 /******************************************************************************
  *                        LIBLO And Reflection Code                           *
@@ -46,15 +52,12 @@ rtosc::UndoHistory undo;
  * Thus, changes in the current interface sending messages can be encoded     *
  * into the stream via events which simply echo back the active interface     *
  ******************************************************************************/
-static lo_server server;
-static string last_url, curr_url;
-
 static void liblo_error_cb(int i, const char *m, const char *loc)
 {
     fprintf(stderr, "liblo :-( %d-%s@%s\n",i,m,loc);
 }
 
-void path_search(const char *m)
+void path_search(const char *m, const char *url)
 {
     using rtosc::Ports;
     using rtosc::Port;
@@ -103,8 +106,8 @@ void path_search(const char *m)
     char buffer[1024*20];
     size_t length = rtosc_amessage(buffer, sizeof(buffer), "/paths", types, args);
     if(length) {
-	lo_message msg  = lo_message_deserialise((void*)buffer, length, NULL);
-        lo_address addr = lo_address_new_from_url(last_url.c_str());
+        lo_message msg  = lo_message_deserialise((void*)buffer, length, NULL);
+        lo_address addr = lo_address_new_from_url(url);
         if(addr)
             lo_send_message(addr, buffer, msg);
     }
@@ -116,13 +119,13 @@ static int handler_function(const char *path, const char *types, lo_arg **argv,
     (void) types;
     (void) argv;
     (void) argc;
-    (void) user_data;
+    MiddleWare *mw = (MiddleWare*)user_data;
     lo_address addr = lo_message_get_source(msg);
     if(addr) {
         const char *tmp = lo_address_get_url(addr);
-        if(tmp != last_url) {
-            uToB->write("/echo", "ss", "OSC_URL", tmp);
-            last_url = tmp;
+        if(tmp != mw->activeUrl()) {
+            mw->transmitMsg("/echo", "ss", "OSC_URL", tmp);
+            mw->activeUrl(tmp);
         }
 
     }
@@ -132,9 +135,9 @@ static int handler_function(const char *path, const char *types, lo_arg **argv,
     size_t size = 2048;
     lo_message_serialise(msg, path, buffer, &size);
     if(!strcmp(buffer, "/path-search") && !strcmp("ss", rtosc_argument_string(buffer))) {
-        path_search(buffer);
-    } else
-        uToB->raw_write(buffer);
+        path_search(buffer, mw->activeUrl().c_str());
+    } else if(buffer[0]=='/' && rindex(buffer, '/')[1])
+        mw->transmitMsg(buffer);
 
     return 0;
 }
@@ -163,18 +166,18 @@ void deallocate(const char *str, void *v)
  *                    PadSynth Setup                                         *
  *****************************************************************************/
 
-void preparePadSynth(string path, PADnoteParameters *p)
+void preparePadSynth(string path, PADnoteParameters *p, rtosc::ThreadLink *uToB)
 {
     //printf("preparing padsynth parameters\n");
     assert(!path.empty());
     path += "sample";
 
     unsigned max = 0;
-    p->sampleGenerator([&max,&path]
+    p->sampleGenerator([&max,&path,uToB]
             (unsigned N, PADnoteParameters::Sample &s)
             {
             max = max<N ? N : max;
-            printf("sending info to '%s'\n", (path+to_s(N)).c_str());
+            //printf("sending info to '%s'\n", (path+to_s(N)).c_str());
             uToB->write((path+to_s(N)).c_str(), "ifb",
                 s.size, s.basefreq, sizeof(float*), &s.smp);
             }, []{return false;});
@@ -195,7 +198,7 @@ void preparePadSynth(string path, PADnoteParameters *p)
  * - Load Bank                                                               *
  * - Refresh List of Banks                                                   *
  *****************************************************************************/
-void refreshBankView(const Bank &bank, unsigned loc, Fl_Osc_Interface *osc)
+void refreshBankView(const Bank &bank, unsigned loc, std::function<void(const char*)> cb)
 {
     if(loc >= BANK_SIZE)
         return;
@@ -207,10 +210,11 @@ void refreshBankView(const Bank &bank, unsigned loc, Fl_Osc_Interface *osc)
         errx(1, "Failure to handle bank update properly...");
 
 
-    osc->tryLink(response);
+    if(cb)
+        cb(response);
 }
 
-void bankList(Bank &bank, Fl_Osc_Interface *osc)
+void bankList(Bank &bank, std::function<void(const char*)> cb)
 {
     char response[2048];
     int i = 0;
@@ -219,33 +223,35 @@ void bankList(Bank &bank, Fl_Osc_Interface *osc)
         if(!rtosc_message(response, 2048, "/bank-list", "iss",
                     i++, elm.name.c_str(), elm.dir.c_str()))
             errx(1, "Failure to handle bank update properly...");
-        osc->tryLink(response);
+        if(cb)
+            cb(response);
     }
 }
 
-void rescanForBanks(Bank &bank, Fl_Osc_Interface *osc)
+void rescanForBanks(Bank &bank, std::function<void(const char*)> cb)
 {
     bank.rescanforbanks();
-    bankList(bank, osc);
+    bankList(bank, cb);
 }
 
-void loadBank(Bank &bank, int pos, Fl_Osc_Interface *osc)
+void loadBank(Bank &bank, int pos, std::function<void(const char*)> cb)
 {
     if(bank.bankpos != pos) {
         bank.bankpos = pos;
         bank.loadbank(bank.banks[pos].dir);
         for(int i=0; i<BANK_SIZE; ++i)
-            refreshBankView(bank, i, osc);
+            refreshBankView(bank, i, cb);
     }
 }
 
-void bankPos(Bank &bank, Fl_Osc_Interface *osc)
+void bankPos(Bank &bank, std::function<void(const char *)> cb)
 {
     char response[2048];
 
     if(!rtosc_message(response, 2048, "/loadbank", "i", bank.bankpos))
         errx(1, "Failure to handle bank update properly...");
-    osc->tryLink(response);
+    if(cb)
+        cb(response);
 }
 
 /*****************************************************************************
@@ -255,8 +261,8 @@ void bankPos(Bank &bank, Fl_Osc_Interface *osc)
 class DummyDataObj:public rtosc::RtData
 {
     public:
-        DummyDataObj(char *loc_, size_t loc_size_, void *obj_, cb_t cb_, void *ui_,
-                Fl_Osc_Interface *osc_)
+        DummyDataObj(char *loc_, size_t loc_size_, void *obj_, MiddleWareImpl *mwi_,
+                rtosc::ThreadLink *uToB_)
         {
             memset(loc_, 0, sizeof(loc_size_));
             buffer = new char[4*4096];
@@ -264,9 +270,8 @@ class DummyDataObj:public rtosc::RtData
             loc      = loc_;
             loc_size = loc_size_;
             obj      = obj_;
-            cb       = cb_;
-            ui       = ui_;
-            osc      = osc_;
+            mwi      = mwi_;
+            uToB     = uToB_;
         }
         ~DummyDataObj(void)
         {
@@ -294,20 +299,13 @@ class DummyDataObj:public rtosc::RtData
             }
             va_end(va);
         }
-        virtual void reply(const char *msg)
-        {
-            //DEBUG
-            //printf("reply used for '%s'\n", msg);
-            osc->tryLink(msg);
-            cb(ui, msg);
-        }
+        virtual void reply(const char *msg);
         //virtual void broadcast(const char *path, const char *args, ...){(void)path;(void)args;};
         //virtual void broadcast(const char *msg){(void)msg;};
     private:
         char *buffer;
-        cb_t cb;
-        void *ui;
-        Fl_Osc_Interface *osc;
+        MiddleWareImpl   *mwi;
+        rtosc::ThreadLink *uToB;
 };
 
 
@@ -349,14 +347,14 @@ struct NonRtObjStore
     {
         std::string base = "/part"+to_s(i)+"/kit"+to_s(j)+"/";
         for(int k=0; k<NUM_VOICES; ++k) {
-            std::string nbase = base+"adpars/voice"+to_s(k)+"/";
+            std::string nbase = base+"adpars/VoicePar"+to_s(k)+"/";
             if(adpars) {
                 auto &nobj = adpars->VoicePar[k];
-                objmap[nbase+"oscil/"]     = nobj.OscilSmp;
-                objmap[nbase+"mod-oscil/"] = nobj.FMSmp;
+                objmap[nbase+"OscilSmp/"]     = nobj.OscilSmp;
+                objmap[nbase+"FMSmp/"] = nobj.FMSmp;
             } else {
-                objmap[nbase+"oscil/"]     = nullptr;
-                objmap[nbase+"mod-oscil/"] = nullptr;
+                objmap[nbase+"OscilSmp/"] = nullptr;
+                objmap[nbase+"FMSmp/"]    = nullptr;
             }
         }
     }
@@ -367,10 +365,10 @@ struct NonRtObjStore
         for(int k=0; k<NUM_VOICES; ++k) {
             if(padpars) {
                 objmap[base+"padpars/"]       = padpars;
-                objmap[base+"padpars/oscil/"] = padpars->oscilgen;
+                objmap[base+"padpars/oscilgen/"] = padpars->oscilgen;
             } else {
                 objmap[base+"padpars/"]       = nullptr;
-                objmap[base+"padpars/oscil/"] = nullptr;
+                objmap[base+"padpars/oscilgen/"] = nullptr;
             }
         }
     }
@@ -428,10 +426,56 @@ struct ParamStore
     PADnoteParameters *pad[NUM_MIDI_PARTS][NUM_KIT_ITEMS];
 };
 
+//XXX perhaps move this to Nio
+//(there needs to be some standard Nio stub file for this sort of stuff)
+namespace Nio
+{
+    using std::get;
+    using rtosc::rtMsg;
+    rtosc::Ports ports = {
+        {"sink-list:", 0, 0, [](const char *msg, rtosc::RtData &d) {
+                auto list = Nio::getSinks();
+                char *ret = rtosc_splat(d.loc, list);
+                d.reply(ret);
+                delete [] ret;
+            }},
+        {"source-list:", 0, 0, [](const char *msg, rtosc::RtData &d) {
+                auto list = Nio::getSources();
+                char *ret = rtosc_splat(d.loc, list);
+                d.reply(ret);
+                delete [] ret;
+            }},
+        {"source::s", 0, 0, [](const char *msg, rtosc::RtData &d) {
+                if(rtosc_narguments(msg) == 0)
+                    d.reply(d.loc, "s", Nio::getSource().c_str());
+                else if(rtMsg<const char*> m{msg})
+                    Nio::setSource(get<0>(m));}},
+        {"sink::s", 0, 0, [](const char *msg, rtosc::RtData &d) {
+                if(rtosc_narguments(msg) == 0)
+                    d.reply(d.loc, "s", Nio::getSink().c_str());
+                else if(rtMsg<const char*> m{msg})
+                    Nio::setSink(get<0>(m));}},
+    };
+}
+
 /* Implementation */
 class MiddleWareImpl
 {
     static constexpr const char* tmp_nam_prefix = "/tmp/zynaddsubfx_";
+    MiddleWare *parent;
+
+    //Detect if the name of the process is 'zynaddsubfx'
+    bool isPlugin()
+    {
+        std::string proc_file = "/proc/" + to_s(getpid()) + "/comm";
+        std::ifstream ifs(proc_file);
+        if(ifs.good()) {
+            std::string comm_name;
+            ifs >> comm_name;
+            return comm_name != "zynaddsubfx";
+        }
+        return true;
+    }
 
     //! returns file name to where UDP port is saved
     std::string get_tmp_nam() const
@@ -539,7 +583,7 @@ class MiddleWareImpl
     }
 
 public:
-    MiddleWareImpl(MiddleWare *mw);
+    MiddleWareImpl(MiddleWare *mw, SYNTH_T synth, int prefered_port);
     ~MiddleWareImpl(void);
 
     void warnMemoryLeaks(void);
@@ -626,9 +670,9 @@ public:
 
         auto alloc = std::async(std::launch::async,
                 [master,filename,this,npart](){
-                Part *p = new Part(*master->memory, &master->microtonal, master->fft);
+                Part *p = new Part(*master->memory, synth, &master->microtonal, master->fft);
                 if(p->loadXMLinstrument(filename))
-                fprintf(stderr, "Warning: failed to load part!\n");
+                    fprintf(stderr, "Warning: failed to load part<%s>!\n", filename);
 
                 auto isLateLoad = [this,npart]{
                 return actual_load[npart] != pending_load[npart];
@@ -640,7 +684,7 @@ public:
         //Load the part
         if(idle) {
             while(alloc.wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
-                idle();
+                idle(idle_ptr);
             }
         }
 
@@ -652,25 +696,41 @@ public:
         //Give it to the backend and wait for the old part to return for
         //deallocation
         uToB->write("/load-part", "ib", npart, sizeof(Part*), &p);
-        if(osc)
-            osc->damage(("/part"+to_s(npart)+"/").c_str());
+        GUI::raiseUi(ui, "/damage", "s", ("/part"+to_s(npart)+"/").c_str());
+    }
+
+    //Load a new cleared Part instance
+    void loadClearPart(int npart)
+    {
+        if(npart == -1)
+            return;
+        Part *p = new Part(*master->memory, synth, &master->microtonal, master->fft);
+        p->applyparameters();
+        obj_store.extractPart(p, npart);
+        kits.extractPart(p, npart);
+
+        //Give it to the backend and wait for the old part to return for
+        //deallocation
+        uToB->write("/load-part", "ib", npart, sizeof(Part*), &p);
+        GUI::raiseUi(ui, "/damage", "s", ("/part"+to_s(npart)+"/").c_str());
+        //if(osc)
+        //    osc->damage(("/part"+to_s(npart)+"/").c_str());
     }
 
     //Well, you don't get much crazier than changing out all of your RT
     //structures at once... TODO error handling
     void loadMaster(const char *filename)
     {
-        Master *m = new Master();
+        Master *m = new Master(synth);
+        m->uToB = uToB;
+        m->bToU = bToU;
         if(filename) {
             m->loadXML(filename);
             m->applyparameters();
         }
 
         //Update resource locator table
-        obj_store.clear();
-        obj_store.extractMaster(m);
-        for(int i=0; i<NUM_MIDI_PARTS; ++i)
-            kits.extractPart(m->part[i], i);
+        updateResources(m);
 
         master = m;
 
@@ -679,15 +739,23 @@ public:
         uToB->write("/load-master", "b", sizeof(Master*), &m);
     }
 
+    void updateResources(Master *m)
+    {
+        obj_store.clear();
+        obj_store.extractMaster(m);
+        for(int i=0; i<NUM_MIDI_PARTS; ++i)
+            kits.extractPart(m->part[i], i);
+    }
+
     //If currently broadcasting messages
     bool broadcast = false;
     //If accepting undo events as user driven
     bool recording_undo = true;
-    void bToUhandle(const char *rtmsg);
+    void bToUhandle(const char *rtmsg, bool dummy=false);
 
     void tick(void)
     {
-        lo_server_recv_noblock(server, 0);
+        while(lo_server_recv_noblock(server, 0));
         while(bToU->hasNext()) {
             const char *rtmsg = bToU->read();
             bToUhandle(rtmsg);
@@ -700,7 +768,7 @@ public:
             return true;
         char buffer[1024];
         memset(buffer, 0, sizeof(buffer));
-        DummyDataObj d(buffer, 1024, v, cb, ui, osc);
+        DummyDataObj d(buffer, 1024, v, this, uToB);
         strcpy(buffer, path.c_str());
 
         PADnoteParameters::ports.dispatch(msg, d);
@@ -712,6 +780,65 @@ public:
         }
 
         return true;
+    }
+
+    void handlePresets(const char *msg)
+    {
+        char buffer[1024];
+        memset(buffer, 0, sizeof(buffer));
+        DummyDataObj d(buffer, 1024, (void*)parent, this, uToB);
+        strcpy(buffer, "/presets/");
+
+        //012345678
+        ///presets/
+        real_preset_ports.dispatch(msg+9, d);
+        //printf("Something <%s>\n", msg+9);
+        if(strstr(msg, "paste") && rtosc_argument_string(msg)[0] == 's') {
+            char buffer[1024];
+            rtosc_message(buffer, 1024, "/damage", "s",
+                    rtosc_argument(msg, 0).s);
+            GUI::raiseUi(ui, buffer);
+        }
+
+
+        if(!d.matches) {
+            fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 1, 7 + 30, 0 + 40);
+            fprintf(stderr, "Unknown location '%s'<%s>\n",
+                    msg, rtosc_argument_string(msg));
+            fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 0, 7 + 30, 0 + 40);
+        }
+    }
+
+    void handleIo(const char *msg)
+    {
+        char buffer[1024];
+        memset(buffer, 0, sizeof(buffer));
+        DummyDataObj d(buffer, 1024, (void*)&config, this, uToB);
+        strcpy(buffer, "/io/");
+
+        Nio::ports.dispatch(msg+4, d);
+        if(!d.matches) {
+            fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 1, 7 + 30, 0 + 40);
+            fprintf(stderr, "Unknown location '%s'<%s>\n",
+                    msg, rtosc_argument_string(msg));
+            fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 0, 7 + 30, 0 + 40);
+        }
+    }
+
+    void handleConfig(const char *msg)
+    {
+        char buffer[1024];
+        memset(buffer, 0, sizeof(buffer));
+        DummyDataObj d(buffer, 1024, (void*)&config, this, uToB);
+        strcpy(buffer, "/config/");
+
+        Config::ports.dispatch(msg+8, d);
+        if(!d.matches) {
+            fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 1, 7 + 30, 0 + 40);
+            fprintf(stderr, "Unknown location '%s'<%s>\n",
+                    msg, rtosc_argument_string(msg));
+            fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 0, 7 + 30, 0 + 40);
+        }
     }
 
     bool handleOscil(string path, const char *msg, void *v);
@@ -746,7 +873,9 @@ public:
     ParamStore kits;
 
     //Callback When Waiting on async events
-    void(*idle)(void);
+    void(*idle)(void*);
+    void* idle_ptr;
+
     //General UI callback
     cb_t cb;
     //UI handle
@@ -754,26 +883,55 @@ public:
 
     std::atomic_int pending_load[NUM_MIDI_PARTS];
     std::atomic_int actual_load[NUM_MIDI_PARTS];
+
+    rtosc::UndoHistory undo;
+
+    //Link To the Realtime
+    rtosc::ThreadLink *bToU;
+    rtosc::ThreadLink *uToB;
+
+    //LIBLO
+    lo_server server;
+    string last_url, curr_url;
+
+    //Synthesis Rate Parameters
+    const SYNTH_T synth;
 };
 
-MiddleWareImpl::MiddleWareImpl(MiddleWare *mw)
+MiddleWareImpl::MiddleWareImpl(MiddleWare *mw, SYNTH_T synth_, int prefered_port)
+    :parent(mw), ui(nullptr), synth(synth_)
 {
-    server = lo_server_new_with_proto(NULL, LO_UDP, liblo_error_cb);
-    lo_server_add_method(server, NULL, NULL, handler_function, NULL);
+    bToU = new rtosc::ThreadLink(4096*2,1024);
+    uToB = new rtosc::ThreadLink(4096*2,1024);
+    if(prefered_port != -1)
+        server = lo_server_new_with_proto(to_s(prefered_port).c_str(), LO_UDP, liblo_error_cb);
+    else
+        server = lo_server_new_with_proto(NULL, LO_UDP, liblo_error_cb);
+    lo_server_add_method(server, NULL, NULL, handler_function, mw);
     fprintf(stderr, "lo server running on %d\n", lo_server_get_port(server));
 
-    clean_up_tmp_nams();
-    create_tmp_file((unsigned)lo_server_get_port(server));
+#ifndef PLUGINVERSION
+    if(!isPlugin()) {
+        clean_up_tmp_nams();
+        create_tmp_file((unsigned)lo_server_get_port(server));
+    }
+#endif
 
     //dummy callback for starters
     cb = [](void*, const char*){};
     idle = 0;
+    idle_ptr = 0;
 
-    master = new Master();
+#ifndef PLUGINVERSION
+    the_bToU = bToU;
+#endif
+    master = new Master(synth);
+    master->bToU = bToU;
+    master->uToB = uToB;
     osc    = GUI::genOscInterface(mw);
 
     //Grab objects of interest from master
-    obj_store.extractMaster(master);
+    updateResources(master);
 
     //Null out Load IDs
     for(int i=0; i < NUM_MIDI_PARTS; ++i) {
@@ -792,14 +950,24 @@ MiddleWareImpl::MiddleWareImpl(MiddleWare *mw)
             handleMsg(buf);
             });
 }
+
+void DummyDataObj::reply(const char *msg)
+{
+    mwi->bToUhandle(msg, true);
+}
 MiddleWareImpl::~MiddleWareImpl(void)
 {
     remove(get_tmp_nam().c_str());
 
     warnMemoryLeaks();
 
+    lo_server_free(server);
+
     delete master;
     delete osc;
+    delete bToU;
+    delete uToB;
+
 }
 
 /** Threading When Saving
@@ -827,7 +995,6 @@ MiddleWareImpl::~MiddleWareImpl(void)
 
 void MiddleWareImpl::doReadOnlyOp(std::function<void()> read_only_fn)
 {
-    //Copy is needed as filename WILL get trashed during the rest of the run
     uToB->write("/freeze_state","");
 
     std::list<const char *> fico;
@@ -861,7 +1028,7 @@ void MiddleWareImpl::doReadOnlyOp(std::function<void()> read_only_fn)
     }
 }
 
-void MiddleWareImpl::bToUhandle(const char *rtmsg)
+void MiddleWareImpl::bToUhandle(const char *rtmsg, bool dummy)
 {
     assert(strcmp(rtmsg, "/part0/kit0/Ppadenableda"));
     assert(strcmp(rtmsg, "/ze_state"));
@@ -874,7 +1041,7 @@ void MiddleWareImpl::bToUhandle(const char *rtmsg)
     }
 
     //Activity dot
-    printf(".");fflush(stdout);
+    //printf(".");fflush(stdout);
 
     if(!strcmp(rtmsg, "/echo")
             && !strcmp(rtosc_argument_string(rtmsg),"ss")
@@ -902,7 +1069,24 @@ void MiddleWareImpl::bToUhandle(const char *rtmsg)
         broadcast = true;
     } else if(broadcast) {
         broadcast = false;
+#ifdef PLUGINVERSION
+        if (!curr_url.empty()) // falktx: check added
+            cb(ui, rtmsg);
+
+        // falktx: changed curr_url to last_url
+        if(last_url != "GUI") {
+            lo_message msg  = lo_message_deserialise((void*)rtmsg,
+                    rtosc_message_length(rtmsg, bToU->buffer_size()), NULL);
+
+            //Send to known url
+            if(!last_url.empty()) {
+                lo_address addr = lo_address_new_from_url(last_url.c_str());
+                lo_send_message(addr, rtmsg, msg);
+            }
+        }
+#else
         cb(ui, rtmsg);
+
         if(curr_url != "GUI") {
             lo_message msg  = lo_message_deserialise((void*)rtmsg,
                     rtosc_message_length(rtmsg, bToU->buffer_size()), NULL);
@@ -913,7 +1097,8 @@ void MiddleWareImpl::bToUhandle(const char *rtmsg)
                 lo_send_message(addr, rtmsg, msg);
             }
         }
-    } else if(curr_url == "GUI" || !strcmp(rtmsg, "/close-ui")) {
+#endif
+    } else if((dummy?last_url:curr_url) == "GUI" || !strcmp(rtmsg, "/close-ui")) {
         cb(ui, rtmsg);
     } else{
         lo_message msg  = lo_message_deserialise((void*)rtmsg,
@@ -921,7 +1106,7 @@ void MiddleWareImpl::bToUhandle(const char *rtmsg)
 
         //Send to known url
         if(!curr_url.empty()) {
-            lo_address addr = lo_address_new_from_url(curr_url.c_str());
+            lo_address addr = lo_address_new_from_url(dummy?last_url.c_str():curr_url.c_str());
             lo_send_message(addr, rtmsg, msg);
         }
     }
@@ -929,10 +1114,10 @@ void MiddleWareImpl::bToUhandle(const char *rtmsg)
 
 bool MiddleWareImpl::handleOscil(string path, const char *msg, void *v)
 {
-    printf("handleOscil...\n");
+    //printf("handleOscil...\n");
     char buffer[1024];
     memset(buffer, 0, sizeof(buffer));
-    DummyDataObj d(buffer, 1024, v, cb, ui, osc);
+    DummyDataObj d(buffer, 1024, v, this, uToB);
     strcpy(buffer, path.c_str());
     if(!v)
         return true;
@@ -1000,15 +1185,15 @@ void MiddleWareImpl::kitEnable(const char *msg)
 
 void MiddleWareImpl::kitEnable(int part, int kit, int type)
 {
-   // printf("attempting a kit enable\n");
+    //printf("attempting a kit enable<%d,%d,%d>\n", part, kit, type);
     string url = "/part"+to_s(part)+"/kit"+to_s(kit)+"/";
     void *ptr = NULL;
     if(type == 0 && kits.add[part][kit] == NULL) {
-        ptr = kits.add[part][kit] = new ADnoteParameters(master->fft);
+        ptr = kits.add[part][kit] = new ADnoteParameters(synth, master->fft);
         url += "adpars-data";
         obj_store.extractAD(kits.add[part][kit], part, kit);
     } else if(type == 1 && kits.pad[part][kit] == NULL) {
-        ptr = kits.pad[part][kit] = new PADnoteParameters(master->fft);
+        ptr = kits.pad[part][kit] = new PADnoteParameters(synth, master->fft);
         url += "padpars-data";
         obj_store.extractPAD(kits.pad[part][kit], part, kit);
     } else if(type == 2 && kits.sub[part][kit] == NULL) {
@@ -1029,8 +1214,8 @@ void MiddleWareImpl::kitEnable(int part, int kit, int type)
  */
 void MiddleWareImpl::handleMsg(const char *msg)
 {
-    assert(!strstr(msg,"free"));
     assert(msg && *msg && rindex(msg, '/')[1]);
+    assert(strstr(msg,"free") == NULL || strstr(rtosc_argument_string(msg), "b") == NULL);
     assert(strcmp(msg, "/part0/Psysefxvol"));
     assert(strcmp(msg, "/Penabled"));
     assert(strcmp(msg, "part0/part0/Ppanning"));
@@ -1048,26 +1233,34 @@ void MiddleWareImpl::handleMsg(const char *msg)
     //printf("watching '%s' go by\n", msg);
     //Get the object resource locator
     string obj_rl(msg, last_path+1);
+    int npart = -1;
+    char testchr = 0;
+
+    std::function<void(const char*)> bank_cb;
+    if(last_url == "GUI")
+        bank_cb = [this](const char *msg){if(osc)osc->tryLink(msg);};
+    else
+        bank_cb = [this](const char *msg){this->bToUhandle(msg, 1);};
 
     if(!strcmp(msg, "/refresh_bank") && !strcmp(rtosc_argument_string(msg), "i")) {
-        refreshBankView(master->bank, rtosc_argument(msg,0).i, osc);
+        refreshBankView(master->bank, rtosc_argument(msg,0).i, bank_cb);
     } else if(!strcmp(msg, "/bank-list") && !strcmp(rtosc_argument_string(msg), "")) {
-        bankList(master->bank, osc);
+        bankList(master->bank, bank_cb);
     } else if(!strcmp(msg, "/rescanforbanks") && !strcmp(rtosc_argument_string(msg), "")) {
-        rescanForBanks(master->bank, osc);
+        rescanForBanks(master->bank, bank_cb);
     } else if(!strcmp(msg, "/loadbank") && !strcmp(rtosc_argument_string(msg), "i")) {
-        loadBank(master->bank, rtosc_argument(msg, 0).i, osc);
+        loadBank(master->bank, rtosc_argument(msg, 0).i, bank_cb);
     } else if(!strcmp(msg, "/loadbank") && !strcmp(rtosc_argument_string(msg), "")) {
-        bankPos(master->bank, osc);
+        bankPos(master->bank, bank_cb);
     } else if(obj_store.has(obj_rl)) {
         //try some over simplified pattern matching
-        if(strstr(msg, "oscil/")) {
+        if(strstr(msg, "oscilgen/") || strstr(msg, "FMSmp/") || strstr(msg, "OscilSmp/")) {
             if(!handleOscil(obj_rl, last_path+1, obj_store.get(obj_rl)))
                 uToB->raw_write(msg);
             //else if(strstr(obj_rl.c_str(), "kititem"))
             //    handleKitItem(obj_rl, objmap[obj_rl],atoi(rindex(msg,'m')+1),rtosc_argument(msg,0).T);
         } else if(strstr(msg, "padpars/prepare"))
-            preparePadSynth(obj_rl,(PADnoteParameters *) obj_store.get(obj_rl));
+            preparePadSynth(obj_rl,(PADnoteParameters *) obj_store.get(obj_rl), uToB);
         else if(strstr(msg, "padpars")) {
             if(!handlePAD(obj_rl, last_path+1, obj_store.get(obj_rl)))
                 uToB->raw_write(msg);
@@ -1099,9 +1292,21 @@ void MiddleWareImpl::handleMsg(const char *msg)
         swapBankSlot(rtosc_argument(msg,0).i, rtosc_argument(msg,1).i, master, osc);
     } else if(strstr(msg, "clear-bank-slot") && !strcmp(rtosc_argument_string(msg), "i")) {
         clearBankSlot(rtosc_argument(msg,0).i, master, osc);
+    } else if(strstr(msg, "/config/")) {
+        handleConfig(msg);
+    } else if(strstr(msg, "/presets/")) {
+        handlePresets(msg);
+    } else if(strstr(msg, "/io/")) {
+        handleIo(msg);
     } else if(strstr(msg, "Padenabled") || strstr(msg, "Ppadenabled") || strstr(msg, "Psubenabled")) {
         kitEnable(msg);
         uToB->raw_write(msg);
+    } else if(sscanf(msg, "/part%d/clea%c", &npart, &testchr) == 2 && testchr == 'r') {
+        loadClearPart(npart);
+    } else if(!strcmp(msg, "/undo")) {
+        undo.seekHistory(-1);
+    } else if(!strcmp(msg, "/redo")) {
+        undo.seekHistory(+1);
     } else
         uToB->raw_write(msg);
 }
@@ -1135,12 +1340,16 @@ void MiddleWareImpl::warnMemoryLeaks(void)
 /******************************************************************************
  *                         MidleWare Forwarding Stubs                         *
  ******************************************************************************/
-    MiddleWare::MiddleWare(void)
-:impl(new MiddleWareImpl(this))
+MiddleWare::MiddleWare(SYNTH_T synth, int prefered_port)
+:impl(new MiddleWareImpl(this, synth, prefered_port))
 {}
 MiddleWare::~MiddleWare(void)
 {
     delete impl;
+}
+void MiddleWare::updateResources(Master *m)
+{
+    impl->updateResources(m);
 }
 Master *MiddleWare::spawnMaster(void)
 {
@@ -1160,22 +1369,23 @@ void MiddleWare::doReadOnlyOp(std::function<void()> fn)
     impl->doReadOnlyOp(fn);
 }
 
-void MiddleWare::setUiCallback(void(*cb)(void*,const char *),void *ui)
+void MiddleWare::setUiCallback(void(*cb)(void*,const char *), void *ui)
 {
     impl->cb = cb;
     impl->ui = ui;
 }
 
-void MiddleWare::setIdleCallback(void(*cb)(void))
+void MiddleWare::setIdleCallback(void(*cb)(void*), void *ptr)
 {
-    impl->idle = cb;
+    impl->idle     = cb;
+    impl->idle_ptr = ptr;
 }
-        
+
 void MiddleWare::transmitMsg(const char *msg)
 {
     impl->handleMsg(msg);
 }
-        
+
 void MiddleWare::transmitMsg(const char *path, const char *args, ...)
 {
     char buffer[1024];
@@ -1197,17 +1407,28 @@ void MiddleWare::transmitMsg(const char *path, const char *args, va_list va)
         fprintf(stderr, "Error in transmitMsg(va)n");
 }
 
-void MiddleWare::pendingSetProgram(int part)
+void MiddleWare::pendingSetProgram(int part, int program)
 {
     impl->pending_load[part]++;
+    impl->bToU->write("/setprogram", "cc", part, program);
 }
 
 std::string MiddleWare::activeUrl(void)
 {
-    return last_url;
+    return impl->last_url;
 }
 
 void MiddleWare::activeUrl(std::string u)
 {
-    last_url = u;
+    impl->last_url = u;
+}
+
+const SYNTH_T &MiddleWare::getSynth(void) const
+{
+    return impl->synth;
+}
+
+const char* MiddleWare::getServerAddress(void) const
+{
+    return lo_server_get_url(impl->server);
 }
