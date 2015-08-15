@@ -277,7 +277,7 @@ ADnote::ADnote(ADnoteParameters *pars_, SynthParams &spars)
                                              getvoicebasefreq(nvoice),
                                              pars.VoicePar[nvoice].Presonance);
 	NoteVoicePar[nvoice]._base_func =
-	    getBaseFunction(/*pars->VoicePar[vc].OscilSmp->Pcurrentbasefunc*/3); // TODO
+	    getBaseFunction(pars.VoicePar[vc].OscilSmp->Pcurrentbasefunc);
 
 
         //I store the first elments to the last position for speedups

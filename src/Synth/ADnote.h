@@ -95,7 +95,7 @@ class ADnote:public SynthNote
         inline void ComputeVoiceOscillatorFrequencyModulation(int nvoice,
                                                               int FMmode);
         //  inline void ComputeVoiceOscillatorFrequencyModulation(int nvoice);
-        /**Computes the Ring Modulated Oscillator.*/
+        /**Computes the WaveTable Modulated Oscillator.*/
         inline void ComputeVoiceOscillatorWaveTableModulation(int nvoice);
         /**TODO*/
         inline void ComputeVoiceOscillatorPitchModulation(int nvoice);
