@@ -26,8 +26,11 @@ class Allocator
         T *alloc(Ts&&... ts)
         {
             void *data = alloc_mem(sizeof(T));
-            if(!data)
+            if(!data) {
+                rollbackTransaction();
                 throw std::bad_alloc();
+            }
+            append_alloc_to_memory_transaction(data);
             return new (data) T(std::forward<Ts>(ts)...);
         }
 
@@ -43,8 +46,11 @@ class Allocator
         T *valloc(size_t len, Ts&&... ts)
         {
             T *data = (T*)alloc_mem(len*sizeof(T));
-            if(!data)
+            if(!data) {
+                rollbackTransaction();
                 throw std::bad_alloc();
+            }
+            append_alloc_to_memory_transaction(data);
             for(unsigned i=0; i<len; ++i)
                 new ((void*)&data[i]) T(std::forward<Ts>(ts)...);
 
@@ -83,6 +89,9 @@ class Allocator
             }
         }
 
+    void beginTransaction();
+    void endTransaction();
+
     virtual void addMemory(void *, size_t mem_size) = 0;
 
     //Return true if the current pool cannot allocate n chunks of chunk_size
@@ -97,6 +106,29 @@ class Allocator
     unsigned long long totalAlloced() const;
 
     struct AllocatorImpl *impl;
+
+private:
+    const static size_t max_transaction_length = 256;
+
+    void* transaction_alloc_content[max_transaction_length];
+    size_t transaction_alloc_index;
+    bool transaction_active;
+
+    void rollbackTransaction();
+
+    /**
+     * Append memory block to the list of memory blocks allocated during this transaction
+     * @param new_memory pointer to the memory pointer to freshly allocated
+     */
+    void append_alloc_to_memory_transaction(void* new_memory) {
+        if (transaction_active) {
+            if( transaction_alloc_index < max_transaction_length) {
+                transaction_alloc_content[transaction_alloc_index++] = new_memory;
+            }
+            // TODO add log about transaction too long and memory transaction safety net being disabled
+        }
+    }
+
 };
 
 //! the allocator for normal use

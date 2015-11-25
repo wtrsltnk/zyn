@@ -38,12 +38,14 @@ Distorsion::Distorsion(EffectParams pars)
       Pstereo(0),
       Pprefiltering(0)
 {
+    memory.beginTransaction();
     lpfl = memory.alloc<AnalogFilter>(2, 22000, 1, 0, pars.srate, pars.bufsize);
     lpfr = memory.alloc<AnalogFilter>(2, 22000, 1, 0, pars.srate, pars.bufsize);
     hpfl = memory.alloc<AnalogFilter>(3, 20, 1, 0, pars.srate, pars.bufsize);
     hpfr = memory.alloc<AnalogFilter>(3, 20, 1, 0, pars.srate, pars.bufsize);
     setpreset(Ppreset);
     cleanup();
+    memory.endTransaction();
 }
 
 Distorsion::~Distorsion()

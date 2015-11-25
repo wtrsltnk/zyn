@@ -28,6 +28,7 @@
 EQ::EQ(EffectParams pars)
     :Effect(pars)
 {
+    memory.beginTransaction();
     for(int i = 0; i < MAX_EQ_BANDS; ++i) {
         filter[i].Ptype   = 0;
         filter[i].Pfreq   = 64;
@@ -42,6 +43,7 @@ EQ::EQ(EffectParams pars)
 
     setpreset(Ppreset);
     cleanup();
+    memory.endTransaction();
 }
 
 EQ::~EQ()
