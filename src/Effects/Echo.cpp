@@ -44,10 +44,8 @@ Echo::Echo(EffectParams pars)
       delta(1),
       ndelta(1)
 {
-    memory.beginTransaction();
     delay.l = memory.valloc<float>(MAX_DELAY * pars.srate);
     delay.r = memory.valloc<float>(MAX_DELAY * pars.srate);
-    memory.endTransaction();
     initdelays();
     setpreset(Ppreset);
 }

@@ -31,7 +31,6 @@
 FormantFilter::FormantFilter(FilterParams *pars, Allocator *alloc, unsigned int srate, int bufsize)
     : Filter(srate, bufsize), memory(*alloc)
 {
-    memory.beginTransaction();
     numformants = pars->Pnumformants;
     for(int i = 0; i < numformants; ++i)
         formant[i] = memory.alloc<AnalogFilter>(4 /*BPF*/, 1000.0f, 10.0f, pars->Pstages, srate, bufsize);
@@ -75,7 +74,6 @@ FormantFilter::FormantFilter(FilterParams *pars, Allocator *alloc, unsigned int 
     Qfactor = pars->getq();
     oldQfactor = Qfactor;
     firsttime  = 1;
-    memory.endTransaction();
 }
 
 FormantFilter::~FormantFilter()

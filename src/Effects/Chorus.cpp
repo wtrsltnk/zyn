@@ -33,7 +33,6 @@ Chorus::Chorus(EffectParams pars)
       maxdelay((int)(MAX_CHORUS_DELAY / 1000.0f * samplerate_f)),
       delaySample(nullptr)
 {
-    memory.beginTransaction();
     delaySample.l = memory.valloc<float>(maxdelay);
     delaySample.r = memory.valloc<float>(maxdelay);
     dlk = 0;
@@ -44,7 +43,6 @@ Chorus::Chorus(EffectParams pars)
     dl2 = getdelay(lfol);
     dr2 = getdelay(lfor);
     cleanup();
-    memory.endTransaction();
 }
 
 Chorus::~Chorus()
