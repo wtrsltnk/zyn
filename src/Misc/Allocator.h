@@ -16,7 +16,8 @@ class Allocator
         virtual void dealloc_mem(void *memory) = 0;
 
         /**
-         * High level allocator method, which return a pointer to a class or struct
+         * High level allocator method, which return a pointer to a class
+         * or struct
          * allocated with the specialized subclass strategy
          * @param ts argument(s) for the constructor of the type T
          * @return a non null pointer to a new object of type T
@@ -35,7 +36,8 @@ class Allocator
         }
 
         /**
-         * High level allocator method, which return a pointer to an array of class or struct
+         * High level allocator method, which return a pointer to an array of
+         * class or struct
          * allocated with the specialized subclass strategy
          * @param len the array length
          * @param ts argument(s) for the constructor of the type T
@@ -117,15 +119,17 @@ private:
     void rollbackTransaction();
 
     /**
-     * Append memory block to the list of memory blocks allocated during this transaction
+     * Append memory block to the list of memory blocks allocated during this
+     * transaction
      * @param new_memory pointer to the memory pointer to freshly allocated
      */
-    void append_alloc_to_memory_transaction(void* new_memory) {
+    void append_alloc_to_memory_transaction(void *new_memory) {
         if (transaction_active) {
-            if( transaction_alloc_index < max_transaction_length) {
+            if (transaction_alloc_index < max_transaction_length) {
                 transaction_alloc_content[transaction_alloc_index++] = new_memory;
             }
-            // TODO add log about transaction too long and memory transaction safety net being disabled
+            // TODO add log about transaction too long and memory transaction
+            // safety net being disabled
         }
     }
 

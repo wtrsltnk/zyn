@@ -125,13 +125,15 @@ static const size_t block_header_free_bit = 1 << 0;
 #endif
 
 void Allocator::beginTransaction() {
-    // TODO: log about unsupported nested transaction when a RT compliant logging is available and transaction_active == true
+    // TODO: log about unsupported nested transaction when a RT compliant
+    // logging is available and transaction_active == true
     transaction_active = true;
     transaction_alloc_index = 0;
 }
 
 void Allocator::endTransaction() {
-    // TODO: log about invalid end of transaction when a RT copmliant logging is available and transaction_active == false
+    // TODO: log about invalid end of transaction when a RT copmliant logging
+    // is available and transaction_active == false
     transaction_active = false;
 }
 
@@ -191,7 +193,8 @@ void Allocator::rollbackTransaction() {
     if (transaction_active) {
 
         // deallocate all allocated memory within this transaction
-        for (size_t temp_idx = 0; temp_idx < transaction_alloc_index; ++temp_idx) {
+        for (size_t temp_idx = 0;
+             temp_idx < transaction_alloc_index; ++temp_idx) {
             dealloc_mem(transaction_alloc_content[temp_idx]);
         }
 
