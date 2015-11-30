@@ -38,14 +38,13 @@ Echo::Echo(EffectParams pars)
       delayTime(1),
       lrdelay(0),
       avgDelay(0),
-      delay(nullptr),
+      delay(memory.valloc<float>(MAX_DELAY * pars.srate),
+            memory.valloc<float>(MAX_DELAY * pars.srate)),
       old(0.0f),
       pos(0),
       delta(1),
       ndelta(1)
 {
-    delay.l = memory.valloc<float>(MAX_DELAY * pars.srate);
-    delay.r = memory.valloc<float>(MAX_DELAY * pars.srate);
     initdelays();
     setpreset(Ppreset);
 }
