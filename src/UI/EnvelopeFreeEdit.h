@@ -45,6 +45,7 @@ class EnvelopeFreeEdit : public Fl_Box, public Fl_Osc_Widget
         //The Points
         char Penvdt[MAX_ENVELOPE_POINTS];
         char Penvval[MAX_ENVELOPE_POINTS];
+        unsigned char Penvsmooth[MAX_ENVELOPE_POINTS];
         //The Sustain point
         char Penvsustain;
         int button_state;

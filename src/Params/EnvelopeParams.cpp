@@ -46,6 +46,7 @@ static const rtosc::Ports localPorts = {
     rParamZyn(Penvsustain, rProp(internal), "Location of the sustain point"),
     rParams(Penvdt,  MAX_ENVELOPE_POINTS, "Envelope Delay Times"),
     rParams(Penvval, MAX_ENVELOPE_POINTS, "Envelope Values"),
+    rParams(Penvsmooth, MAX_ENVELOPE_POINTS, "Smoothing control flags"),
     rParamZyn(Penvstretch, "Stretch with respect to frequency"),
     rToggle(Pforcedrelease, "Force Envelope to fully evaluate"),
     rToggle(Plinearenvelope, "Linear or Logarithmic Envelopes"),
@@ -68,6 +69,7 @@ static const rtosc::Ports localPorts = {
             for (int i=env->Penvpoints; i>=curpoint+1; i--) {
                 env->Penvdt[i]=env->Penvdt[i-1];
                 env->Penvval[i]=env->Penvval[i-1];
+                env->Penvsmooth[i]=env->Penvsmooth[i-1];
             }
 
             if (curpoint==0) {
@@ -87,9 +89,13 @@ static const rtosc::Ports localPorts = {
             for (int i=curpoint+1;i<env->Penvpoints;i++){
                 env->Penvdt[i-1]=env->Penvdt[i];
                 env->Penvval[i-1]=env->Penvval[i];
+                env->Penvsmooth[i-1]=env->Penvsmooth[i];
             };
 
             env->Penvpoints--;
+
+            if (env->Penvpoints > 1)
+                env->Penvsmooth[env->Penvpoints-2] = false;
 
             if (curpoint<=env->Penvsustain)
                 env->Penvsustain--;
@@ -116,6 +122,7 @@ EnvelopeParams::EnvelopeParams(unsigned char Penvstretch_,
     for(int i = 0; i < MAX_ENVELOPE_POINTS; ++i) {
         Penvdt[i]  = 32;
         Penvval[i] = 64;
+        Penvsmooth[i] = false;
     }
     Penvdt[0]       = 0; //no used
     Penvsustain     = 1;
@@ -142,6 +149,7 @@ void EnvelopeParams::paste(const EnvelopeParams &ep)
     for(int i=0; i<MAX_ENVELOPE_POINTS; ++i) {
         this->Penvdt[i]  = ep.Penvdt[i];
         this->Penvval[i] = ep.Penvval[i];
+        this->Penvsmooth[i]=ep.Penvsmooth[i];
     }
     COPY(Penvstretch);
     COPY(Pforcedrelease);
@@ -308,6 +316,8 @@ void EnvelopeParams::converttofree()
             Penvval[2]  = PR_val;
             break;
     }
+    for (int i=0; i < 4; i++)
+        Penvsmooth[i] = false;
 }
 
 
@@ -335,6 +345,8 @@ void EnvelopeParams::add2XML(XMLwrapper& xml)
             if(i != 0)
                 xml.addpar("dt", Penvdt[i]);
             xml.addpar("val", Penvval[i]);
+            if (i < Penvpoints-2)
+                xml.addparbool("smooth", Penvsmooth[i]);
             xml.endbranch();
         }
 }
@@ -364,6 +376,8 @@ void EnvelopeParams::getfromXML(XMLwrapper& xml)
         if(i != 0)
             Penvdt[i] = xml.getpar127("dt", Penvdt[i]);
         Penvval[i] = xml.getpar127("val", Penvval[i]);
+        if (i < Penvpoints-2)
+            Penvsmooth[i] = xml.getparbool("smooth", Penvsmooth[i]);
         xml.exitbranch();
     }
 
