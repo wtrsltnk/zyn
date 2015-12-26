@@ -160,6 +160,7 @@ static void draw_bezier(int x0, int y0, int x1, int y1, int x2, int y2)
 }
 
 #define BEZIER_LINE_COLOR FL_DARK_MAGENTA
+#define BEZIER_DISABLED FL_DARK_YELLOW
 
 void EnvelopeFreeEdit::draw(void)
 {
@@ -186,16 +187,20 @@ void EnvelopeFreeEdit::draw(void)
 
     //draws the evelope points and lines
     Fl_Color alb=FL_WHITE;
+    Fl_Color smooth_color=BEZIER_LINE_COLOR;
     if (!active_r()) alb=fl_rgb_color(180,180,180);
 
     // Draw the lines
     int smoothct = Penvsmooth[0] ? 2 : 0;
     int xx=0, yy=getpointy(0);
     for (int i=1; i<npoints; ++i){
+        if (smoothct == 2)
+            smooth_color = Penvdt[i] > 0 || Penvdt[i+1] > 0 ?
+                BEZIER_LINE_COLOR : BEZIER_DISABLED;
         int oldxx=xx, oldyy=yy;
         xx=getpointx(i); yy=getpointy(i);
         fl_color((i==currentpoint || (ctrldown && i==lastpoint))
-                 ? FL_RED : smoothct == 0 ? alb : BEZIER_LINE_COLOR);
+                 ? FL_RED : smoothct == 0 ? alb : smooth_color);
         fl_line(ox+oldxx,oy+oldyy,ox+xx,oy+yy);
         if (Penvsmooth[i])
             smoothct=2;
@@ -218,7 +223,8 @@ void EnvelopeFreeEdit::draw(void)
         } else if (draw == TO_POINT)
             draw_bezier(xb, yb, xb2, yb2, xx, yy);
         draw = NONE;
-        if (!smoothing && !Penvsmooth[i])
+        if (!smoothing &&
+            !(Penvsmooth[i] && (Penvdt[i+1] > 0 || Penvdt[i+2] > 0)))
             continue;
         if (!smoothing) {
             xb = xx; yb = yy;
@@ -226,7 +232,7 @@ void EnvelopeFreeEdit::draw(void)
             continue;
         }
         xb2 = xx; yb2 = yy;
-        smoothing = Penvsmooth[i];
+        smoothing = (Penvsmooth[i] && (Penvdt[i+1] > 0 || Penvdt[i+2] > 0));
         draw = smoothing ? TO_MIDPOINT : TO_POINT;
     }
 
@@ -240,7 +246,8 @@ void EnvelopeFreeEdit::draw(void)
             offset = 5;
             size = 10;
         } else if (Penvsmooth[i])
-            fl_color(BEZIER_LINE_COLOR);
+            fl_color(Penvdt[i+1] > 0 || Penvdt[i+2] > 0 ?
+                     BEZIER_LINE_COLOR : BEZIER_DISABLED);
         else
             fl_color((i==currentpoint || (ctrldown && i==lastpoint))
                      ? FL_RED : alb);
