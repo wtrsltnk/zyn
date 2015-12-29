@@ -89,7 +89,7 @@ float getdetune(unsigned char type,
             findet = fabs(fdetune / 8192.0f) * 10.0f;
             break;
         case 3:
-            cdet   = fabs(cdetune * 100);
+            cdet   = fabs(cdetune * 100.0f);
             findet = powf(10, fabs(fdetune / 8192.0f) * 3.0f) / 10.0f - 0.1f;
             break;
         case 4:
@@ -133,11 +133,6 @@ void set_realtime()
     sched_setscheduler(0, SCHED_FIFO, &sc);
     //if (err==0) printf("Real-time");
 #endif
-}
-
-void os_sleep(long length)
-{
-    usleep(length);
 }
 
 std::string legalizeFilename(std::string filename)

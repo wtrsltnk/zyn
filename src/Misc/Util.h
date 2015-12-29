@@ -45,9 +45,6 @@ extern float getdetune(unsigned char type,
  * pthread_attr_t*/
 void set_realtime();
 
-/**Os independent sleep in microsecond*/
-void os_sleep(long length);
-
 std::string legalizeFilename(std::string filename);
 
 extern float *denormalkillbuf; /**<the buffer to add noise in order to avoid denormalisation*/
