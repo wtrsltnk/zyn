@@ -56,8 +56,8 @@ Master::Master()
     swaplr = 0;
     off  = 0;
     smps = 0;
-    bufl = new float[synth->buffersize];
-    bufr = new float[synth->buffersize];
+    bufl = getTmpBuffer();
+    bufr = getTmpBuffer();
 
     pthread_mutex_init(&mutex, NULL);
     pthread_mutex_init(&vumutex, NULL);
@@ -80,8 +80,25 @@ Master::Master()
     for(int nefx = 0; nefx < NUM_SYS_EFX; ++nefx)
         sysefx[nefx] = new EffectMgr(0, &mutex);
 
-
     defaults();
+}
+
+Master::~Master()
+{
+    returnTmpBuffer(bufl);
+    returnTmpBuffer(bufr);
+
+    for(int npart = 0; npart < NUM_MIDI_PARTS; ++npart)
+        delete part[npart];
+    for(int nefx = 0; nefx < NUM_INS_EFX; ++nefx)
+        delete insefx[nefx];
+    for(int nefx = 0; nefx < NUM_SYS_EFX; ++nefx)
+        delete sysefx[nefx];
+
+    delete fft;
+
+    pthread_mutex_destroy(&mutex);
+    pthread_mutex_destroy(&vumutex);
 }
 
 void Master::defaults()
@@ -398,8 +415,8 @@ void Master::AudioOut(float *outl, float *outr)
         if(sysefx[nefx]->geteffect() == 0)
             continue;  //the effect is disabled
 
-        float tmpmixl[synth->buffersize];
-        float tmpmixr[synth->buffersize];
+        float *tmpmixl = getTmpBuffer();
+        float *tmpmixr = getTmpBuffer();
         //Clean up the samples used by the system effects
         memset(tmpmixl, 0, synth->bufferbytes);
         memset(tmpmixr, 0, synth->bufferbytes);
@@ -440,6 +457,9 @@ void Master::AudioOut(float *outl, float *outr)
             outl[i] += tmpmixl[i] * outvol;
             outr[i] += tmpmixr[i] * outvol;
         }
+
+        returnTmpBuffer(tmpmixl);
+        returnTmpBuffer(tmpmixr);
     }
 
     //Mix all parts
@@ -519,24 +539,6 @@ void Master::GetAudioOutSamples(size_t nsamples,
             nsamples = 0;
         }
     }
-}
-
-Master::~Master()
-{
-    delete []bufl;
-    delete []bufr;
-
-    for(int npart = 0; npart < NUM_MIDI_PARTS; ++npart)
-        delete part[npart];
-    for(int nefx = 0; nefx < NUM_INS_EFX; ++nefx)
-        delete insefx[nefx];
-    for(int nefx = 0; nefx < NUM_SYS_EFX; ++nefx)
-        delete sysefx[nefx];
-
-    delete fft;
-
-    pthread_mutex_destroy(&mutex);
-    pthread_mutex_destroy(&vumutex);
 }
 
 

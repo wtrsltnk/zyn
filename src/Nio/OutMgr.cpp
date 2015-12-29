@@ -29,8 +29,8 @@ OutMgr::OutMgr()
     master     = Master::getInstance();
 
     //init samples
-    outr = new float[synth->buffersize];
-    outl = new float[synth->buffersize];
+    outr = getTmpBuffer();
+    outl = getTmpBuffer();
     memset(outl, 0, synth->bufferbytes);
     memset(outr, 0, synth->bufferbytes);
 }
@@ -40,8 +40,8 @@ OutMgr::~OutMgr()
     delete wave;
     delete [] priBuf.l;
     delete [] priBuf.r;
-    delete [] outr;
-    delete [] outl;
+    returnTmpBuffer(outr);
+    returnTmpBuffer(outl);
 }
 
 /* Sequence of a tick

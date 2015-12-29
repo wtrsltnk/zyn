@@ -391,7 +391,7 @@ void AnalogFilter::filterout(float *smp)
 
     if(needsinterpolation) {
         //Merge Filter at old coeff with new coeff
-        float ismp[buffersize];
+        float *ismp = getTmpBuffer();
         memcpy(ismp, smp, bufferbytes);
 
         for(int i = 0; i < stages + 1; ++i)
@@ -402,6 +402,7 @@ void AnalogFilter::filterout(float *smp)
             smp[i] = ismp[i] * (1.0f - x) + smp[i] * x;
         }
         needsinterpolation = false;
+        returnTmpBuffer(ismp);
     }
 
     for(int i = 0; i < buffersize; ++i)

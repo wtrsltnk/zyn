@@ -144,7 +144,7 @@ void Reverb::out(const Stereo<float *> &smp)
     if(!Pvolume && insertion)
         return;
 
-    float inputbuf[buffersize];
+    float *inputbuf = getTmpBuffer();
     for(int i = 0; i < buffersize; ++i)
         inputbuf[i] = (smp.l[i] + smp.r[i]) / 2.0f;
 
@@ -180,6 +180,8 @@ void Reverb::out(const Stereo<float *> &smp)
         efxoutl[i] *= lvol;
         efxoutr[i] *= rvol;
     }
+
+    returnTmpBuffer(inputbuf);
 }
 
 

@@ -505,8 +505,8 @@ int SUBnote::noteout(float *outl, float *outr)
     if(NoteEnabled == OFF)
         return 0;
 
-    float tmprnd[synth->buffersize];
-    float tmpsmp[synth->buffersize];
+    float *tmpsmp = getTmpBuffer();
+    float *tmprnd = getTmpBuffer();
     //left channel
     for(int i = 0; i < synth->buffersize; ++i)
         tmprnd[i] = RND * 2.0f - 1.0f;
@@ -584,6 +584,10 @@ int SUBnote::noteout(float *outl, float *outr)
         }
         KillNote();
     }
+
+    returnTmpBuffer(tmprnd);
+    returnTmpBuffer(tmpsmp);
+
     return 1;
 }
 

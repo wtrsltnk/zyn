@@ -1,52 +1,56 @@
 # data file for the Fltk User Interface Designer (fluid)
-version 1.0110 
+version 1.0303 
 header_name {.h} 
 code_name {.cc}
-decl {\#include "../Params/PADnoteParameters.h"} {public
+decl {\#include "../Params/PADnoteParameters.h"} {public local
 } 
 
-decl {\#include "../Misc/Util.h"} {public
+decl {\#include "../Misc/Util.h"} {public local
 } 
 
-decl {\#include "../Misc/Master.h"} {public
+decl {\#include "../Misc/Master.h"} {public local
 } 
 
-decl {\#include "ResonanceUI.h"} {public
+decl {\#include "ResonanceUI.h"} {public local
 } 
 
-decl {\#include <FL/Fl_Box.H>} {public
+decl {\#include <FL/Fl_Box.H>} {public local
 } 
 
-decl {\#include <FL/Fl_Group.H>} {public
+decl {\#include <FL/Fl_Group.H>} {public local
 } 
 
-decl {\#include <FL/Fl_File_Chooser.H>} {public
+decl {\#include <FL/Fl_File_Chooser.H>} {public local
 } 
 
-decl {\#include <math.h>} {} 
-
-decl {\#include <stdio.h>} {} 
-
-decl {\#include <stdlib.h>} {} 
-
-decl {\#include <string.h>} {} 
-
-decl {\#include "WidgetPDial.h"} {public
+decl {\#include <math.h>} {private local
 } 
 
-decl {\#include "EnvelopeUI.h"} {public
+decl {\#include <stdio.h>} {private local
 } 
 
-decl {\#include "LFOUI.h"} {public
+decl {\#include <stdlib.h>} {private local
 } 
 
-decl {\#include "FilterUI.h"} {public
+decl {\#include <string.h>} {private local
 } 
 
-decl {\#include "OscilGenUI.h"} {public
+decl {\#include "WidgetPDial.h"} {public local
 } 
 
-decl {\#include "PresetsUI.h"} {public
+decl {\#include "EnvelopeUI.h"} {public local
+} 
+
+decl {\#include "LFOUI.h"} {public local
+} 
+
+decl {\#include "FilterUI.h"} {public local
+} 
+
+decl {\#include "OscilGenUI.h"} {public local
+} 
+
+decl {\#include "PresetsUI.h"} {public local
 } 
 
 class PADnoteHarmonicProfile {: {public Fl_Box}
@@ -58,10 +62,11 @@ class PADnoteHarmonicProfile {: {public Fl_Box}
     code {master=master_;
 this->pars=pars;} {}
   }
-  Function {draw()} {} {
+  Function {draw()} {open
+  } {
     code {int ox=x(),oy=y(),lx=w(),ly=h();
 if (!visible()) return;
-float smps[lx];
+float *smps = new float[lx];
 
 float realbw=pars->getprofile(smps,lx);
 bool active=active_r();
@@ -126,14 +131,17 @@ if (active) fl_color(0,100,220);
 fl_line(ox+lx/2-rbw,oy,ox+lx/2-rbw,oy+ly-1);
 fl_line(ox+lx/2+rbw,oy,ox+lx/2+rbw,oy+ly-1);
 
-fl_line_style(0);} {}
+fl_line_style(0);
+
+delete[] smps;} {}
   }
-  decl {Master *master;} {}
-  decl {PADnoteParameters *pars;} {public
+  decl {Master *master;} {private local
+  }
+  decl {PADnoteParameters *pars;} {public local
   }
 } 
 
-class PADnoteOvertonePosition {: {public Fl_Box}
+class PADnoteOvertonePosition {open : {public Fl_Box}
 } {
   Function {PADnoteOvertonePosition(int x,int y, int w, int h, const char *label=0):Fl_Box(x,y,w,h,label)} {} {
     code {pars=NULL;} {}
@@ -142,7 +150,8 @@ class PADnoteOvertonePosition {: {public Fl_Box}
     code {master=master_;
 this->pars=pars;} {}
   }
-  Function {draw()} {} {
+  Function {draw()} {open
+  } {
     code {if (!visible()) return;
 const int maxdb=60;
 
@@ -162,7 +171,7 @@ for (int i=1;i<maxharmonic;i++){
 
 
 int n=synth->oscilsize/2;
-float spc[n];
+float *spc = new float[n];
 for (int i=0;i<n;i++) spc[i]=0.0;
 
 pthread_mutex_lock(&master->mutex);
@@ -179,7 +188,7 @@ for (int i=0;i<n;i++){
 if (max<0.000001) max=1.0;
 max=max*1.05;
 
-float spectrum[lx];
+float *spectrum = new float[lx];
 for (int i=0;i<lx;i++) spectrum[i]=0;
 
 
@@ -221,28 +230,31 @@ for (int i=0;i<lx;i++){
        	int yy=(int)(x*ly);
 	fl_line(ox+i,oy+ly-1-yy,ox+i,oy+ly-1);
       
-};} {}
+};
+
+delete[] spc;
+delete[] spectrum;} {selected
+    }
   }
-  decl {Master *master;} {}
-  decl {PADnoteParameters *pars;} {public
+  decl {Master *master;} {private local
+  }
+  decl {PADnoteParameters *pars;} {public local
   }
 } 
 
 class PADnoteUI {open : {public PresetsUI_}
 } {
-  Function {PADnoteUI(PADnoteParameters *parameters,Master *master_)} {open
-  } {
+  Function {PADnoteUI(PADnoteParameters *parameters,Master *master_)} {} {
     code {pars=parameters;
 master=master_;
 oscui=NULL;
 resui=new ResonanceUI(pars->resonance);
 make_window();} {}
   }
-  Function {make_window()} {open
-  } {
+  Function {make_window()} {} {
     Fl_Window padnotewindow {
       label {PAD synth Parameters} open
-      xywh {288 386 535 435} type Double visible
+      xywh {845 334 511 411} type Double visible
     } {
       Fl_Tabs {} {
         callback {if (o->value()!=harmonicstructuregroup) applybutton->hide();
@@ -250,7 +262,7 @@ make_window();} {}
         xywh {0 0 535 395} box UP_FRAME
       } {
         Fl_Group harmonicstructuregroup {
-          label {Harmonic Structure} open selected
+          label {Harmonic Structure} open
           xywh {0 20 535 375} box UP_FRAME
         } {
           Fl_Group bwprofilegroup {
@@ -504,7 +516,7 @@ cbwidget->do_callback();}
                 xywh {120 120 100 20} labelfont 1 labelsize 11
               }
               MenuItem {} {
-                label Shift selected
+                label Shift
                 xywh {130 130 100 20} labelfont 1 labelsize 11
               }
             }
@@ -1107,14 +1119,14 @@ delete(resui);
 padnotewindow->hide();
 delete(padnotewindow);} {}
   }
-  decl {PADnoteParameters *pars;} {public
+  decl {PADnoteParameters *pars;} {public local
   }
-  decl {Master *master;} {public
+  decl {Master *master;} {public local
   }
-  decl {OscilEditor *oscui;} {public
+  decl {OscilEditor *oscui;} {public local
   }
-  decl {Oscilloscope *osc;} {public
+  decl {Oscilloscope *osc;} {public local
   }
-  decl {ResonanceUI *resui;} {public
+  decl {ResonanceUI *resui;} {public local
   }
 } 

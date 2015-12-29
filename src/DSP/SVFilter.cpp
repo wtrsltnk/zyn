@@ -160,7 +160,7 @@ void SVFilter::filterout(float *smp)
         singlefilterout(smp, st[i], par);
 
     if(needsinterpolation) {
-        float ismp[buffersize];
+        float *ismp = getTmpBuffer();
         memcpy(ismp, smp, bufferbytes);
 
         for(int i = 0; i < stages + 1; ++i)
@@ -171,6 +171,7 @@ void SVFilter::filterout(float *smp)
             smp[i] = ismp[i] * (1.0f - x) + smp[i] * x;
         }
         needsinterpolation = false;
+        returnTmpBuffer(ismp);
     }
 
     for(int i = 0; i < buffersize; ++i)

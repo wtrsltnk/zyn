@@ -64,6 +64,13 @@ std::string stringFrom(T x)
     return ss.str();
 }
 
+//Memory pool for temporary buffers
+//No allocation in *normal* case
+//All should be sized to synth->buffersize
+float *getTmpBuffer();
+void returnTmpBuffer(float *buf);
+void clearTmpBuffers(void);
+
 template<class T>
 T stringTo(const char *x)
 {
