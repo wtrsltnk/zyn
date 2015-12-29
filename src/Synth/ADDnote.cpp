@@ -30,10 +30,10 @@
 #include "../Misc/Util.h"
 #include "../DSP/Filter.h"
 #include "OscilGen.h"
-#include "ADnote.h"
+#include "ADDnote.h"
 
 
-ADnote::ADnote(ADnoteParameters *pars,
+ADDnote::ADDnote(ADDnoteParameters *pars,
                Controller *ctl_,
                float freq,
                float velocity,
@@ -136,7 +136,7 @@ ADnote::ADnote(ADnoteParameters *pars,
             };
                 break;
             default: { //unison for more than 2 subvoices
-                float unison_values[unison];
+                float *unison_values = new float[unison];
                 float min = -1e-6, max = 1e-6;
                 for(int k = 0; k < unison; ++k) {
                     float step = (k / (float) (unison - 1)) * 2.0f - 1.0f; //this makes the unison spread more uniform
@@ -156,6 +156,7 @@ ADnote::ADnote(ADnoteParameters *pars,
                     unison_base_freq_rap[nvoice][k] =
                         powf(2.0f, (unison_spread * unison_values[k]) / 1200);
                 }
+                delete[] unison_values;
             };
         }
 
@@ -413,10 +414,10 @@ ADnote::ADnote(ADnoteParameters *pars,
 // initparameters() stuck together with some lines removed so that it
 // only alter the already playing note (to perform legato). It is
 // possible I left stuff that is not required for this.
-void ADnote::legatonote(float freq, float velocity, int portamento_,
+void ADDnote::legatonote(float freq, float velocity, int portamento_,
                         int midinote_, bool externcall)
 {
-    ADnoteParameters *pars = partparams;
+    ADDnoteParameters *pars = partparams;
 
     // Manage legato stuff
     if(legato.update(freq, velocity, portamento_, midinote_, externcall))
@@ -663,7 +664,7 @@ void ADnote::legatonote(float freq, float velocity, int portamento_,
 /*
  * Kill a voice of ADnote
  */
-void ADnote::KillVoice(int nvoice)
+void ADDnote::KillVoice(int nvoice)
 {
     delete [] oscfreqhi[nvoice];
     delete [] oscfreqlo[nvoice];
@@ -687,7 +688,7 @@ void ADnote::KillVoice(int nvoice)
 /*
  * Kill the note
  */
-void ADnote::KillNote()
+void ADDnote::KillNote()
 {
     for(unsigned nvoice = 0; nvoice < NUM_VOICES; ++nvoice) {
         if(NoteVoicePar[nvoice].Enabled == ON)
@@ -703,7 +704,7 @@ void ADnote::KillNote()
     NoteEnabled = OFF;
 }
 
-ADnote::~ADnote()
+ADDnote::~ADDnote()
 {
     if(NoteEnabled == ON)
         KillNote();
@@ -720,7 +721,7 @@ ADnote::~ADnote()
 /*
  * Init the parameters
  */
-void ADnote::initparameters()
+void ADDnote::initparameters()
 {
     int tmp[NUM_VOICES];
 
@@ -848,7 +849,7 @@ void ADnote::initparameters()
             tmp[i] = 0;
         for(int i = nvoice + 1; i < NUM_VOICES; ++i)
             if((NoteVoicePar[i].FMVoice == nvoice) && (tmp[i] == 0)) {
-                NoteVoicePar[nvoice].VoiceOut = new float[synth->buffersize];
+                NoteVoicePar[nvoice].VoiceOut = getTmpBuffer();
                 tmp[i] = 1;
             }
 
@@ -862,7 +863,7 @@ void ADnote::initparameters()
  * Computes the relative frequency of each unison voice and it's vibratto
  * This must be called before setfreq* functions
  */
-void ADnote::compute_unison_freq_rap(int nvoice) {
+void ADDnote::compute_unison_freq_rap(int nvoice) {
     if(unison_size[nvoice] == 1) { //no unison
         unison_freq_rap[nvoice][0] = 1.0f;
         return;
@@ -896,7 +897,7 @@ void ADnote::compute_unison_freq_rap(int nvoice) {
 /*
  * Computes the frequency of an oscillator
  */
-void ADnote::setfreq(int nvoice, float in_freq)
+void ADDnote::setfreq(int nvoice, float in_freq)
 {
     for(int k = 0; k < unison_size[nvoice]; ++k) {
         float freq  = fabs(in_freq) * unison_freq_rap[nvoice][k];
@@ -912,7 +913,7 @@ void ADnote::setfreq(int nvoice, float in_freq)
 /*
  * Computes the frequency of an modullator oscillator
  */
-void ADnote::setfreqFM(int nvoice, float in_freq)
+void ADDnote::setfreqFM(int nvoice, float in_freq)
 {
     for(int k = 0; k < unison_size[nvoice]; ++k) {
         float freq  = fabs(in_freq) * unison_freq_rap[nvoice][k];
@@ -928,7 +929,7 @@ void ADnote::setfreqFM(int nvoice, float in_freq)
 /*
  * Get Voice base frequency
  */
-float ADnote::getvoicebasefreq(int nvoice) const
+float ADDnote::getvoicebasefreq(int nvoice) const
 {
     float detune = NoteVoicePar[nvoice].Detune / 100.0f
                    + NoteVoicePar[nvoice].FineDetune / 100.0f
@@ -957,7 +958,7 @@ float ADnote::getvoicebasefreq(int nvoice) const
 /*
  * Get Voice's Modullator base frequency
  */
-float ADnote::getFMvoicebasefreq(int nvoice) const
+float ADDnote::getFMvoicebasefreq(int nvoice) const
 {
     float detune = NoteVoicePar[nvoice].FMDetune / 100.0f;
     return getvoicebasefreq(nvoice) * powf(2, detune / 12.0f);
@@ -966,7 +967,7 @@ float ADnote::getFMvoicebasefreq(int nvoice) const
 /*
  * Computes all the parameters for each tick
  */
-void ADnote::computecurrentparameters()
+void ADDnote::computecurrentparameters()
 {
     int   nvoice;
     float voicefreq, voicepitch, filterpitch, filterfreq, FMfreq,
@@ -1089,7 +1090,7 @@ void ADnote::computecurrentparameters()
 /*
  * Fadein in a way that removes clicks but keep sound "punchy"
  */
-inline void ADnote::fadein(float *smps) const
+inline void ADDnote::fadein(float *smps) const
 {
     int zerocrossings = 0;
     for(int i = 1; i < synth->buffersize; ++i)
@@ -1127,7 +1128,7 @@ inline void ADnote::fadein(float *smps) const
  * sticking to integers for tracking the overflow of the low portion, around 15%
  * of the execution time was shaved off in the ADnote test.
  */
-inline void ADnote::ComputeVoiceOscillator_LinearInterpolation(int nvoice)
+inline void ADDnote::ComputeVoiceOscillator_LinearInterpolation(int nvoice)
 {
     for(int k = 0; k < unison_size[nvoice]; ++k) {
         int    poshi  = oscposhi[nvoice][k];
@@ -1189,7 +1190,7 @@ inline void ADnote::ComputeVoiceOscillator_CubicInterpolation(int nvoice){
 /*
  * Computes the Oscillator (Morphing)
  */
-inline void ADnote::ComputeVoiceOscillatorMorph(int nvoice)
+inline void ADDnote::ComputeVoiceOscillatorMorph(int nvoice)
 {
     int   i;
     float amp;
@@ -1247,7 +1248,7 @@ inline void ADnote::ComputeVoiceOscillatorMorph(int nvoice)
 /*
  * Computes the Oscillator (Ring Modulation)
  */
-inline void ADnote::ComputeVoiceOscillatorRingModulation(int nvoice)
+inline void ADDnote::ComputeVoiceOscillatorRingModulation(int nvoice)
 {
     int   i;
     float amp;
@@ -1304,7 +1305,7 @@ inline void ADnote::ComputeVoiceOscillatorRingModulation(int nvoice)
 /*
  * Computes the Oscillator (Phase Modulation or Frequency Modulation)
  */
-inline void ADnote::ComputeVoiceOscillatorFrequencyModulation(int nvoice,
+inline void ADDnote::ComputeVoiceOscillatorFrequencyModulation(int nvoice,
                                                               int FMmode)
 {
     int   carposhi = 0;
@@ -1429,7 +1430,7 @@ inline void ADnote::ComputeVoiceOscillatorFrequencyModulation(int nvoice,
 
 
 /*Calculeaza Oscilatorul cu PITCH MODULATION*/
-inline void ADnote::ComputeVoiceOscillatorPitchModulation(int /*nvoice*/)
+inline void ADDnote::ComputeVoiceOscillatorPitchModulation(int /*nvoice*/)
 {
 //TODO
 }
@@ -1437,7 +1438,7 @@ inline void ADnote::ComputeVoiceOscillatorPitchModulation(int /*nvoice*/)
 /*
  * Computes the Noise
  */
-inline void ADnote::ComputeVoiceNoise(int nvoice)
+inline void ADDnote::ComputeVoiceNoise(int nvoice)
 {
     for(int k = 0; k < unison_size[nvoice]; ++k) {
         float *tw = tmpwave_unison[k];
@@ -1452,7 +1453,7 @@ inline void ADnote::ComputeVoiceNoise(int nvoice)
  * Compute the ADnote samples
  * Returns 0 if the note is finished
  */
-int ADnote::noteout(float *outl, float *outr)
+int ADDnote::noteout(float *outl, float *outr)
 {
     memcpy(outl, denormalkillbuf, synth->bufferbytes);
     memcpy(outr, denormalkillbuf, synth->bufferbytes);
@@ -1717,7 +1718,7 @@ int ADnote::noteout(float *outl, float *outr)
 /*
  * Relase the key (NoteOff)
  */
-void ADnote::relasekey()
+void ADDnote::relasekey()
 {
     for(int nvoice = 0; nvoice < NUM_VOICES; ++nvoice)
         NoteVoicePar[nvoice].releasekey();
@@ -1729,7 +1730,7 @@ void ADnote::relasekey()
 /*
  * Check if the note is finished
  */
-int ADnote::finished() const
+int ADDnote::finished() const
 {
     if(NoteEnabled == ON)
         return 0;
@@ -1737,7 +1738,7 @@ int ADnote::finished() const
         return 1;
 }
 
-void ADnote::Voice::releasekey()
+void ADDnote::Voice::releasekey()
 {
     if(!Enabled)
         return;
@@ -1758,7 +1759,7 @@ static inline void nullify(T &t) {delete t; t = NULL; }
 template<class T>
 static inline void arrayNullify(T &t) {delete [] t; t = NULL; }
 
-void ADnote::Voice::kill()
+void ADDnote::Voice::kill()
 {
     arrayNullify(OscilSmp);
     nullify(FreqEnvelope);
@@ -1784,7 +1785,7 @@ void ADnote::Voice::kill()
     Enabled = OFF;
 }
 
-void ADnote::Global::kill()
+void ADDnote::Global::kill()
 {
     nullify(FreqEnvelope);
     nullify(FreqLfo);
@@ -1796,7 +1797,7 @@ void ADnote::Global::kill()
     nullify(FilterLfo);
 }
 
-void ADnote::Global::initparameters(const ADnoteGlobalParam &param,
+void ADDnote::Global::initparameters(const ADnoteGlobalParam &param,
                                     float basefreq, float velocity,
                                     bool stereo)
 {

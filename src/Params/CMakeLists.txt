@@ -1,5 +1,5 @@
 set(zynaddsubfx_params_SRCS
-	Params/ADnoteParameters.cpp
+	Params/ADDnoteParameters.cpp
 	Params/Controller.cpp
 	Params/EnvelopeParams.cpp
 	Params/FilterParams.cpp

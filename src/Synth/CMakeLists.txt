@@ -1,6 +1,6 @@
 set(zynaddsubfx_synth_SRCS
 	Synth/SynthNote.cpp
-	Synth/ADnote.cpp
+	Synth/ADDnote.cpp
 	Synth/Envelope.cpp
 	Synth/LFO.cpp
 	Synth/OscilGen.cpp

@@ -288,11 +288,11 @@ struct ADnoteVoiceParam {
     EnvelopeParams *FMAmpEnvelope;
 };
 
-class ADnoteParameters:public PresetsArray
+class ADDnoteParameters:public PresetsArray
 {
     public:
-        ADnoteParameters(FFTwrapper *fft_);
-        ~ADnoteParameters();
+        ADDnoteParameters(FFTwrapper *fft_);
+        ~ADDnoteParameters();
 
         ADnoteGlobalParam GlobalPar;
         ADnoteVoiceParam  VoicePar[NUM_VOICES];

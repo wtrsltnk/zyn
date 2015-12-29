@@ -20,13 +20,13 @@
 
 */
 
-#ifndef AD_NOTE_H
-#define AD_NOTE_H
+#ifndef ADD_NOTE_H
+#define ADD_NOTE_H
 
 #include "SynthNote.h"
 #include "Envelope.h"
 #include "LFO.h"
-#include "../Params/ADnoteParameters.h"
+#include "../Params/ADDnoteParameters.h"
 #include "../Params/Controller.h"
 
 //Globals
@@ -37,7 +37,7 @@
 #define OSCIL_SMP_EXTRA_SAMPLES 5
 
 /**The "additive" synthesizer*/
-class ADnote:public SynthNote
+class ADDnote:public SynthNote
 {
     public:
         /**Constructor.
@@ -48,11 +48,11 @@ class ADnote:public SynthNote
          * @param portamento_ 1 if the note has portamento
          * @param midinote_ The midi number of the note
          * @param besilent Start silent note if true*/
-        ADnote(ADnoteParameters *pars, Controller *ctl_, float freq,
+        ADDnote(ADDnoteParameters *pars, Controller *ctl_, float freq,
                float velocity, int portamento_, int midinote_,
                bool besilent);
         /**Destructor*/
-        ~ADnote();
+        ~ADDnote();
 
         /**Alters the playing note for legato effect*/
         void legatonote(float freq, float velocity, int portamento_,
@@ -112,7 +112,7 @@ class ADnote:public SynthNote
 
 
         //GLOBALS
-        ADnoteParameters *partparams;
+        ADDnoteParameters *partparams;
         unsigned char     stereo; //if the note is stereo (allows note Panning)
         int   midinote;
         float velocity, basefreq;

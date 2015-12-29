@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "ADnoteParameters.h"
+#include "ADDnoteParameters.h"
 #include "EnvelopeParams.h"
 #include "LFOParams.h"
 #include "../Misc/XMLwrapper.h"
@@ -36,7 +36,7 @@
 int ADnote_unison_sizes[] =
 {1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 0};
 
-ADnoteParameters::ADnoteParameters(FFTwrapper *fft_)
+ADDnoteParameters::ADDnoteParameters(FFTwrapper *fft_)
     :PresetsArray()
 {
     setpresettype("Padsynth");
@@ -66,7 +66,7 @@ ADnoteGlobalParam::ADnoteGlobalParam()
     Reson     = new Resonance();
 }
 
-void ADnoteParameters::defaults()
+void ADDnoteParameters::defaults()
 {
     //Default Parameters
     GlobalPar.defaults();
@@ -112,7 +112,7 @@ void ADnoteGlobalParam::defaults()
 /*
  * Defaults a voice
  */
-void ADnoteParameters::defaults(int n)
+void ADDnoteParameters::defaults(int n)
 {
     VoicePar[n].defaults();
 }
@@ -189,7 +189,7 @@ void ADnoteVoiceParam::defaults()
 /*
  * Init the voice parameters
  */
-void ADnoteParameters::EnableVoice(int nvoice)
+void ADDnoteParameters::EnableVoice(int nvoice)
 {
     VoicePar[nvoice].enable(fft, GlobalPar.Reson);
 }
@@ -221,7 +221,7 @@ void ADnoteVoiceParam::enable(FFTwrapper *fft, Resonance *Reson)
 /*
  * Get the Multiplier of the fine detunes of the voices
  */
-float ADnoteParameters::getBandwidthDetuneMultiplier()
+float ADDnoteParameters::getBandwidthDetuneMultiplier()
 {
     float bw = (GlobalPar.PBandwidth - 64.0f) / 64.0f;
     bw = powf(2.0f, bw * powf(fabs(bw), 0.2f) * 5.0f);
@@ -233,7 +233,7 @@ float ADnoteParameters::getBandwidthDetuneMultiplier()
  * Get the unison spread in cents for a voice
  */
 
-float ADnoteParameters::getUnisonFrequencySpreadCents(int nvoice) {
+float ADDnoteParameters::getUnisonFrequencySpreadCents(int nvoice) {
     float unison_spread = VoicePar[nvoice].Unison_frequency_spread / 127.0f;
     unison_spread = powf(unison_spread * 2.0f, 2.0f) * 50.0f; //cents
     return unison_spread;
@@ -242,7 +242,7 @@ float ADnoteParameters::getUnisonFrequencySpreadCents(int nvoice) {
 /*
  * Kill the voice
  */
-void ADnoteParameters::KillVoice(int nvoice)
+void ADDnoteParameters::KillVoice(int nvoice)
 {
     VoicePar[nvoice].kill();
 }
@@ -279,13 +279,13 @@ ADnoteGlobalParam::~ADnoteGlobalParam()
     delete Reson;
 }
 
-ADnoteParameters::~ADnoteParameters()
+ADDnoteParameters::~ADDnoteParameters()
 {
     for(int nvoice = 0; nvoice < NUM_VOICES; ++nvoice)
         KillVoice(nvoice);
 }
 
-int ADnoteParameters::get_unison_size_index(int nvoice) {
+int ADDnoteParameters::get_unison_size_index(int nvoice) {
     int index = 0;
     if(nvoice >= NUM_VOICES)
         return 0;
@@ -303,7 +303,7 @@ int ADnoteParameters::get_unison_size_index(int nvoice) {
     return 0;
 }
 
-void ADnoteParameters::set_unison_size_index(int nvoice, int index) {
+void ADDnoteParameters::set_unison_size_index(int nvoice, int index) {
     int unison = 1;
     for(int i = 0; i <= index; ++i) {
         unison = ADnote_unison_sizes[i];
@@ -318,7 +318,7 @@ void ADnoteParameters::set_unison_size_index(int nvoice, int index) {
 
 
 
-void ADnoteParameters::add2XMLsection(XMLwrapper *xml, int n)
+void ADDnoteParameters::add2XMLsection(XMLwrapper *xml, int n)
 {
     int nvoice = n;
     if(nvoice >= NUM_VOICES)
@@ -543,7 +543,7 @@ void ADnoteGlobalParam::add2XML(XMLwrapper *xml)
     xml->endbranch();
 }
 
-void ADnoteParameters::add2XML(XMLwrapper *xml)
+void ADDnoteParameters::add2XML(XMLwrapper *xml)
 {
     GlobalPar.add2XML(xml);
     for(int nvoice = 0; nvoice < NUM_VOICES; ++nvoice) {
@@ -630,7 +630,7 @@ void ADnoteGlobalParam::getfromXML(XMLwrapper *xml)
     }
 }
 
-void ADnoteParameters::getfromXML(XMLwrapper *xml)
+void ADDnoteParameters::getfromXML(XMLwrapper *xml)
 {
     GlobalPar.getfromXML(xml);
 
@@ -643,7 +643,7 @@ void ADnoteParameters::getfromXML(XMLwrapper *xml)
     }
 }
 
-void ADnoteParameters::getfromXMLsection(XMLwrapper *xml, int n)
+void ADDnoteParameters::getfromXMLsection(XMLwrapper *xml, int n)
 {
     int nvoice = n;
     if(nvoice >= NUM_VOICES)

@@ -25,10 +25,10 @@
 #include "Util.h"
 #include "XMLwrapper.h"
 #include "../Effects/EffectMgr.h"
-#include "../Params/ADnoteParameters.h"
+#include "../Params/ADDnoteParameters.h"
 #include "../Params/SUBnoteParameters.h"
 #include "../Params/PADnoteParameters.h"
-#include "../Synth/ADnote.h"
+#include "../Synth/ADDnote.h"
 #include "../Synth/SUBnote.h"
 #include "../Synth/PADnote.h"
 #include "../DSP/FFTwrapper.h"
@@ -52,7 +52,7 @@ Part::Part(Microtonal *microtonal_, FFTwrapper *fft_, pthread_mutex_t *mutex_)
         kit[n].padpars = NULL;
     }
 
-    kit[0].adpars  = new ADnoteParameters(fft);
+    kit[0].adpars  = new ADDnoteParameters(fft);
     kit[0].subpars = new SUBnoteParameters();
     kit[0].padpars = new PADnoteParameters(fft, mutex);
 

@@ -1,5 +1,5 @@
 set(UI_fl_files
-    ADnoteUI.fl
+    ADDnoteUI.fl
     BankUI.fl
     ConfigUI.fl
     EffUI.fl

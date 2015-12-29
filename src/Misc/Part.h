@@ -33,7 +33,7 @@
 #include <list> // For the monomemnotes list.
 
 class EffectMgr;
-class ADnoteParameters;
+class ADDnoteParameters;
 class SUBnoteParameters;
 class PADnoteParameters;
 class SynthNote;
@@ -95,7 +95,7 @@ class Part
             unsigned char     *Pname;
             unsigned char      Padenabled, Psubenabled, Ppadenabled;
             unsigned char      Psendtoparteffect;
-            ADnoteParameters  *adpars;
+            ADDnoteParameters  *adpars;
             SUBnoteParameters *subpars;
             PADnoteParameters *padpars;
         } kit[NUM_KIT_ITEMS];
