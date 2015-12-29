@@ -121,6 +121,7 @@
 
 #define LOG_2 0.693147181f
 #define PI 3.1415926536f
+#define PI_2 PI / 2.0f
 #define LOG_10 2.302585093f
 
 /*
