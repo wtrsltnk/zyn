@@ -459,7 +459,7 @@ void Part::NoteOn(unsigned char note,
         if(Pkitmode == 0) { //init the notes for the "normal mode"
             partnote[pos].kititem[0].sendtoparteffect = 0;
             if(kit[0].Padenabled != 0)
-                partnote[pos].kititem[0].adnote = new ADnote(kit[0].adpars,
+                partnote[pos].kititem[0].adnote = new ADDnote(kit[0].adpars,
                                                              &ctl,
                                                              notebasefreq,
                                                              vel,
@@ -490,7 +490,7 @@ void Part::NoteOn(unsigned char note,
             if(legatomodevalid) {
                 partnote[posb].kititem[0].sendtoparteffect = 0;
                 if(kit[0].Padenabled != 0)
-                    partnote[posb].kititem[0].adnote = new ADnote(kit[0].adpars,
+                    partnote[posb].kititem[0].adnote = new ADDnote(kit[0].adpars,
                                                                   &ctl,
                                                                   notebasefreq,
                                                                   vel,
@@ -535,7 +535,7 @@ void Part::NoteOn(unsigned char note,
                      kit[item].Psendtoparteffect : NUM_PART_EFX);
 
                 if((kit[item].adpars != NULL) && ((kit[item].Padenabled) != 0))
-                    partnote[pos].kititem[ci].adnote = new ADnote(
+                    partnote[pos].kititem[ci].adnote = new ADDnote(
                         kit[item].adpars,
                         &ctl,
                         notebasefreq,
@@ -573,7 +573,7 @@ void Part::NoteOn(unsigned char note,
 
                     if((kit[item].adpars != NULL)
                        && ((kit[item].Padenabled) != 0))
-                        partnote[posb].kititem[ci].adnote = new ADnote(
+                        partnote[posb].kititem[ci].adnote = new ADDnote(
                             kit[item].adpars,
                             &ctl,
                             notebasefreq,
@@ -1071,7 +1071,7 @@ void Part::setkititemstatus(int kititem, int Penabled_)
     }
     else {
         if(kit[kititem].adpars == NULL)
-            kit[kititem].adpars = new ADnoteParameters(fft);
+            kit[kititem].adpars = new ADDnoteParameters(fft);
         if(kit[kititem].subpars == NULL)
             kit[kititem].subpars = new SUBnoteParameters();
         if(kit[kititem].padpars == NULL)
