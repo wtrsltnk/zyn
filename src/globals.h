@@ -223,7 +223,7 @@ struct SYNTH_T {
     int buffersize;
 
     /**
-     * The size of ADnote Oscillator
+     * The size of ADDnote Oscillator
      * Decrease this => poor quality
      * Increase this => CPU requirements gets high (only at start of the note)
      */
