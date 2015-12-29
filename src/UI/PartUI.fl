@@ -24,7 +24,7 @@ decl {\#include "EffUI.h"} {public
 decl {\#include "BankUI.h"} {public
 } 
 
-decl {\#include "ADnoteUI.h"} {public
+decl {\#include "ADDnoteUI.h"} {public
 } 
 
 decl {\#include "SUBnoteUI.h"} {public
@@ -1075,7 +1075,7 @@ if (kititem!=lastkititem){
     if (kititem<0) return;
 
     if (part->kit[kititem].adpars!=NULL) 
-      adnoteui=new ADnoteUI(part->kit[kititem].adpars,master);
+      adnoteui=new ADDnoteUI(part->kit[kititem].adpars,master);
 
     if (part->kit[kititem].subpars!=NULL) 
        subnoteui=new SUBnoteUI(part->kit[kititem].subpars);
@@ -1087,7 +1087,7 @@ if (kititem!=lastkititem){
 
 
 
-if ((engine==0)&&(adnoteui!=NULL)) adnoteui->ADnoteGlobalParameters->show();
+if ((engine==0)&&(adnoteui!=NULL)) adnoteui->ADDnoteGlobalParameters->show();
 if ((engine==1)&&(subnoteui!=NULL)) subnoteui->SUBparameters->show();
 if ((engine==2)&&(adnoteui!=NULL)) padnoteui->padnotewindow->show();} {}
   }
@@ -1114,7 +1114,7 @@ delete(instrumenteditwindow);} {}
   decl {Part *part;} {}
   decl {Master *master;} {}
   decl {BankUI *bankui;} {}
-  decl {ADnoteUI *adnoteui;} {}
+  decl {ADDnoteUI *adnoteui;} {}
   decl {SUBnoteUI *subnoteui;} {}
   decl {PADnoteUI *padnoteui;} {}
   decl {PartSysEffSend *psyef[NUM_SYS_EFX];} {}

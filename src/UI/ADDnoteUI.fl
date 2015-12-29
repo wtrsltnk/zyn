@@ -50,11 +50,11 @@ decl {\#include "OscilGenUI.h"} {public
 decl {\#include "PresetsUI.h"} {public
 } 
 
-class ADvoicelistitem {open : {public Fl_Group}
+class ADDvoicelistitem {open : {public Fl_Group}
 } {
   Function {make_window()} {open private
   } {
-    Fl_Window ADnoteVoiceListItem {open
+    Fl_Window ADDnoteVoiceListItem {open
       private xywh {262 736 615 100} type Double box UP_FRAME
       class Fl_Group visible
     } {
@@ -133,7 +133,7 @@ o->redraw();}
       }
     }
   }
-  Function {ADvoicelistitem(int x,int y, int w, int h, const char *label=0):Fl_Group(x,y,w,h,label)} {} {
+  Function {ADDvoicelistitem(int x,int y, int w, int h, const char *label=0):Fl_Group(x,y,w,h,label)} {} {
     code {nvoice=0;
 pars=NULL;} {}
   }
@@ -142,7 +142,7 @@ pars=NULL;} {}
 nvoice=nvoice_;
 master=master_;
 make_window();
-ADnoteVoiceListItem->show();
+ADDnoteVoiceListItem->show();
 end();} {}
   }
   Function {refreshlist()} {} {
@@ -160,11 +160,11 @@ if (pars->VoicePar[nvoice].Enabled==0) voicelistitemgroup->deactivate();
     else voicelistitemgroup->activate();
 detunevalueoutput->do_callback();
 noiselabel->do_callback();
-ADnoteVoiceListItem->redraw();} {}
+ADDnoteVoiceListItem->redraw();} {}
   }
-  Function {~ADvoicelistitem()} {} {
-    code {ADnoteVoiceListItem->hide();
-//delete(ADnoteVoiceListItem);} {}
+  Function {~ADDvoicelistitem()} {} {
+    code {ADDnoteVoiceListItem->hide();
+//delete(ADDnoteVoiceListItem);} {}
   }
   decl {ADDnoteParameters *pars;} {}
   decl {int nvoice;} {}
@@ -172,11 +172,11 @@ ADnoteVoiceListItem->redraw();} {}
   decl {Master *master;} {}
 } 
 
-class ADvoiceUI {open : {public Fl_Group}
+class ADDvoiceUI {open : {public Fl_Group}
 } {
   Function {make_window()} {open
   } {
-    Fl_Window ADnoteVoiceParameters {
+    Fl_Window ADDnoteVoiceParameters {
       label Voice open
       xywh {863 89 765 595} type Double box NO_BOX
       class Fl_Group visible
@@ -562,7 +562,7 @@ voiceonbutton->redraw();} open
               label Unison
               callback {pars->set_unison_size_index(nvoice,(int) o->value());} open
               tooltip {Unison size} xywh {10 560 75 20} down_box BORDER_BOX labelfont 1 align 5 textfont 1 textsize 10
-              code0 {o->add("OFF");char tmp[100];for (int i=1;ADnote_unison_sizes[i];i++){snprintf(tmp,100,"size %d",ADnote_unison_sizes[i]);o->add(tmp);};}
+              code0 {o->add("OFF");char tmp[100];for (int i=1;ADDnote_unison_sizes[i];i++){snprintf(tmp,100,"size %d",ADDnote_unison_sizes[i]);o->add(tmp);};}
               code1 {o->value(pars->get_unison_size_index(nvoice));}
             } {}
             Fl_Dial {} {
@@ -782,7 +782,7 @@ o->redraw();}
       }
     }
   }
-  Function {ADvoiceUI(int x,int y, int w, int h, const char *label=0):Fl_Group(x,y,w,h,label)} {} {
+  Function {ADDvoiceUI(int x,int y, int w, int h, const char *label=0):Fl_Group(x,y,w,h,label)} {} {
     code {nvoice=0;
 pars=NULL;
 oscedit=NULL;} {}
@@ -794,16 +794,16 @@ nvoice=nvoice_;
 master=master_;
 make_window();
 end();
-ADnoteVoiceParameters->show();} {}
+ADDnoteVoiceParameters->show();} {}
   }
-  Function {~ADvoiceUI()} {open
+  Function {~ADDvoiceUI()} {open
   } {
-    code {ADnoteVoiceParameters->hide();
+    code {ADDnoteVoiceParameters->hide();
 hide();
 if (oscedit!=NULL) {
     delete(oscedit);
 };
-//delete (ADnoteVoiceParameters);} {}
+//delete (ADDnoteVoiceParameters);} {}
   }
   decl {int nvoice;} {}
   decl {ADDnoteParameters *pars;} {}
@@ -813,11 +813,11 @@ if (oscedit!=NULL) {
   decl {Master *master;} {}
 } 
 
-class ADnoteUI {open : {public PresetsUI_}
+class ADDnoteUI {open : {public PresetsUI_}
 } {
   Function {make_window()} {open private
   } {
-    Fl_Window ADnoteGlobalParameters {
+    Fl_Window ADDnoteGlobalParameters {
       label {ADsynth Global Parameters of the Instrument} open
       xywh {457 319 540 430} type Double visible
     } {
@@ -996,17 +996,17 @@ for (int i=0;i<NUM_VOICES;i++){
         callback {for (int i=0;i<NUM_VOICES;i++){
   voicelistitem[i]->refreshlist();
 }
-ADnoteVoiceList->show();}
+ADDnoteVoiceList->show();}
         xywh {180 400 125 25} labelsize 12
       }
       Fl_Button {} {
         label {Show Voice Parameters}
-        callback {ADnoteVoice->show();}
+        callback {ADDnoteVoice->show();}
         xywh {5 400 170 25} labelsize 12
       }
       Fl_Button {} {
         label Close
-        callback {ADnoteGlobalParameters->hide();}
+        callback {ADDnoteGlobalParameters->hide();}
         xywh {475 400 60 25} box THIN_UP_BOX
       }
       Fl_Button {} {
@@ -1026,7 +1026,7 @@ resui->resonancewindow->show();}
         xywh {435 405 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
       }
     }
-    Fl_Window ADnoteVoice {
+    Fl_Window ADDnoteVoice {
       label {ADsynth Voice Parameters} open
       xywh {1142 229 765 630} type Double visible
     } {
@@ -1034,24 +1034,24 @@ resui->resonancewindow->show();}
         xywh {0 0 765 595}
         code0 {o->init(pars,nvoice,master);}
         code1 {o->show();}
-        class ADvoiceUI
+        class ADDvoiceUI
       } {}
       Fl_Button {} {
         label {Close Window}
-        callback {ADnoteVoice->hide();}
+        callback {ADDnoteVoice->hide();}
         xywh {305 601 195 25} box THIN_UP_BOX labelfont 1
       }
       Fl_Counter currentvoicecounter {
         label {Current Voice}
         callback {nvoice=(int)o->value()-1;
 advoice->hide();
-ADnoteVoice->remove(advoice);
+ADDnoteVoice->remove(advoice);
 delete advoice;
-advoice=new ADvoiceUI(0,0,765,590);
-ADnoteVoice->add(advoice);
+advoice=new ADDvoiceUI(0,0,765,590);
+ADDnoteVoice->add(advoice);
 advoice->init(pars,nvoice,master);
 advoice->show();
-ADnoteVoice->redraw();}
+ADDnoteVoice->redraw();}
         xywh {10 601 130 25} type Simple labelfont 1 align 8 minimum 0 maximum 2 step 1 value 1 textfont 1 textsize 13
         code0 {o->bounds(1,NUM_VOICES);}
       }
@@ -1066,7 +1066,7 @@ ADnoteVoice->redraw();}
         xywh {735 609 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
       }
     }
-    Fl_Window ADnoteVoiceList {
+    Fl_Window ADDnoteVoiceList {
       label {ADsynth Voices list}
       xywh {32 266 650 260} type Double hide
     } {
@@ -1096,7 +1096,7 @@ ADnoteVoice->redraw();}
       }
       Fl_Button {} {
         label {Hide Voice List}
-        callback {ADnoteVoiceList->hide();}
+        callback {ADDnoteVoiceList->hide();}
         xywh {255 237 125 20}
       }
       Fl_Scroll {} {open
@@ -1104,25 +1104,25 @@ ADnoteVoice->redraw();}
       } {
         Fl_Pack {} {open
           xywh {0 20 620 210}
-          code0 {for (int i=0;i<NUM_VOICES;i++){voicelistitem[i]=new ADvoicelistitem(0,0,620,25,"");voicelistitem[i]->init(pars,i,master);}}
+          code0 {for (int i=0;i<NUM_VOICES;i++){voicelistitem[i]=new ADDvoicelistitem(0,0,620,25,"");voicelistitem[i]->init(pars,i,master);}}
         } {}
       }
     }
   }
-  Function {ADnoteUI(ADDnoteParameters *parameters,Master *master_)} {} {
+  Function {ADDnoteUI(ADDnoteParameters *parameters,Master *master_)} {} {
     code {pars=parameters;
 master=master_;
 nvoice=0;
 resui=new ResonanceUI(pars->GlobalPar.Reson);
 make_window();} {}
   }
-  Function {~ADnoteUI()} {} {
-    code {ADnoteVoiceList->hide();
-ADnoteGlobalParameters->hide();
-ADnoteVoice->hide();
-delete(ADnoteVoiceList);
-delete(ADnoteGlobalParameters);
-delete(ADnoteVoice);
+  Function {~ADDnoteUI()} {} {
+    code {ADDnoteVoiceList->hide();
+ADDnoteGlobalParameters->hide();
+ADDnoteVoice->hide();
+delete(ADDnoteVoiceList);
+delete(ADDnoteGlobalParameters);
+delete(ADDnoteVoice);
 delete(resui);} {}
   }
   Function {refresh()} {} {
@@ -1165,5 +1165,5 @@ currentvoicecounter->do_callback();} {}
   decl {ResonanceUI *resui;} {}
   decl {Master *master;} {}
   decl {int nvoice;} {}
-  decl {ADvoicelistitem *voicelistitem[NUM_VOICES];} {}
+  decl {ADDvoicelistitem *voicelistitem[NUM_VOICES];} {}
 } 
