@@ -311,5 +311,12 @@ void Config::saveConfig(const char *filename)
 void Config::getConfigFileName(char *name, int namesize)
 {
     name[0] = 0;
+#ifdef _WIN32
+    char LOCALAPPDATA[_MAX_ENV] = { 0 };
+    size_t s;
+    getenv_s(&s, LOCALAPPDATA, "LOCALAPPDATA");
+    snprintf(name, namesize, "%s%s", LOCALAPPDATA, "/.zynaddsubfxXML.cfg");
+#else
     snprintf(name, namesize, "%s%s", getenv("HOME"), "/.zynaddsubfxXML.cfg");
+#endif
 }
