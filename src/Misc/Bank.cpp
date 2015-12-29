@@ -33,7 +33,11 @@
 
 #include <sys/types.h>
 #include <fcntl.h>
+#ifdef _WIN32
+#include <direct.h>
+#else
 #include <unistd.h>
+#endif
 #include <errno.h>
 
 #include "Config.h"
@@ -259,7 +263,11 @@ int Bank::newbank(string newbankdirname)
         bankdir += "/";
 
     bankdir += newbankdirname;
+#ifdef _WIN32
+    if(_mkdir(bankdir.c_str()) < 0)
+#else
     if(mkdir(bankdir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) < 0)
+#endif
         return -1;
 
     const string tmpfilename = bankdir + '/' + FORCE_BANK_DIR_FILE;

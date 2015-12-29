@@ -25,12 +25,16 @@
 #include <cassert>
 #include <math.h>
 #include <stdio.h>
-#include <err.h>
+#include <iostream>
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <unistd.h>
+#endif
 #include <errno.h>
 #include <string.h>
 #ifdef HAVE_SCHEDULER

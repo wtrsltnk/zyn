@@ -23,7 +23,11 @@
 #ifndef NUL_ENGINE_H
 #define NUL_ENGINE_H
 
+#if _WIN32
+#include <winsock2.h>
+#else
 #include <sys/time.h>
+#endif
 #include <pthread.h>
 #include "../globals.h"
 #include "AudioOut.h"

@@ -30,10 +30,11 @@
 #include <algorithm>
 #include <signal.h>
 
-#include <unistd.h>
 #include <pthread.h>
 
+#ifndef _WIN32
 #include <getopt.h>
+#endif
 
 #include "DSP/FFTwrapper.h"
 #include "Misc/Master.h"
@@ -200,7 +201,12 @@ int main(int argc, char *argv[])
 
     sprng(time(NULL));
 
+    int option_index = 0, opt, exitwithhelp = 0, exitwithversion = 0;
+
+    string loadfile, loadinstrument, execAfterInit;
+
     /* Parse command-line options */
+    /*
     struct option opts[] = {
         {
             "load", 2, NULL, 'l'
@@ -255,14 +261,11 @@ int main(int argc, char *argv[])
         }
     };
     opterr = 0;
-    int option_index = 0, opt, exitwithhelp = 0, exitwithversion = 0;
-
-    string loadfile, loadinstrument, execAfterInit;
 
     while(1) {
         int tmp = 0;
 
-        /**\todo check this process for a small memory leak*/
+        // todo check this process for a small memory leak
         opt = getopt_long(argc,
                           argv,
                           "l:L:r:b:o:I:O:N:e:hvaSDUY",
@@ -285,13 +288,6 @@ int main(int argc, char *argv[])
                 break;
             case 'v':
                 exitwithversion = 1;
-                break;
-            case 'Y': /* this command a dummy command (has NO effect)
-                        and is used because I need for NSIS installer
-                        (NSIS sometimes forces a command line for a
-                        program, even if I don't need that; eg. when
-                        I want to add a icon to a shortcut.
-                     */
                 break;
             case 'U':
                 noui = 1;
@@ -361,7 +357,7 @@ int main(int argc, char *argv[])
                 break;
         }
     }
-
+*/
     synth->alias();
 
     if(exitwithversion) {

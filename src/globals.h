@@ -246,4 +246,10 @@ struct SYNTH_T {
 };
 
 extern SYNTH_T *synth;
+
+// Make snprintf work on windows platform
+#if WIN32
+#define snprintf sprintf_s
+#endif
+
 #endif
