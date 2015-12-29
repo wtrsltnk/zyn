@@ -1,7 +1,7 @@
 /*
   ZynAddSubFX - a software synthesizer
 
-  ADnoteParameters.h - Parameters for ADnote (ADsynth)
+  ADDnoteParameters.h - Parameters for ADDnote (ADsynth)
   Copyright (C) 2002-2005 Nasca Octavian Paul
   Author: Nasca Octavian Paul
 
@@ -38,15 +38,15 @@ class FFTwrapper;
 enum FMTYPE {
     NONE, MORPH, RING_MOD, PHASE_MOD, FREQ_MOD, PITCH_MOD
 };
-extern int ADnote_unison_sizes[];
+extern int ADDnote_unison_sizes[];
 
 /*****************************************************************/
 /*                    GLOBAL PARAMETERS                          */
 /*****************************************************************/
 
-struct ADnoteGlobalParam {
-    ADnoteGlobalParam();
-    ~ADnoteGlobalParam();
+struct ADDnoteGlobalParam {
+    ADDnoteGlobalParam();
+    ~ADDnoteGlobalParam();
     void defaults();
     void add2XML(XMLwrapper *xml);
     void getfromXML(XMLwrapper *xml);
@@ -118,7 +118,7 @@ struct ADnoteGlobalParam {
 /***********************************************************/
 /*                    VOICE PARAMETERS                     */
 /***********************************************************/
-struct ADnoteVoiceParam {
+struct ADDnoteVoiceParam {
     void getfromXML(XMLwrapper *xml, unsigned nvoice);
     void add2XML(XMLwrapper *xml, bool fmoscilused);
     void defaults();
@@ -294,8 +294,8 @@ class ADDnoteParameters:public PresetsArray
         ADDnoteParameters(FFTwrapper *fft_);
         ~ADDnoteParameters();
 
-        ADnoteGlobalParam GlobalPar;
-        ADnoteVoiceParam  VoicePar[NUM_VOICES];
+        ADDnoteGlobalParam GlobalPar;
+        ADDnoteVoiceParam  VoicePar[NUM_VOICES];
 
         void defaults();
         void add2XML(XMLwrapper *xml);

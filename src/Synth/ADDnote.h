@@ -1,7 +1,7 @@
 /*
   ZynAddSubFX - a software synthesizer
 
-  ADnote.h - The "additive" synthesizer
+  ADDnote.h - The "additive" synthesizer
   Copyright (C) 2002-2005 Nasca Octavian Paul
   Author: Nasca Octavian Paul
 
@@ -126,7 +126,7 @@ class ADDnote:public SynthNote
 
         struct Global {
             void kill();
-            void initparameters(const ADnoteGlobalParam &param,
+            void initparameters(const ADDnoteGlobalParam &param,
                                 float basefreq, float velocity,
                                 bool stereo);
             /******************************************

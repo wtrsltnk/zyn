@@ -1,7 +1,7 @@
 /*
   ZynAddSubFX - a software synthesizer
 
-  ADnoteParameters.cpp - Parameters for ADnote (ADsynth)
+  ADDnoteParameters.cpp - Parameters for ADDnote (ADDsynth)
   Copyright (C) 2002-2005 Nasca Octavian Paul
   Author: Nasca Octavian Paul
 
@@ -33,7 +33,7 @@
 #include "../Synth/Resonance.h"
 #include "FilterParams.h"
 
-int ADnote_unison_sizes[] =
+int ADDnote_unison_sizes[] =
 {1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 0};
 
 ADDnoteParameters::ADDnoteParameters(FFTwrapper *fft_)
@@ -49,7 +49,7 @@ ADDnoteParameters::ADDnoteParameters(FFTwrapper *fft_)
     defaults();
 }
 
-ADnoteGlobalParam::ADnoteGlobalParam()
+ADDnoteGlobalParam::ADDnoteGlobalParam()
 {
     FreqEnvelope = new EnvelopeParams(0, 0);
     FreqEnvelope->ASRinit(64, 50, 64, 60);
@@ -77,7 +77,7 @@ void ADDnoteParameters::defaults()
     VoicePar[0].Enabled = 1;
 }
 
-void ADnoteGlobalParam::defaults()
+void ADDnoteGlobalParam::defaults()
 {
     /* Frequency Global Parameters */
     PStereo = 1; //stereo
@@ -117,7 +117,7 @@ void ADDnoteParameters::defaults(int n)
     VoicePar[n].defaults();
 }
 
-void ADnoteVoiceParam::defaults()
+void ADDnoteVoiceParam::defaults()
 {
     Enabled = 0;
 
@@ -194,7 +194,7 @@ void ADDnoteParameters::EnableVoice(int nvoice)
     VoicePar[nvoice].enable(fft, GlobalPar.Reson);
 }
 
-void ADnoteVoiceParam::enable(FFTwrapper *fft, Resonance *Reson)
+void ADDnoteVoiceParam::enable(FFTwrapper *fft, Resonance *Reson)
 {
     OscilSmp = new OscilGen(fft, Reson);
     FMSmp    = new OscilGen(fft, NULL);
@@ -247,7 +247,7 @@ void ADDnoteParameters::KillVoice(int nvoice)
     VoicePar[nvoice].kill();
 }
 
-void ADnoteVoiceParam::kill()
+void ADDnoteVoiceParam::kill()
 {
     delete OscilSmp;
     delete FMSmp;
@@ -267,7 +267,7 @@ void ADnoteVoiceParam::kill()
 }
 
 
-ADnoteGlobalParam::~ADnoteGlobalParam()
+ADDnoteGlobalParam::~ADDnoteGlobalParam()
 {
     delete FreqEnvelope;
     delete FreqLfo;
@@ -292,10 +292,10 @@ int ADDnoteParameters::get_unison_size_index(int nvoice) {
     int unison = VoicePar[nvoice].Unison_size;
 
     while(1) {
-        if(ADnote_unison_sizes[index] >= unison)
+        if(ADDnote_unison_sizes[index] >= unison)
             return index;
 
-        if(ADnote_unison_sizes[index] == 0)
+        if(ADDnote_unison_sizes[index] == 0)
             return index - 1;
 
         index++;
@@ -306,9 +306,9 @@ int ADDnoteParameters::get_unison_size_index(int nvoice) {
 void ADDnoteParameters::set_unison_size_index(int nvoice, int index) {
     int unison = 1;
     for(int i = 0; i <= index; ++i) {
-        unison = ADnote_unison_sizes[i];
+        unison = ADDnote_unison_sizes[i];
         if(unison == 0) {
-            unison = ADnote_unison_sizes[i - 1];
+            unison = ADDnote_unison_sizes[i - 1];
             break;
         }
     }
@@ -341,7 +341,7 @@ void ADDnoteParameters::add2XMLsection(XMLwrapper *xml, int n)
     VoicePar[nvoice].add2XML(xml, fmoscilused);
 }
 
-void ADnoteVoiceParam::add2XML(XMLwrapper *xml, bool fmoscilused)
+void ADDnoteVoiceParam::add2XML(XMLwrapper *xml, bool fmoscilused)
 {
     xml->addpar("type", Type);
 
@@ -480,7 +480,7 @@ void ADnoteVoiceParam::add2XML(XMLwrapper *xml, bool fmoscilused)
     }
 }
 
-void ADnoteGlobalParam::add2XML(XMLwrapper *xml)
+void ADDnoteGlobalParam::add2XML(XMLwrapper *xml)
 {
     xml->addparbool("stereo", PStereo);
 
@@ -554,7 +554,7 @@ void ADDnoteParameters::add2XML(XMLwrapper *xml)
 }
 
 
-void ADnoteGlobalParam::getfromXML(XMLwrapper *xml)
+void ADDnoteGlobalParam::getfromXML(XMLwrapper *xml)
 {
     PStereo = xml->getparbool("stereo", PStereo);
 
@@ -653,7 +653,7 @@ void ADDnoteParameters::getfromXMLsection(XMLwrapper *xml, int n)
 }
 
 
-void ADnoteVoiceParam::getfromXML(XMLwrapper *xml, unsigned nvoice)
+void ADDnoteVoiceParam::getfromXML(XMLwrapper *xml, unsigned nvoice)
 {
     Enabled     = xml->getparbool("enabled", 0);
     Unison_size = xml->getpar127("unison_size", Unison_size);

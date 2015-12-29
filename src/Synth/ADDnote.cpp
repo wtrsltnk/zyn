@@ -1,7 +1,7 @@
 /*
   ZynAddSubFX - a software synthesizer
 
-  ADnote.cpp - The "additive" synthesizer
+  ADDnote.cpp - The "additive" synthesizer
   Copyright (C) 2002-2005 Nasca Octavian Paul
   Author: Nasca Octavian Paul
 
@@ -410,7 +410,7 @@ ADDnote::ADDnote(ADDnoteParameters *pars,
     initparameters();
 }
 
-// ADlegatonote: This function is (mostly) a copy of ADnote(...) and
+// ADlegatonote: This function is (mostly) a copy of ADDnote(...) and
 // initparameters() stuck together with some lines removed so that it
 // only alter the already playing note (to perform legato). It is
 // possible I left stuff that is not required for this.
@@ -662,7 +662,7 @@ void ADDnote::legatonote(float freq, float velocity, int portamento_,
 
 
 /*
- * Kill a voice of ADnote
+ * Kill a voice of ADDnote
  */
 void ADDnote::KillVoice(int nvoice)
 {
@@ -742,7 +742,7 @@ void ADDnote::initparameters()
     // Voice Parameter init
     for(int nvoice = 0; nvoice < NUM_VOICES; ++nvoice) {
         Voice &vce = NoteVoicePar[nvoice];
-        ADnoteVoiceParam &param = partparams->VoicePar[nvoice];
+        ADDnoteVoiceParam &param = partparams->VoicePar[nvoice];
 
         if(vce.Enabled == 0)
             continue;
@@ -1126,7 +1126,7 @@ inline void ADDnote::fadein(float *smps) const
  * a maximum of 24 bits are significant. The below code does your standard
  * linear interpolation that you'll see throughout this codebase, but by
  * sticking to integers for tracking the overflow of the low portion, around 15%
- * of the execution time was shaved off in the ADnote test.
+ * of the execution time was shaved off in the ADDnote test.
  */
 inline void ADDnote::ComputeVoiceOscillator_LinearInterpolation(int nvoice)
 {
@@ -1156,7 +1156,7 @@ inline void ADDnote::ComputeVoiceOscillator_LinearInterpolation(int nvoice)
  * Computes the Oscillator (Without Modulation) - CubicInterpolation
  *
  The differences from the Linear are to little to deserve to be used. This is because I am using a large synth->oscilsize (>512)
-inline void ADnote::ComputeVoiceOscillator_CubicInterpolation(int nvoice){
+inline void ADDnote::ComputeVoiceOscillator_CubicInterpolation(int nvoice){
     int i,poshi;
     float poslo;
 
@@ -1450,7 +1450,7 @@ inline void ADDnote::ComputeVoiceNoise(int nvoice)
 
 
 /*
- * Compute the ADnote samples
+ * Compute the ADDnote samples
  * Returns 0 if the note is finished
  */
 int ADDnote::noteout(float *outl, float *outr)
@@ -1606,7 +1606,7 @@ int ADDnote::noteout(float *outl, float *outr)
         //the voice is killed later
 
 
-        // Put the ADnote samples in VoiceOut (without appling Global volume, because I wish to use this voice as a modullator)
+        // Put the ADDnote samples in VoiceOut (without appling Global volume, because I wish to use this voice as a modullator)
         if(NoteVoicePar[nvoice].VoiceOut != NULL) {
             if(stereo)
                 for(int i = 0; i < synth->buffersize; ++i)
@@ -1797,7 +1797,7 @@ void ADDnote::Global::kill()
     nullify(FilterLfo);
 }
 
-void ADDnote::Global::initparameters(const ADnoteGlobalParam &param,
+void ADDnote::Global::initparameters(const ADDnoteGlobalParam &param,
                                     float basefreq, float velocity,
                                     bool stereo)
 {
