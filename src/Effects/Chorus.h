@@ -28,6 +28,8 @@
 
 #define MAX_CHORUS_DELAY 250.0f //ms
 
+#define NUM_CHORUS_PRESETS 10
+
 /**Chorus and Flange effects*/
 class Chorus:public Effect
 {

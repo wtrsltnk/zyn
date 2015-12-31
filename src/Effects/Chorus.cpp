@@ -26,6 +26,31 @@
 
 using namespace std;
 
+#define PRESET_SIZE 12
+
+unsigned char presets[NUM_CHORUS_PRESETS][PRESET_SIZE] = {
+    //Chorus1
+    {64, 64, 50, 0,   0, 90, 40,  85, 64,  119, 0, 0},
+    //Chorus2
+    {64, 64, 45, 0,   0, 98, 56,  90, 64,  19,  0, 0},
+    //Chorus3
+    {64, 64, 29, 0,   1, 42, 97,  95, 90,  127, 0, 0},
+    //Celeste1
+    {64, 64, 26, 0,   0, 42, 115, 18, 90,  127, 0, 0},
+    //Celeste2
+    {64, 64, 29, 117, 0, 50, 115, 9,  31,  127, 0, 1},
+    //Flange1
+    {64, 64, 57, 0,   0, 60, 23,  3,  62,  0,   0, 0},
+    //Flange2
+    {64, 64, 33, 34,  1, 40, 35,  3,  109, 0,   0, 0},
+    //Flange3
+    {64, 64, 53, 34,  1, 94, 35,  3,  54,  0,   0, 1},
+    //Flange4
+    {64, 64, 40, 0,   1, 62, 12,  19, 97,  0,   0, 0},
+    //Flange5
+    {64, 64, 55, 105, 0, 24, 39,  19, 17,  0,   0, 1}
+};
+
 Chorus::Chorus(bool insertion_, float *const efxoutl_, float *efxoutr_, unsigned int srate, int bufsize)
     :Effect(insertion_, efxoutl_, efxoutr_, NULL, 0, srate, bufsize),
       lfo(srate, bufsize),
@@ -170,33 +195,8 @@ void Chorus::setvolume(unsigned char _Pvolume)
 
 void Chorus::setpreset(unsigned char npreset)
 {
-    const int     PRESET_SIZE = 12;
-    const int     NUM_PRESETS = 10;
-    unsigned char presets[NUM_PRESETS][PRESET_SIZE] = {
-        //Chorus1
-        {64, 64, 50, 0,   0, 90, 40,  85, 64,  119, 0, 0},
-        //Chorus2
-        {64, 64, 45, 0,   0, 98, 56,  90, 64,  19,  0, 0},
-        //Chorus3
-        {64, 64, 29, 0,   1, 42, 97,  95, 90,  127, 0, 0},
-        //Celeste1
-        {64, 64, 26, 0,   0, 42, 115, 18, 90,  127, 0, 0},
-        //Celeste2
-        {64, 64, 29, 117, 0, 50, 115, 9,  31,  127, 0, 1},
-        //Flange1
-        {64, 64, 57, 0,   0, 60, 23,  3,  62,  0,   0, 0},
-        //Flange2
-        {64, 64, 33, 34,  1, 40, 35,  3,  109, 0,   0, 0},
-        //Flange3
-        {64, 64, 53, 34,  1, 94, 35,  3,  54,  0,   0, 1},
-        //Flange4
-        {64, 64, 40, 0,   1, 62, 12,  19, 97,  0,   0, 0},
-        //Flange5
-        {64, 64, 55, 105, 0, 24, 39,  19, 17,  0,   0, 1}
-    };
-
-    if(npreset >= NUM_PRESETS)
-        npreset = NUM_PRESETS - 1;
+    if(npreset >= NUM_CHORUS_PRESETS)
+        npreset = NUM_CHORUS_PRESETS - 1;
     for(int n = 0; n < PRESET_SIZE; ++n)
         changepar(n, presets[npreset][n]);
     Ppreset = npreset;

@@ -2,6 +2,8 @@
 message(STATUS "Checking Include Path" $ENV{CMAKE_INCLUDE_PATH} ${CMAKE_INCLUDE_PATH})
 message(STATUS "Checking Library Path" $ENV{CMAKE_LIBRARY_PATH} ${CMAKE_LIBRARY_PATH})
 
+option(VstEnable "Build Vst DLL" ON)
+
 #Dependency check
 find_package(zlib REQUIRED)
 find_package(FLTK)
@@ -361,6 +363,22 @@ add_subdirectory(DSP)
 add_subdirectory(Nio)
 add_subdirectory(Mxml)
 
+if( WIN32 )
+    set(VSTSDK_PATH ${CMAKE_SOURCE_DIR}/vstsdk2.4)
+    set(VSTSDK_INCLUDE_DIR ${VSTSDK_PATH})
+    set(VSTSDK_PLUGIN_SOURCE
+        ${VSTSDK_PATH}/public.sdk/source/vst2.x/audioeffectx.cpp
+        ${VSTSDK_PATH}/public.sdk/source/vst2.x/audioeffect.cpp
+        ${VSTSDK_PATH}/public.sdk/source/vst2.x/vstplugmain.cpp
+    )
+
+    set(VSTSDK_HOST_SOURCE
+        ${VSTSDK_PATH}/pluginterfaces/vst2.x/aeffectx.cpp
+    )
+
+    add_subdirectory(Vst)
+endif( WIN32 )
+
 add_library(zynaddsubfx_core STATIC
     ${zynaddsubfx_dsp_SRCS}
     ${zynaddsubfx_effect_SRCS}
@@ -392,6 +410,20 @@ target_link_libraries(zynaddsubfx
     ${NIO_LIBRARIES}
     ${AUDIO_LIBRARIES}
     )
+
+if (VstEnable)
+
+    include_directories(
+        ${VSTSDK_INCLUDE_DIR}
+    )
+
+    add_library(zynaddsubfx_vst SHARED ${zynaddsubfx_vst_SRCS})
+
+    target_link_libraries(zynaddsubfx_vst
+        zynaddsubfx_core
+        )
+
+endif (VstEnable)
 
 if (DssiEnable)
     add_library(zynaddsubfx_dssi SHARED
