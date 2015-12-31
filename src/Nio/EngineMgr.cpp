@@ -19,6 +19,7 @@
 #if PORTAUDIO
 #include "PaEngine.h"
 #endif
+#include "RtEngine.h"
 
 using namespace std;
 
@@ -46,6 +47,7 @@ EngineMgr::EngineMgr()
 #if PORTAUDIO
     engines.push_back(new PaEngine());
 #endif
+    engines.push_back(new RtEngine());
 
     defaultOut = dynamic_cast<AudioOut *>(defaultEng);
 

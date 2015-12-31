@@ -138,6 +138,9 @@ option (BuildForDebug "Include gdb debugging support" OFF)
 set(CMAKE_BUILD_TYPE "Release")
 
 if( WIN32 )
+    add_definitions(-D__WINDOWS_MM__)
+    set(OS_LIBRARIES "winmm.lib")
+
     set (BuildOptions_x86_64AMD
         "-O3 -march=athlon64 -m64 -Wall -ffast-math -fno-finite-math-only -fomit-frame-pointer"
       CACHE STRING "X86_64 compiler options"
