@@ -18,7 +18,7 @@ decl {\#include <string.h>} {public
 decl {\#include "WidgetPDial.h"} {public
 } 
 
-decl {\#include "ADnoteUI.h"} {public
+decl {\#include "ADDnoteUI.h"} {public
 } 
 
 decl {\#include "SUBnoteUI.h"} {public
