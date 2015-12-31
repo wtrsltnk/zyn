@@ -9,7 +9,7 @@ find_package(OpenGL) #for FLTK
 
 if( WIN32 )
     find_package(FFTW REQUIRED)
-    find_package(MXML REQUIRED)
+    #find_package(MXML REQUIRED)
     find_package(PTHREAD REQUIRED)
     find_package(JACK4WIN)
     find_package(PORTAUDIO)
@@ -356,6 +356,7 @@ add_subdirectory(Effects)
 add_subdirectory(Params)
 add_subdirectory(DSP)
 add_subdirectory(Nio)
+add_subdirectory(Mxml)
 
 add_library(zynaddsubfx_core STATIC
     ${zynaddsubfx_dsp_SRCS}
@@ -368,7 +369,7 @@ add_library(zynaddsubfx_core STATIC
 target_link_libraries(zynaddsubfx_core
     ${ZLIB_LIBRARIES}
     ${FFTW_LIBRARIES}
-    ${MXML_LIBRARIES}
+    zynaddsubfx_mxml
     ${OS_LIBRARIES}
     ${PTHREAD_LIBRARIES})
 
@@ -396,7 +397,6 @@ if (DssiEnable)
 
     target_link_libraries(zynaddsubfx_dssi
         zynaddsubfx_core
-        ${OS_LIBRARIES}
         )
     if (${CMAKE_SIZEOF_VOID_P} EQUAL "8")
         install(TARGETS zynaddsubfx_dssi LIBRARY DESTINATION lib64/dssi/)
