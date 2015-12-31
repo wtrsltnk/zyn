@@ -293,7 +293,7 @@ if(FltkGui)
         string(STRIP ${FLTK_LDFLAGS} FLTK_LIBRARIES)
     endif()
 
-    message(STATUS ${FLTK_LDFLAGS})
+    message(STATUS "FLTK_LDFLAGS : ${FLTK_LDFLAGS}")
 
 
     set(GUI_LIBRARIES ${FLTK_LIBRARIES} ${FLTK_LIBRARIES} ${OPENGL_LIBRARIES} zynaddsubfx_gui)
@@ -314,7 +314,7 @@ if(NtkGui)
 
     find_program( FLTK_FLUID_EXECUTABLE ntk-fluid)
 
-    message(STATUS ${NTK_LDFLAGS} ${NTK_IMAGES_LDFLAGS})
+    message(STATUS "NTK_LDFLAGS : ${NTK_LDFLAGS}, NTK_IMAGES_LDFLAGS: ${NTK_IMAGES_LDFLAGS}")
 
     set(GUI_LIBRARIES ${NTK_LIBRARIES} ${NTK_IMAGES_LIBRARIES} ${OPENGL_LIBRARIES} zynaddsubfx_gui)
 
