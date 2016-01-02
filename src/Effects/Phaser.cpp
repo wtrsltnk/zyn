@@ -95,15 +95,15 @@ Phaser::~Phaser()
 /*
  * Effect output
  */
-void Phaser::out(const Stereo<float *> &input)
+void Phaser::out(const Stereo<float *> &input, int sampleFrames)
 {
     if(Panalog)
-        AnalogPhase(input);
+        AnalogPhase(input, sampleFrames);
     else
-        normalPhase(input);
+        normalPhase(input, sampleFrames);
 }
 
-void Phaser::AnalogPhase(const Stereo<float *> &input)
+void Phaser::AnalogPhase(const Stereo<float *> &input, int sampleFrames)
 {
     Stereo<float> gain(0.0f), lfoVal(0.0f), mod(0.0f), g(0.0f), b(0.0f), hpf(
         0.0f);
@@ -133,7 +133,7 @@ void Phaser::AnalogPhase(const Stereo<float *> &input)
     g = oldgain;
     oldgain = mod;
 
-    for(int i = 0; i < buffersize; ++i) {
+    for(int i = 0; i < /*buffersize*/sampleFrames; ++i) {
         g.l += diff.l; // Linear interpolation between LFO samples
         g.r += diff.r;
 
@@ -155,8 +155,8 @@ void Phaser::AnalogPhase(const Stereo<float *> &input)
     }
 
     if(Poutsub) {
-        invSignal(efxoutl, buffersize);
-        invSignal(efxoutr, buffersize);
+        invSignal(efxoutl, /*buffersize*/sampleFrames);
+        invSignal(efxoutr, /*buffersize*/sampleFrames);
     }
 }
 
@@ -188,7 +188,7 @@ float Phaser::applyPhase(float x, float g, float fb,
     }
     return x;
 }
-void Phaser::normalPhase(const Stereo<float *> &input)
+void Phaser::normalPhase(const Stereo<float *> &input, int sampleFrames)
 {
     Stereo<float> gain(0.0f), lfoVal(0.0f);
 
@@ -206,7 +206,7 @@ void Phaser::normalPhase(const Stereo<float *> &input)
     gain.l = limit(gain.l, ZERO_, ONE_);
     gain.r = limit(gain.r, ZERO_, ONE_);
 
-    for(int i = 0; i < buffersize; ++i) {
+    for(int i = 0; i < /*buffersize*/sampleFrames; ++i) {
         float x  = (float) i / buffersize_f;
         float x1 = 1.0f - x;
         //TODO think about making panning an external feature
@@ -231,8 +231,8 @@ void Phaser::normalPhase(const Stereo<float *> &input)
     oldgain = gain;
 
     if(Poutsub) {
-        invSignal(efxoutl, buffersize);
-        invSignal(efxoutr, buffersize);
+        invSignal(efxoutl, /*buffersize*/sampleFrames);
+        invSignal(efxoutr, /*buffersize*/sampleFrames);
     }
 }
 

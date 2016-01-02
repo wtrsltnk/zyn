@@ -91,7 +91,7 @@ float Chorus::getdelay(float xlfo)
 }
 
 //Apply the effect
-void Chorus::out(const Stereo<float *> &input)
+void Chorus::out(const Stereo<float *> &input, int sampleFrames)
 {
     const float one = 1.0f;
     dl1 = dl2;
@@ -100,8 +100,9 @@ void Chorus::out(const Stereo<float *> &input)
 
     dl2 = getdelay(lfol);
     dr2 = getdelay(lfor);
+    float bf = /*buffersize*/float(sampleFrames);
 
-    for(int i = 0; i < buffersize; ++i) {
+    for(int i = 0; i < /*buffersize*/sampleFrames; ++i) {
         float inL = input.l[i];
         float inR = input.r[i];
         //LRcross
@@ -113,7 +114,7 @@ void Chorus::out(const Stereo<float *> &input)
 
         //compute the delay in samples using linear interpolation between the lfo delays
         float mdel =
-            (dl1 * (buffersize - i) + dl2 * i) / buffersize_f;
+            (dl1 * (/*buffersize*/sampleFrames - i) + dl2 * i) / /*buffersize_f*/bf;
         if(++dlk >= maxdelay)
             dlk = 0;
         float tmp = dlk - mdel + maxdelay * 2.0f; //where should I get the sample from
@@ -131,7 +132,7 @@ void Chorus::out(const Stereo<float *> &input)
         //Right channel
 
         //compute the delay in samples using linear interpolation between the lfo delays
-        mdel = (dr1 * (buffersize - i) + dr2 * i) / buffersize_f;
+        mdel = (dr1 * (/*buffersize*/sampleFrames - i) + dr2 * i) / /*buffersize_f*/bf;
         if(++drk >= maxdelay)
             drk = 0;
         tmp = drk * 1.0f - mdel + maxdelay * 2.0f; //where should I get the sample from
@@ -148,12 +149,12 @@ void Chorus::out(const Stereo<float *> &input)
     }
 
     if(Poutsub)
-        for(int i = 0; i < buffersize; ++i) {
+        for(int i = 0; i < /*buffersize*/sampleFrames; ++i) {
             efxoutl[i] *= -1.0f;
             efxoutr[i] *= -1.0f;
         }
 
-    for(int i = 0; i < buffersize; ++i) {
+    for(int i = 0; i < /*buffersize*/sampleFrames; ++i) {
         efxoutl[i] *= pangainL;
         efxoutr[i] *= pangainR;
     }

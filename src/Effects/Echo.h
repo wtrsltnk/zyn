@@ -26,6 +26,8 @@
 #include "Effect.h"
 #include "../Misc/Stereo.h"
 
+#define NUM_ECHO_PRESETS 9
+
 /**Echo Effect*/
 class Echo:public Effect
 {
@@ -33,7 +35,7 @@ class Echo:public Effect
         Echo(bool insertion_, float *efxoutl_, float *efxoutr_, unsigned int srate, int bufsize);
         ~Echo();
 
-        void out(const Stereo<float *> &input);
+        void out(const Stereo<float *> &input, int sampleFrames);
         void setpreset(unsigned char npreset);
         /**
          * Sets the value of the chosen variable

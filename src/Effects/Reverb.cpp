@@ -139,17 +139,17 @@ void Reverb::processmono(int ch, float *output, float *inputbuf)
 }
 
 //Effect output
-void Reverb::out(const Stereo<float *> &smp)
+void Reverb::out(const Stereo<float *> &smp, int sampleFrames)
 {
     if(!Pvolume && insertion)
         return;
 
     float *inputbuf = getTmpBuffer();
-    for(int i = 0; i < buffersize; ++i)
+    for(int i = 0; i < /*buffersize*/sampleFrames; ++i)
         inputbuf[i] = (smp.l[i] + smp.r[i]) / 2.0f;
 
     if(idelay)
-        for(int i = 0; i < buffersize; ++i) {
+        for(int i = 0; i < /*buffersize*/sampleFrames; ++i) {
             //Initial delay r
             float tmp = inputbuf[i] + idelay[idelayk] * idelayfb;
             inputbuf[i]     = idelay[idelayk];
@@ -160,7 +160,7 @@ void Reverb::out(const Stereo<float *> &smp)
         }
 
     if(bandwidth)
-        bandwidth->process(buffersize, inputbuf);
+        bandwidth->process(/*buffersize*/sampleFrames, inputbuf);
 
     if(lpf)
         lpf->filterout(inputbuf);
@@ -176,7 +176,7 @@ void Reverb::out(const Stereo<float *> &smp)
         lvol *= 2.0f;
         rvol *= 2.0f;
     }
-    for(int i = 0; i < buffersize; ++i) {
+    for(int i = 0; i < /*buffersize*/sampleFrames; ++i) {
         efxoutl[i] *= lvol;
         efxoutr[i] *= rvol;
     }

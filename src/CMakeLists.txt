@@ -417,9 +417,15 @@ if (VstEnable)
         ${VSTSDK_INCLUDE_DIR}
     )
 
-    add_library(zynaddsubfx_vst SHARED ${zynaddsubfx_vst_SRCS})
+    add_library(zynaddsubfx_chorus_vst SHARED ${zynaddsubfx_chorus_vst_SRCS})
 
-    target_link_libraries(zynaddsubfx_vst
+    target_link_libraries(zynaddsubfx_chorus_vst
+        zynaddsubfx_core
+        )
+
+    add_library(zynaddsubfx_echo_vst SHARED ${zynaddsubfx_echo_vst_SRCS})
+
+    target_link_libraries(zynaddsubfx_echo_vst
         zynaddsubfx_core
         )
 

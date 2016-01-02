@@ -69,7 +69,7 @@ class Effect
          * @param smpsr Input buffer for the Right channel
          */
         void out(float *const smpsl, float *const smpsr);
-        virtual void out(const Stereo<float *> &smp) = 0;
+        virtual void out(const Stereo<float *> &smp, int sampleFrames) = 0;
         /**Reset the state of the effect*/
         virtual void cleanup(void) {}
         virtual float getfreqresponse(float freq) { return freq; }

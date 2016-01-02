@@ -48,7 +48,7 @@ DynamicFilter::~DynamicFilter()
 
 
 // Apply the effect
-void DynamicFilter::out(const Stereo<float *> &smp)
+void DynamicFilter::out(const Stereo<float *> &smp, int sampleFrames)
 {
     if(filterpars->changed) {
         filterpars->changed = false;
@@ -62,7 +62,7 @@ void DynamicFilter::out(const Stereo<float *> &smp)
     const float freq = filterpars->getfreq();
     const float q    = filterpars->getq();
 
-    for(int i = 0; i < buffersize; ++i) {
+    for(int i = 0; i < /*buffersize*/sampleFrames; ++i) {
         efxoutl[i] = smp.l[i];
         efxoutr[i] = smp.r[i];
 
@@ -86,7 +86,7 @@ void DynamicFilter::out(const Stereo<float *> &smp)
     filterr->filterout(efxoutr);
 
     //panning
-    for(int i = 0; i < buffersize; ++i) {
+    for(int i = 0; i < /*buffersize*/sampleFrames; ++i) {
         efxoutl[i] *= pangainL;
         efxoutr[i] *= pangainR;
     }

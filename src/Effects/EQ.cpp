@@ -54,9 +54,9 @@ void EQ::cleanup(void)
 }
 
 //Effect output
-void EQ::out(const Stereo<float *> &smp)
+void EQ::out(const Stereo<float *> &smp, int sampleFrames)
 {
-    for(int i = 0; i < buffersize; ++i) {
+    for(int i = 0; i < /*buffersize*/sampleFrames; ++i) {
         efxoutl[i] = smp.l[i] * volume;
         efxoutr[i] = smp.r[i] * volume;
     }

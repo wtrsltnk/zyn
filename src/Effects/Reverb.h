@@ -34,7 +34,7 @@ class Reverb:public Effect
     public:
         Reverb(bool insertion_, float *efxoutl_, float *efxoutr_, unsigned int srate, int bufsize);
         ~Reverb();
-        void out(const Stereo<float *> &smp);
+        void out(const Stereo<float *> &smp, int sampleFrames);
         void cleanup(void);
 
         void setpreset(unsigned char npreset);

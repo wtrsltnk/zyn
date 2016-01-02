@@ -1,11 +1,13 @@
-#ifndef __VST_H__
-#define __VST_H__
+#ifndef __CHORUS_FX_VST_H__
+#define __CHORUS_FX_VST_H__
 
 #include "public.sdk/source/vst2.x/audioeffectx.h"
 #include "../Effects/Chorus.h"
 
 #define kNumPrograms 0
 
+namespace ChorusParams
+{
 enum
 {
     Volume = 0,
@@ -22,14 +24,14 @@ enum
 
     kNumParams
 };
+}
 
 
-
-class ZynChorusFxVst : public AudioEffectX
+class ChorusFxVst : public AudioEffectX
 {
 public:
-    ZynChorusFxVst (audioMasterCallback audioMaster);
-    ~ZynChorusFxVst ();
+    ChorusFxVst (audioMasterCallback audioMaster);
+    ~ChorusFxVst ();
 
     virtual void processReplacing (float** inputs, float** outputs, VstInt32 sampleFrames);
 
@@ -54,11 +56,11 @@ public:
     virtual VstPlugCategory getPlugCategory () { return kPlugCategEffect; }
 
 protected:
-    Chorus* _chorus;
+    Chorus* _effect;
 
     long size;
     float fTempo;
     float* _buffer[2];
 };
 
-#endif  // __VST_H__
+#endif  // __CHORUS_FX_VST_H__

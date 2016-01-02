@@ -24,6 +24,7 @@
 
 #include <cmath>
 #include "Echo.h"
+#include <fstream>
 
 #define MAX_DELAY 2
 
@@ -82,9 +83,9 @@ void Echo::initdelays(void)
 }
 
 //Effect output
-void Echo::out(const Stereo<float *> &input)
+void Echo::out(const Stereo<float *> &input, int sampleFrames)
 {
-    for(int i = 0; i < buffersize; ++i) {
+    for(int i = 0; i < /*buffersize*/sampleFrames; ++i) {
         float ldl = delay.l[pos.l];
         float rdl = delay.r[pos.r];
         ldl = ldl * (1.0f - lrcross) + rdl * lrcross;
@@ -163,11 +164,11 @@ void Echo::sethidamp(unsigned char _Phidamp)
     hidamp  = 1.0f - Phidamp / 127.0f;
 }
 
+#define PRESET_SIZE 7
+
 void Echo::setpreset(unsigned char npreset)
 {
-    const int     PRESET_SIZE = 7;
-    const int     NUM_PRESETS = 9;
-    unsigned char presets[NUM_PRESETS][PRESET_SIZE] = {
+    unsigned char presets[NUM_ECHO_PRESETS][PRESET_SIZE] = {
         {67, 64, 35,  64,  30,  59, 0 }, //Echo 1
         {67, 64, 21,  64,  30,  59, 0 }, //Echo 2
         {67, 75, 60,  64,  30,  59, 10}, //Echo 3
@@ -179,8 +180,8 @@ void Echo::setpreset(unsigned char npreset)
         {62, 64, 28,  64,  100, 90, 55}  //Feedback Echo
     };
 
-    if(npreset >= NUM_PRESETS)
-        npreset = NUM_PRESETS - 1;
+    if(npreset >= NUM_ECHO_PRESETS)
+        npreset = NUM_ECHO_PRESETS - 1;
     for(int n = 0; n < PRESET_SIZE; ++n)
         changepar(n, presets[npreset][n]);
     if(insertion)

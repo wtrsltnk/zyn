@@ -41,7 +41,7 @@ Effect::Effect(bool insertion_, float *efxoutl_, float *efxoutr_,
 
 void Effect::out(float *const smpsl, float *const smpsr)
 {
-    out(Stereo<float *>(smpsl, smpsr));
+    out(Stereo<float *>(smpsl, smpsr), this->buffersize);
 }
 
 void Effect::crossover(float &a, float &b, float crossover)

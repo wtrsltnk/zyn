@@ -37,7 +37,7 @@ class Phaser:public Effect
     public:
         Phaser(const int &insertion_, float *efxoutl_, float *efxoutr_, unsigned int srate, int bufsize);
         ~Phaser();
-        void out(const Stereo<float *> &input);
+        void out(const Stereo<float *> &input, int sampleFrames);
         void setpreset(unsigned char npreset);
         void changepar(int npar, unsigned char value);
         unsigned char getpar(int npar) const;
@@ -86,12 +86,12 @@ class Phaser:public Effect
         float CFs;      // A constant derived from capacitor and resistor relationships
 
         void analog_setup();
-        void AnalogPhase(const Stereo<float *> &input);
+        void AnalogPhase(const Stereo<float *> &input, int sampleFrames);
         //analog case
         float applyPhase(float x, float g, float fb,
                          float &hpf, float *yn1, float *xn1);
 
-        void normalPhase(const Stereo<float *> &input);
+        void normalPhase(const Stereo<float *> &input, int sampleFrames);
         float applyPhase(float x, float g, float *old);
 };
 

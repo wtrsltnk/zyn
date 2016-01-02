@@ -31,7 +31,7 @@ class Distorsion:public Effect
     public:
         Distorsion(bool insertion, float *efxoutl_, float *efxoutr_, unsigned int srate, int bufsize);
         ~Distorsion();
-        void out(const Stereo<float *> &smp);
+        void out(const Stereo<float *> &smp, int sampleFrames);
         void setpreset(unsigned char npreset);
         void changepar(int npar, unsigned char value);
         unsigned char getpar(int npar) const;

@@ -37,7 +37,7 @@ class Chorus:public Effect
         Chorus(bool insertion_, float *efxoutl_, float *efxoutr_, unsigned int srate, int bufsize);
         /**Destructor*/
         ~Chorus();
-        void out(const Stereo<float *> &input);
+        void out(const Stereo<float *> &input, int sampleFrames);
         void setpreset(unsigned char npreset);
         /**
          * Sets the value of the chosen variable

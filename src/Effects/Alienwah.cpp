@@ -45,7 +45,7 @@ Alienwah::~Alienwah()
 
 
 //Apply the effect
-void Alienwah::out(const Stereo<float *> &smp)
+void Alienwah::out(const Stereo<float *> &smp, int sampleFrames)
 {
     float lfol, lfor; //Left/Right LFOs
     complex<float> clfol, clfor;
@@ -59,7 +59,7 @@ void Alienwah::out(const Stereo<float *> &smp)
     clfol = complex<float>(cosf(lfol + phase) * fb, sinf(lfol + phase) * fb); //rework
     clfor = complex<float>(cosf(lfor + phase) * fb, sinf(lfor + phase) * fb); //rework
 
-    for(int i = 0; i < buffersize; ++i) {
+    for(int i = 0; i < /*buffersize*/sampleFrames; ++i) {
         float x  = ((float) i) / buffersize_f;
         float x1 = 1.0f - x;
         //left
