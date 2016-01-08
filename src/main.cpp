@@ -462,6 +462,7 @@ int main(int argc, char *argv[])
     Fl::foreground( 255,255,255 );
 #endif
 
+    Fl::scheme("plastic");
     ui = new MasterUI(master, &Pexitprogram);
     
     if ( !noui) 
